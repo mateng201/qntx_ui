@@ -1,0 +1,47 @@
+# Dependencies and package-manager caches
+node_modules/
+.npm/
+.npm-cache*/
+.pnpm-store/
+
+# Astro / Vite output and caches
+dist/
+.astro/
+.vite/
+.cache/
+*.tsbuildinfo
+
+# Local environment values (keep the shareable example)
+.env
+.env.*
+!.env.example
+
+# Generated test output and screenshots
+playwright-report/
+test-results/
+artifacts/
+coverage/
+
+# Logs, temporary files, and local backups
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+/review/*.zip
+/review/*-backup*/
+/review/latest-original-backup.txt
+
+# Editor history and operating-system metadata
+.history/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local task input and Git metadata backups
+/Q1.txt
+.git/
+.git-rollback-backup-*/
+.git-empty-backup-*/

@@ -1,0 +1,10 @@
+{
+  "editor.formatOnSave": true,
+  "[astro]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "files.exclude": { ".astro": true, "dist": true },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "tailwindCSS.experimental.configFile": "src/styles/global.css"
+}

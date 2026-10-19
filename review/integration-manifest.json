@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-17",
+  "source": "E:/bigshoot/qntx.ui-previews/logo-review-20261017",
+  "target": "E:/bigshoot/qntx.ui",
+  "backup": "E:\\bigshoot\\qntx.ui-backups\\before-logo-sync-20261017-194325.zip",
+  "changed": [
+    "src/components/HomeVisual.tsx",
+    "src/components/Logo.astro",
+    "src/data/logo-poses.json",
+    "src/data/logo.ts",
+    "src/data/overview-nodes.ts",
+    "src/pages/index.astro",
+    "src/pages/logo-check.astro",
+    "src/scripts/logo-animation.ts",
+    "src/scripts/overview-interactions.ts",
+    "src/styles/overview-interactions.css",
+    "src/vendor/logo-catalog.d.ts",
+    "src/vendor/logo-catalog.js",
+    "public/logo-check/before.png",
+    "tests/logo-candidate.spec.ts",
+    "tests/overview-hover.spec.ts",
+    "tests/overview-interactions.spec.ts"
+  ],
+  "configuration": "Original Astro and Playwright configuration retained; tests use original port 4321. Dependencies unchanged.",
+  "documentation": [
+    "README.md",
+    "E:/bigshoot/第五周/01-设计理念与页面架构.md",
+    "E:/bigshoot/第五周/02-关键交互与实现原理.md",
+    "E:/bigshoot/第五周/03-对话驱动的迭代复盘.md",
+    "E:/bigshoot/第五周/04-工程验收与维护手册.md",
+    "E:/bigshoot/第五周/README.md"
+  ],
+  "metadata": [
+    "review/integration-manifest.json",
+    "review/integration-verification.md",
+    "review/logo-catalog-provenance.json"
+  ],
+  "verification": {
+    "project": "E:/bigshoot/qntx.ui",
+    "url": "http://127.0.0.1:4321/",
+    "astroErrors": 0,
+    "oxlintErrors": 0,
+    "format": "passed",
+    "build": "passed",
+    "chromeTests": {
+      "passed": 62,
+      "failed": 0
+    }
+  },
+  "sha256": {
+    "src/components/HomeVisual.tsx": "bf926bfe6f0f31cb0f27e850a450b069f6fc616f9d08c777496ed37031ce8fbf",
+    "src/components/Logo.astro": "68a954a1407819156d6a49a65064ba41c277c2fb09ae1775a6cf838fadc6aa38",
+    "src/data/logo-poses.json": "59765eae2ae4016e94a6e5427eb432508feaef06714c5089601e7463ffdfda93",
+    "src/data/logo.ts": "7a9dec6bc74e4b49fe4b8d5a3c59f11eef86a07abba1cedeeb7bea92b5a5788f",
+    "src/data/overview-nodes.ts": "b9b35bffd852a147393d00c5d992d5277b327a0ad9621f2205285e917cd3a505",
+    "src/pages/index.astro": "9168c6e6429b6ac704bf106e2e8cf29354fd957f3a372448db0db3481142fdc1",
+    "src/pages/logo-check.astro": "5c3642517be74d285f2ec7d63867fb0e83c46445176136d9b5a538d42fc4b79d",
+    "src/scripts/logo-animation.ts": "0d36297dd108a70bb8455f08300196ff899086e6e133a11fae59e6e33e0c9fd9",
+    "src/scripts/overview-interactions.ts": "652fbad692796cc67cc56d1d4032c4b7198d779bda6452ccb9f99c29f8900157",
+    "src/styles/overview-interactions.css": "7d3491dc2841bd05ebdaf33d8fd0f321ac47a84cd56de33016b766a23b76765c",
+    "src/vendor/logo-catalog.d.ts": "444986463678bf3815d54a703a91a79caf1b324b93604a39ed75bf41a624c472",
+    "src/vendor/logo-catalog.js": "3ce35f4744f929ccdf52c763b65ee793a7f6ec8cf7ff3943ece3ca57736fcbbb",
+    "public/logo-check/before.png": "b34e871f3ce672356cbf6a71e44d549114ee0a406269e2a886fac12528830ab2",
+    "tests/logo-candidate.spec.ts": "dc593cdb4f36147d3a2ee9c29d64efc2cf4f66d00c451adb852f5f8e09a675fd",
+    "tests/overview-hover.spec.ts": "2a2ff84a04756e14484c8e6e0214fe91505ee7efc72f12c61bd697c3a564235a",
+    "tests/overview-interactions.spec.ts": "6363fe150f285eb8b501bd79396ab9b3e4634ab0dbda497a7ee08922f5eea308",
+    "README.md": "d8d3e66f691877655d020b4e78ddd27a4a3dffebd1acbd824c25d5d0465d5083",
+    "review/logo-catalog-provenance.json": "fefb7cba6d773ebb34724a1eae47ea2b82a000ce76aba753ea9ec1855311b939"
+  }
+}

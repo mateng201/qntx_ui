@@ -1,0 +1,86 @@
+/* Keep the fixed-size label outside the center mask as the diagram shrinks. */
+.home-panel .action-collaborate {
+  right: 0;
+}
+
+@media (min-width: 761px) {
+  /* Constrain only Overview; let the diagram use the space between its captions. */
+  .home-panel .home-grid {
+    height: 100%;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .home-panel .home-visual {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 18px;
+    min-height: 0;
+    width: 100%;
+  }
+  .home-panel .agent-stage {
+    display: grid;
+    place-items: center;
+    min-height: 0;
+    container-type: size;
+  }
+  .home-panel .agent-field {
+    width: min(100cqw, 100cqh);
+    margin: 0;
+  }
+}
+
+@media (max-height: 780px) and (min-width: 761px) {
+  /* Reduce accumulated whitespace rather than clipping or removing content. */
+  .home-panel {
+    --overview-space: clamp(8px, calc(6svh - 24px), 20px);
+  }
+  .home-panel .home-grid {
+    padding-block: var(--overview-space);
+  }
+  .home-panel .eyebrow,
+  .home-panel h1,
+  .home-panel .standards > p {
+    margin-bottom: var(--overview-space);
+  }
+  .home-panel .hero-actions,
+  .home-panel .standards {
+    margin-top: var(--overview-space);
+  }
+  .home-panel .home-facts {
+    margin-top: calc(var(--overview-space) * 1.5);
+  }
+}
+
+/* About's 160ms background feedback and (2px, -2px) arrow motion, in the light theme. */
+:is(.protocol-panel, .build-panel) a {
+  --link-hover-background: #e9ece5;
+  position: relative;
+  isolation: isolate;
+  transition:
+    background-color 160ms,
+    color 160ms;
+}
+:is(.protocol-panel, .build-panel) a:not(.button)::before {
+  content: "";
+  position: absolute;
+  inset: -6px -12px;
+  z-index: -1;
+  transition: background-color 160ms;
+}
+:is(.protocol-panel, .build-panel) a:not(.button):hover {
+  color: #181918;
+}
+:is(.protocol-panel, .build-panel) a:not(.button):hover::before {
+  background-color: var(--link-hover-background);
+}
+:is(.protocol-panel, .build-panel) a .icon {
+  transition: transform 160ms;
+}
+:is(.protocol-panel, .build-panel) a:hover .icon {
+  transform: translate(2px, -2px);
+}
+.build-panel a.button:hover {
+  background-color: #232620;
+  color: #fff;
+  transform: none;
+}

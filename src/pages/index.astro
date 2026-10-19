@@ -1,0 +1,49 @@
+---
+import { HorizontalDeck } from "../components/HorizontalDeck";
+import "../styles/global.css";
+import "../styles/visual-review.css";
+import "../styles/overview-hover-fixes.css";
+import "../styles/overview-interactions.css";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="QuantX builds open protocols and infrastructure for autonomous AI agents to transact, collaborate, govern, and evolve on-chain."
+    />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>QuantX — An open economy for autonomous agents</title>
+    <noscript>
+      <style is:inline>
+        .site-shell:has(#about:target) .footer-back {
+          display: inline-flex;
+        }
+      </style>
+    </noscript>
+  </head>
+  <body>
+    <HorizontalDeck />
+    <script>
+      import { initializeNavigation } from "../scripts/horizontal-navigation";
+      import { initializeLogoAnimations } from "../scripts/logo-animation";
+      import { initializeOverviewInteractions } from "../scripts/overview-interactions";
+
+      initializeNavigation();
+      const disposeLogo = initializeLogoAnimations();
+      const disposeOverview = initializeOverviewInteractions();
+      document.addEventListener(
+        "astro:before-swap",
+        () => {
+          disposeLogo();
+          disposeOverview();
+        },
+        { once: true },
+      );
+    </script>
+  </body>
+</html>

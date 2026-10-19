@@ -1,0 +1,296 @@
+---
+import Logo from "../components/Logo.astro";
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>QNTX · SVG Logo 可行性检查</title>
+  </head>
+  <body>
+    <header>
+      <a href="/">QuantX</a>
+      <span>PHASE 0 / LOGO REVIEW</span>
+    </header>
+    <main>
+      <p class="eyebrow">阶段 0 已复核通过 · 阶段 1 已接入独立预览</p>
+      <h1>
+        修复完成。
+        <br />
+        现在，回到网络之中。
+      </h1>
+      <p class="lead">
+        原始 SVG 的路径与边界问题已修复。Overview 现已区分区域睁眼与 Logo
+        悬停待机，点击后显示无嘴笑眼，说明在节点旁丝滑弹出。
+      </p>
+      <p>
+        <a class="preview-link" href="/">
+          打开 Overview 交互预览 ↗
+        </a>
+      </p>
+      <div class="comparison">
+        <section class="sample before">
+          <div class="sample-heading">
+            <h2>原始版本</h2>
+            <span>初始渲染</span>
+          </div>
+          <div class="logo-area">
+            <img
+              src="/logo-check/before.png"
+              width="220"
+              height="220"
+              alt="原始 SVG 因路径错误只显示三角残片"
+            />
+          </div>
+          <p>圆弧缺少一个半径参数，浏览器报错；悬停结束后才被脚本写回正确轮廓。</p>
+        </section>
+        <section class="sample after">
+          <div class="sample-heading">
+            <h2>修复预览</h2>
+            <span>悬停或 Tab 聚焦</span>
+          </div>
+          <div class="logo-area">
+            <Logo size={168} label="修复后的 QNTX 动画 Logo，悬停或键盘聚焦查看" />
+          </div>
+          <p>保留原轮廓与原动画的表情几何，平滑进入、循环与返回；动画始终留在 SVG 画布内。</p>
+        </section>
+      </div>
+      <section class="sizes">
+        <div>
+          <p class="eyebrow">目标尺寸与实例隔离</p>
+          <h2>小尺寸也保持完整。</h2>
+          <p>两个独立实例不会互相触发。开启系统“减少动态效果”时显示完整静态标识。</p>
+        </div>
+        <div class="size-sample">
+          <Logo size={80} label="80 像素 QNTX 动画 Logo" />
+          <span>80px / 现有中央标识尺寸</span>
+        </div>
+        <div class="size-sample">
+          <Logo size={48} label="48 像素 QNTX 动画 Logo" />
+          <span>48px / 小尺寸检查</span>
+        </div>
+      </section>
+      <section class="assessment">
+        <h2>阶段 0 的结论</h2>
+        <ol>
+          <li>
+            <strong>修复后替换：复核通过。</strong>
+            补全路径、统一边界并隔离实例后，已按原中央标识尺寸接入；未改变外层面板高度。
+          </li>
+          <li>
+            <strong>节点交互：通过并已实现。</strong>
+            使用原生按钮和局部事件处理，点击在节点附近弹出说明；淡出后再切换位置，无新增组件依赖。
+          </li>
+          <li>
+            <strong>小方块跟随：通过并已实现。</strong>
+            仅内部方块及表情眼部在有限范围内偏移，移出右侧区域归中；外层 Logo 不跟随鼠标移动。
+          </li>
+        </ol>
+        <p>
+          上方保留上一轮 Logo 修复对比。本轮接入仍使用原动画的轮廓与表情几何，没有采用 Stitch
+          示例中的固定大高度或向视口外弹出的浮层。
+        </p>
+      </section>
+      <footer>
+        独立预览 · 原网站与原 Logo 目录均未覆盖 · <a href="/">查看交互 Overview ↗</a>
+      </footer>
+    </main>
+  </body>
+</html>
+
+<style>
+  :global(*) {
+    box-sizing: border-box;
+  }
+  :global(body) {
+    margin: 0;
+    color: #20231e;
+    background: #f7f7f4;
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  }
+  :global(a) {
+    color: inherit;
+    text-decoration: none;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 6vw;
+    border-bottom: 1px solid #daddd3;
+  }
+  header a {
+    font-size: 23px;
+    font-weight: 600;
+  }
+  header span {
+    color: #596250;
+    font: 11px monospace;
+    letter-spacing: 1px;
+  }
+  main {
+    max-width: 1240px;
+    width: 88%;
+    margin: auto;
+    padding-top: 64px;
+  }
+  .eyebrow {
+    color: #596250;
+    font-size: 12px;
+    letter-spacing: 1px;
+    margin: 0 0 20px;
+  }
+  h1 {
+    font-size: clamp(32px, 4vw, 54px);
+    font-weight: 450;
+    line-height: 1.3;
+    letter-spacing: -1.5px;
+    margin: 0 0 24px;
+  }
+  .lead {
+    max-width: 700px;
+    font-size: 16px;
+    line-height: 1.9;
+    color: #596250;
+    margin-bottom: 40px;
+  }
+  .preview-link {
+    display: inline-block;
+    margin-bottom: 28px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid currentColor;
+    font-size: 15px;
+  }
+  h2 {
+    font-size: 21px;
+    font-weight: 500;
+    margin: 0;
+  }
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+  .sample {
+    padding: 28px;
+    border: 1px solid #daddd3;
+  }
+  .sample-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  .sample-heading span {
+    color: #596250;
+    font-size: 12px;
+  }
+  .logo-area {
+    height: 270px;
+    display: grid;
+    place-items: center;
+    color: #18181b;
+  }
+  .logo-area img {
+    display: block;
+    width: 220px;
+    height: 220px;
+  }
+  .sample p,
+  .sizes p,
+  .assessment p,
+  .assessment li {
+    font-size: 14px;
+    line-height: 1.9;
+    color: #596250;
+  }
+  .sample p {
+    max-width: 440px;
+    margin: 0;
+  }
+  .sizes {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    align-items: center;
+    gap: 40px;
+    margin-top: 48px;
+    padding: 40px 0;
+    border-block: 1px solid #daddd3;
+  }
+  .sizes p {
+    max-width: 390px;
+    margin-bottom: 0;
+  }
+  .sizes .eyebrow {
+    margin-bottom: 18px;
+  }
+  .size-sample {
+    display: grid;
+    justify-items: center;
+    gap: 24px;
+    color: #18181b;
+  }
+  .size-sample span {
+    font-size: 12px;
+    color: #596250;
+  }
+  .assessment {
+    max-width: 900px;
+    padding: 48px 0;
+  }
+  ol {
+    padding-left: 20px;
+    margin: 28px 0;
+  }
+  li {
+    padding-left: 8px;
+    margin-bottom: 18px;
+  }
+  strong {
+    color: #30372b;
+    font-weight: 600;
+  }
+  footer {
+    border-top: 1px solid #daddd3;
+    padding: 28px 0 50px;
+    color: #596250;
+    font-size: 12px;
+    line-height: 1.9;
+  }
+  footer a {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  @media (max-width: 760px) {
+    header {
+      padding-block: 22px;
+    }
+    header span {
+      font-size: 9px;
+    }
+    main {
+      padding-top: 42px;
+    }
+    .comparison,
+    .sizes {
+      grid-template-columns: 1fr;
+    }
+    .sample {
+      padding: 22px;
+    }
+    .sample-heading {
+      align-items: start;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .logo-area {
+      height: 240px;
+    }
+    .sizes {
+      gap: 36px;
+    }
+  }
+</style>

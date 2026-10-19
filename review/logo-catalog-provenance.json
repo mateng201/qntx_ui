@@ -1,0 +1,7 @@
+{
+  "source": "E:/bigshoot/qntx-astro-logo-component2/qntx-astro-logo-component/src/scripts/logo-animation.js",
+  "sourceBytes": 39227,
+  "note": "Original animation engine, tree-shaken to remove its page-wide DOM controller. No dependencies added.",
+  "sha256": "9809612e092311b11353de9dd8114b22ce65ea27859da4599047f4260e6fc4f4",
+  "integration": "Pure runtime only: no original global DOM scan, hover controller, or new package. The existing controller supplies activation, gaze, smiles and lifecycle. Vendor lint exceptions apply only to generated upstream code."
+}

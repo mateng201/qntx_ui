@@ -1,0 +1,230 @@
+/* Overview only: keep the existing orbit, label positions, and panel height. */
+.home-visual[data-overview-visual] {
+  position: relative;
+  isolation: isolate;
+}
+.home-visual[data-overview-visual] .agent-field {
+  container-type: inline-size;
+}
+.overview-logo {
+  display: grid;
+  place-items: center;
+}
+.overview-logo > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.network-node {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--visual-ink);
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  -webkit-tap-highlight-color: transparent;
+}
+.node-target {
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  transition:
+    border-color 160ms,
+    background-color 160ms,
+    transform 160ms;
+}
+.network-node:is(:hover, :focus-visible, [aria-expanded="true"]) .node-target {
+  border-color: #9aa391;
+  background: #68735b12;
+  transform: scale(1.1);
+}
+.network-node:focus-visible {
+  outline: none;
+}
+.network-node:focus-visible .node-target {
+  outline: 2px solid #68735b;
+  outline-offset: 3px;
+}
+.network-node .network-action {
+  z-index: 1;
+  white-space: nowrap;
+  transition:
+    color 160ms,
+    transform 160ms;
+}
+.network-node .network-action::before {
+  content: "";
+  position: absolute;
+  inset: -5px -7px;
+  z-index: -1;
+  transition: background-color 160ms;
+}
+.network-node:is(:hover, :focus-visible, [aria-expanded="true"]) .network-action::before {
+  background: #e9ece5;
+}
+.network-node:is(:hover, :focus-visible) .network-action {
+  color: #181918;
+  transform: translate(2px, -2px);
+}
+.network-node .action-transact {
+  left: calc(50% + 18px);
+  top: calc(50% - 4.57143cqw);
+}
+.home-visual .network-node .action-collaborate {
+  right: calc(50% - 13.57143cqw);
+  top: calc(50% + 18px);
+}
+.network-node .action-govern {
+  right: calc(50% + 18px);
+  bottom: calc(50% - 7.57143cqw);
+}
+.network-node .action-evolve {
+  left: calc(50% + 3.02857cqw);
+  top: calc(50% - 30px);
+}
+@container (max-width: 300px) {
+  /* Keep labels outside the center mask on a small orbit. Popovers do not resize it. */
+  .home-visual .network-node .action-collaborate {
+    top: calc(50% + 12.3cqw + 5px);
+  }
+  .network-node .action-evolve {
+    top: calc(50% - 12.3cqw - 23px);
+  }
+}
+.visual-footer {
+  min-width: 0;
+}
+.network-details[hidden] {
+  display: none;
+}
+.network-details {
+  position: absolute;
+  z-index: 5;
+  top: var(--popover-top, 0px);
+  left: var(--popover-left, 0px);
+  width: var(--popover-width, 260px);
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid #cdd3c6;
+  border-radius: 8px;
+  background: #fbfcf9;
+  box-shadow: 0 10px 28px #20291812;
+  color: #343b2f;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(var(--popover-shift-x, 0px), var(--popover-shift-y, 6px)) scale(0.97);
+  transform-origin: var(--popover-origin, center);
+  transition:
+    opacity 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.network-details[data-state="open"] {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(0, 0) scale(1);
+}
+.network-details[data-state="closing"] {
+  transition-duration: 180ms;
+}
+.network-details::before {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 1px solid #cdd3c6;
+  background: #fbfcf9;
+  transform: rotate(45deg);
+}
+.network-details[data-direction="top"]::before {
+  bottom: -5px;
+  left: var(--popover-arrow-x);
+  border-top: 0;
+  border-left: 0;
+}
+.network-details[data-direction="bottom"]::before {
+  top: -5px;
+  left: var(--popover-arrow-x);
+  border-bottom: 0;
+  border-right: 0;
+}
+.network-details[data-direction="left"]::before {
+  right: -5px;
+  top: var(--popover-arrow-y);
+  border-bottom: 0;
+  border-left: 0;
+}
+.network-details[data-direction="right"]::before {
+  left: -5px;
+  top: var(--popover-arrow-y);
+  border-top: 0;
+  border-right: 0;
+}
+.node-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.home-panel .node-detail-heading h2 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.3px;
+}
+[data-node-close] {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  margin: -6px -8px -6px 0;
+  padding: 0;
+  border: 0;
+  color: #444d3c;
+  background: transparent;
+  font: 20px/1 var(--font-sans);
+  cursor: pointer;
+  transition:
+    color 160ms,
+    background-color 160ms;
+}
+[data-node-close]:is(:hover, :focus-visible) {
+  color: #181918;
+  background: #e4e9dd;
+}
+.network-details p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+@media (max-height: 700px) and (min-width: 761px) {
+  .network-details {
+    padding: 12px 14px;
+  }
+  .network-details p {
+    margin-top: 6px;
+    font-size: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .network-details,
+  .network-node .node-target,
+  .network-node .network-action,
+  .network-node .network-action::before {
+    transition: none;
+  }
+}
+/* Without JavaScript, preserve the diagram without advertising inert buttons. */
+.home-visual:not([data-interactive]) .network-node {
+  pointer-events: none;
+}
