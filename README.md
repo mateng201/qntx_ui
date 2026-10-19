@@ -35,21 +35,23 @@ VS Code 可直接打开本目录或 `qntx-ui.code-workspace`。扩展建议与�
 
 ## 源码导航
 
-| 文件                                                            | 职责                                                       |
-| --------------------------------------------------------------- | ---------------------------------------------------------- |
-| `src/components/HorizontalDeck.tsx`                             | 整屏容器、四屏组合。                                       |
-| `src/components/SiteHeader.tsx`、`SiteFooter.tsx`               | 公共导航、当前位置与前后切屏。                             |
-| `src/components/HomeIntro.tsx`、`HomeVisual.tsx`                | 首页左侧介绍、右侧网络图与内联 SVG。                       |
-| `src/components/Logo.astro`                                     | 独立 Logo 演示。                                           |
-| `src/data/site.ts`、`overview-nodes.ts`                         | 组织链接、协议、仓库、节点说明与坐标。                     |
-| `src/data/logo.ts`、`logo-poses.json`                           | 静态 Q 路径与基础轮廓。                                    |
-| `src/scripts/horizontal-navigation.ts`                          | 滚轮、键盘、锚点、活动状态同步。                           |
-| `src/scripts/logo-animation.ts`                                 | 五秒计时、睁眼 / 笑眼 / 待机切换、目光跟随与生命周期。     |
-| `src/scripts/overview-interactions.ts`                          | 节点选择、附近弹窗、避让、过渡与焦点恢复。                 |
-| `src/styles/global.css`                                         | Tailwind 入口、整屏高度、基础布局与响应式规则。            |
-| `src/styles/visual-review.css`、`overview-hover-fixes.css`      | 四屏视觉层级、首页高度与标签避让、Protocols / Build 悬停。 |
+| 文件                                                         | 职责                                                       |
+| ------------------------------------------------------------ | ---------------------------------------------------------- |
+| `src/components/HorizontalDeck.tsx`                          | 整屏容器、四屏组合。                                       |
+| `src/components/SiteHeader.tsx`、`SiteFooter.tsx`            | 公共导航、当前位置与前后切屏。                             |
+| `src/components/HomeIntro.tsx`、`HomeVisual.tsx`             | 首页左侧介绍、右侧网络图与内联 SVG。                       |
+| `src/components/Logo.astro`                                  | Logo 组件。                                                |
+| `src/data/site.ts`、`overview-nodes.ts`                      | 组织链接、协议、仓库、节点说明与坐标。                     |
+| `src/data/logo.ts`、`logo-poses.json`                        | 静态 “Q” 路径与基础轮廓。                                  |
+| `src/scripts/horizontal-navigation.ts`                       | 滚轮、键盘、锚点、活动状态同步。                           |
+| `src/scripts/logo-animation.ts`                              | 五秒计时、睁眼 / 笑眼 / 待机切换、目光跟随与生命周期。     |
+| `src/scripts/overview-interactions.ts`                       | 节点选择、附近弹窗、避让、过渡与焦点恢复。                 |
+| `src/pages/index.astro`                                      | 首页                                                       |
+| `src/pages/logo-check.astro`                                 | logo独立演示                                               |
+| `src/styles/global.css`                                      | Tailwind 入口、整屏高度、基础布局与响应式规则。            |
+| `src/styles/visual-review.css`、`overview-hover-fixes.css`   | 四屏视觉层级、首页高度与标签避让、Protocols / Build 悬停。 |
 | `src/styles/header-navigation.css`、`overview-interactions.css` | 导航反馈和指示器、网络节点及弹窗。                         |
-| `src/vendor/logo-catalog.js`、`logo-catalog.d.ts`               | 原动画纯运行时及类型声明，不包含原脚本的全页 DOM 初始化。  |
+| `src/vendor/logo-catalog.js`、`logo-catalog.d.ts`            | 原动画纯运行时及类型声明，不包含原脚本的全页 DOM 初始化。  |
 
 React 在构建时输出 HTML/SVG，交互由原生 TypeScript 控制器处理，没有 React 客户端水合，没有新增 UI 组件库或动画依赖。
 
@@ -71,5 +73,6 @@ npm run verify       # 完整检查链
 
 Oxlint 对 `.astro` 模板的覆盖有限，不能用 lint 结果代替 `astro check` 与构建。`.astro` 只交给 `prettier-plugin-astro`，避免 Oxfmt 的不完整支持破坏模板。提供的生成式 vendor 动画代码保留文件内明确列出的规则例外，手写控制器、类型声明与测试继续接受原有严格检查。
 
-当前浏览器测试共 62 项，涵盖切屏、连续滚轮、锚点与键盘、缩放与溢出、文字对比度、链接悬停、节点与弹窗、无嘴笑眼、五秒待机、完整动画循环、触摸、减少动态效果及离屏暂停。测试需要本机安装 Google Chrome；同步后的实际验收结果见 `review/integration-verification.md`。
+当前浏览器测试共 62 项，涵盖切屏、连续滚轮、锚点与键盘、缩放与溢出、文字对比度、链接悬停、节点与弹窗、微笑、五秒待机、完整动画循环、触摸、减少动态效果及离屏暂停。测试需要本机安装 Google Chrome；同步后的实际验收结果见 `review/integration-verification.md`。
 
+此外项目已通过cloudflare部署，域名为：[qntx-ui.mateng20221.workers.dev](https://qntx-ui.mateng20221.workers.dev/)
