@@ -1,10 +1,11 @@
 {
   "editor.formatOnSave": true,
+  "oxc.path.node": "E:/bigshoot/qntx.ui/node_modules/node/bin/node.exe",
   "[astro]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
   "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "files.exclude": { ".astro": true, "dist": true },
-  "typescript.tsdk": "node_modules/typescript/lib",
+  "js/ts.tsdk.path": "./node_modules/typescript/lib",
   "tailwindCSS.experimental.configFile": "src/styles/global.css"
 }
