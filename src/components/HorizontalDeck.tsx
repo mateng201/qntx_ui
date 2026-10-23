@@ -1,9 +1,7 @@
 import type { ReactElement } from "react";
 
 import { AboutPanel } from "./AboutPanel";
-import { BuildPanel } from "./BuildPanel";
 import { HomeIntro } from "./HomeIntro";
-import { HomeVisual } from "./HomeVisual";
 import { ProtocolPanel } from "./ProtocolPanel";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
@@ -31,11 +29,9 @@ export function HorizontalDeck(): ReactElement {
         >
           <div className="panel-grid home-grid">
             <HomeIntro />
-            <HomeVisual />
           </div>
         </section>
         <ProtocolPanel />
-        <BuildPanel />
         <AboutPanel />
       </main>
       <SiteFooter />

@@ -1,6 +1,8 @@
 # QuantX UI
 
-基于 Astro、React、TypeScript 与 Tailwind CSS 的组织介绍页。通过四个横向面板介绍 QuantX 的定位、协议、开发资源与组织入口；首页包含可交互的 SVG 协议网络和动画 Logo。
+基于 Astro、React、TypeScript 与 Tailwind CSS 的组织介绍页。本分支为页面减法版本，通过 Overview、Protocols、About 三个横向面板介绍 QuantX 的定位、协议与组织入口。
+
+`codex/simplify-panels` 从 `main` 的 `a047b26` 创建，原来的四屏设计与首页 SVG 网络交互保留在 `main`。本分支移除首页辅助标语、三列特点及右侧网络图，删除 Build 面板与导航入口，移除 Protocols / About 标注的辅助文案；首页调整为居中的单栏内容。导航、页脚进度与计数同步使用三屏数据，About 编号为 03。原组件与动画源码仍保留在仓库，首页不再加载相关交互脚本；独立 `/logo-check/` 演示继续可用。
 
 ## 启动与构建
 
@@ -18,12 +20,11 @@ VS Code 可直接打开本目录或 `qntx-ui.code-workspace`。扩展建议与�
 
 ## 页面与交互
 
-| 面板      | 设计与行为                                                                                         |
-| --------- | -------------------------------------------------------------------------------------------------- |
-| Overview  | 参考 Ollama 的独立顶栏与左右分栏；左侧介绍 QuantX，右侧保留协议轨道、节点、元信息和中央动画 Logo。 |
-| Protocols | 保留 Payments、Identity、Commerce、Wallets 四类原语，以 2×2 栅格分组。                             |
-| Build     | 展示开发入口及四个仓库，移除重复的终端 clone 示例，保留一个明确的主行动入口。                      |
-| About     | 深色收尾，保留组织、文档、动态入口；返回首页入口放在页脚导航附近。                                 |
+| 面板      | 设计与行为                                                                         |
+| --------- | ---------------------------------------------------------------------------------- |
+| Overview  | 单栏展示标题、简介、探索按钮和 x402 / ERC–8004 / ERC–8183 协议链接，保留充足留白。 |
+| Protocols | 保留 Payments、Identity、Commerce、Wallets 四类原语，以 2×2 栅格分组。             |
+| About     | 深色收尾，保留组织、文档、动态入口；返回首页入口放在页脚导航附近。                 |
 
 ### 横向切屏与公共导航
 
@@ -31,24 +32,26 @@ VS Code 可直接打开本目录或 `qntx-ui.code-workspace`。扩展建议与�
 
 桌面验证视口下，每屏内容放入顶栏、页脚之间的剩余高度，不依赖隐藏溢出来通过检查。窄屏内容确实放不下时保留面板内纵向阅读与原滚轮让行逻辑。
 
-导航右侧六个按钮统一采用低饱和背景、文字轻微上移及箭头位移反馈。四个面板链接通过 `aria-current="page"` 表示活动状态；支持 CSS Anchor Positioning 时使用单一下划线平滑移动，不支持时退化为淡入淡出。GitHub、Docs 只参与悬停反馈。
+导航右侧五个按钮统一采用低饱和背景、文字轻微上移及箭头位移反馈。三个面板链接通过 `aria-current="page"` 表示活动状态；支持 CSS Anchor Positioning 时使用单一下划线平滑移动，不支持时退化为淡入淡出。GitHub、Docs 只参与悬停反馈。
 
 ## 源码导航
 
 | 文件                                                            | 职责                                                       |
 | --------------------------------------------------------------- | ---------------------------------------------------------- |
-| `src/components/HorizontalDeck.tsx`                             | 整屏容器、四屏组合。                                       |
+| `src/components/HorizontalDeck.tsx`                             | 整屏容器、三屏组合。                                       |
 | `src/components/SiteHeader.tsx`、`SiteFooter.tsx`               | 公共导航、当前位置与前后切屏。                             |
-| `src/components/HomeIntro.tsx`、`HomeVisual.tsx`                | 首页左侧介绍、右侧网络图与内联 SVG。                       |
+| `src/components/HomeIntro.tsx`                                  | 首页单栏介绍与协议链接。                                   |
+| `src/components/HomeVisual.tsx`、`BuildPanel.tsx`               | 保留的原网络图与 Build 组件，本分支首页不挂载。            |
 | `src/components/Logo.astro`                                     | Logo 组件。                                                |
 | `src/data/site.ts`、`overview-nodes.ts`                         | 组织链接、协议、仓库、节点说明与坐标。                     |
 | `src/data/logo.ts`、`logo-poses.json`                           | 静态 “Q” 路径与基础轮廓。                                  |
 | `src/scripts/horizontal-navigation.ts`                          | 滚轮、键盘、锚点、活动状态同步。                           |
 | `src/scripts/logo-animation.ts`                                 | 五秒计时、睁眼 / 笑眼 / 待机切换、目光跟随与生命周期。     |
-| `src/scripts/overview-interactions.ts`                          | 节点选择、附近弹窗、避让、过渡与焦点恢复。                 |
+| `src/scripts/overview-interactions.ts`                          | 保留的原节点交互逻辑，本分支首页不加载。                   |
 | `src/pages/index.astro`                                         | 首页                                                       |
 | `src/pages/logo-check.astro`                                    | logo独立演示                                               |
 | `src/styles/global.css`                                         | Tailwind 入口、整屏高度、基础布局与响应式规则。            |
+| `src/styles/simplified-panels.css`                              | 减法版首页的单栏布局、字号与响应式留白。                   |
 | `src/styles/visual-review.css`、`overview-hover-fixes.css`      | 四屏视觉层级、首页高度与标签避让、Protocols / Build 悬停。 |
 | `src/styles/header-navigation.css`、`overview-interactions.css` | 导航反馈和指示器、网络节点及弹窗。                         |
 | `src/vendor/logo-catalog.js`、`logo-catalog.d.ts`               | 原动画纯运行时及类型声明，不包含原脚本的全页 DOM 初始化。  |
@@ -72,7 +75,7 @@ npm run verify       # 完整检查链
 
 格式检查通过仅说明排版符合配置，不能替代 `npm run lint`、`npm run check`、构建或浏览器功能验收。
 
-当前浏览器测试共 62 项，涵盖切屏、连续滚轮、锚点与键盘、缩放与溢出、文字对比度、链接悬停、节点与弹窗、微笑、五秒待机、完整动画循环、触摸、减少动态效果及离屏暂停。测试需要本机安装 Google Chrome；同步后的实际验收结果见 `review/integration-verification.md`。
+本分支浏览器测试共 36 项，覆盖三屏切换、连续滚轮、锚点与键盘、首页缩放与溢出、文字对比度、Protocols 悬停、截图标注内容的删除范围、三屏计数及独立 Logo 演示。已移除首页不再展示的网络节点交互测试，并调整原四屏导航用例。测试需要本机安装 Google Chrome；本次验收见 `review/simplification-20261023.md`，`review/integration-verification.md` 保留的是原四屏设计的历史验收记录。
 
 此外项目已通过cloudflare部署，域名为：[qntx-ui.mateng20221.workers.dev](https://qntx-ui.mateng20221.workers.dev/)
 

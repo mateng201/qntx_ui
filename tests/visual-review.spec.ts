@@ -1,57 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-for (const viewport of [
-  { width: 1440, height: 1000 },
-  { width: 1280, height: 600 },
-  { width: 390, height: 844 },
-]) {
-  test(`diagram typography stays legible at ${viewport.width}x${viewport.height}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await page.goto("/");
-    const sizes = await page.locator(".home-visual").evaluate((visual) => {
-      const actions = [...visual.querySelectorAll(".network-action")];
-      const field = visual.querySelector(".agent-field")?.getBoundingClientRect();
-      const caption = visual.querySelector(".visual-caption");
-      const metadata = visual.querySelector(".visual-label");
-      if (caption === null || metadata === null) {
-        throw new Error("Missing diagram typography roles");
-      }
-      return {
-        actions: actions.map((element) =>
-          Number(getComputedStyle(element).fontSize.replace("px", "")),
-        ),
-        caption: Number(getComputedStyle(caption).fontSize.replace("px", "")),
-        metadata: Number(getComputedStyle(metadata).fontSize.replace("px", "")),
-        labelsFit: actions.every((element) => {
-          const box = element.getBoundingClientRect();
-          return field !== undefined && box.left >= field.left && box.right <= field.right;
-        }),
-      };
-    });
-    expect(sizes.actions).toHaveLength(4);
-    expect(sizes.actions.every((size) => size >= 14)).toBe(true);
-    expect(sizes.caption).toBeGreaterThanOrEqual(13);
-    expect(sizes.metadata).toBeGreaterThanOrEqual(11);
-    expect(sizes.labelsFit).toBe(true);
-  });
-}
-
 const contrastGroups = [
   {
     id: "overview",
-    selector: ".visual-label span, .network-action, .field-coordinate, .visual-caption span",
+    selector: ".intro-copy, .hero-actions .text-link",
   },
   {
     id: "protocols",
-    selector:
-      ".primitive-content p, .protocol-badge, .row-number, .protocol-note span, .protocol-note p",
-  },
-  {
-    id: "build",
-    selector:
-      ".list-heading span, .list-heading a, .repository-row p, .repo-prefix, .repo-language, .repository-footnote",
+    selector: ".primitive-content p, .protocol-badge, .row-number",
   },
   {
     id: "about",
@@ -110,7 +66,7 @@ for (const group of contrastGroups) {
 }
 
 for (const width of [1280, 1024]) {
-  for (const id of ["build", "about"]) {
+  for (const id of ["about"]) {
     test(`${id} fits ${width}x600 without clipping`, async ({ page }) => {
       await page.setViewportSize({ width, height: 600 });
       await page.goto(`/#${id}`);

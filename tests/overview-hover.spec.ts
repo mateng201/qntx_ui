@@ -34,14 +34,10 @@ for (const scenario of [
       const page = await context.newPage();
       await page.goto("http://127.0.0.1:4321/");
       const metrics = await page.locator("#overview").evaluate((panel) => {
-        const label = panel.querySelector(".action-collaborate");
-        const center = panel.querySelector(".network-center");
-        const logo = panel.querySelector(".network-mark");
         const documentScroller = document.scrollingElement;
-        if (label === null || center === null || logo === null || documentScroller === null) {
+        if (documentScroller === null) {
           throw new Error("Missing Overview geometry");
         }
-        const text = label.getBoundingClientRect();
         const panelBounds = panel.getBoundingClientRect();
         return {
           zoom: devicePixelRatio,
@@ -49,20 +45,7 @@ for (const scenario of [
           panelScrollHeight: panel.scrollHeight,
           documentHeight: documentScroller.clientHeight,
           documentScrollHeight: documentScroller.scrollHeight,
-          collision: [center, logo].some((element) => {
-            const box = element.getBoundingClientRect();
-            return (
-              text.left < box.right &&
-              text.right > box.left &&
-              text.top < box.bottom &&
-              text.bottom > box.top
-            );
-          }),
-          contentFits: [
-            ...panel.querySelectorAll(
-              "h1,p,a,dt,dd,.network-action,.field-coordinate,.visual-label,.visual-caption",
-            ),
-          ].every((element) => {
+          contentFits: [...panel.querySelectorAll("h1,p,a")].every((element) => {
             if (element.getClientRects().length === 0) {
               return true;
             }
@@ -72,7 +55,6 @@ for (const scenario of [
         };
       });
       expect(metrics.zoom).toBeCloseTo(scenario.zoom, 2);
-      expect(metrics.collision).toBe(false);
       expect(metrics.panelScrollHeight).toBeLessThanOrEqual(metrics.panelHeight);
       expect(metrics.documentScrollHeight).toBeLessThanOrEqual(metrics.documentHeight);
       expect(metrics.contentFits).toBe(true);
@@ -82,10 +64,7 @@ for (const scenario of [
   });
 }
 
-for (const panel of [
-  { id: "protocols", count: 5, label: "Protocols" },
-  { id: "build", count: 6, label: "Build" },
-]) {
+for (const panel of [{ id: "protocols", count: 5, label: "Protocols" }]) {
   for (let index = 0; index < panel.count; index += 1) {
     test(`${panel.label} link ${index + 1} has About-style hover feedback`, async ({ page }) => {
       await page.emulateMedia({ reducedMotion: "no-preference" });

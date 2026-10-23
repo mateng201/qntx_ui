@@ -6,9 +6,6 @@ import { Icon } from "./Icon";
 export function HomeIntro(): ReactElement {
   return (
     <div className="home-intro panel-intro">
-      <div className="eyebrow flex items-center gap-2.5">
-        <span className="status-dot" /> Open infrastructure. Shared possibilities.
-      </div>
       <h1>
         The economic layer
         <br />
@@ -30,22 +27,7 @@ export function HomeIntro(): ReactElement {
           Built in public <span aria-hidden="true">↗</span>
         </a>
       </div>
-      <dl className="home-facts grid grid-cols-3">
-        <div>
-          <dt>Open</dt>
-          <dd>Source, by default</dd>
-        </div>
-        <div>
-          <dt>Agent-first</dt>
-          <dd>Native to the machine economy</dd>
-        </div>
-        <div>
-          <dt>On-chain</dt>
-          <dd>Coordination without borders</dd>
-        </div>
-      </dl>
       <div className="standards">
-        <p>Open standards. Common ground.</p>
         <div className="standard-links flex items-center">
           <a href="https://github.com/qntx/r402" className="standard-x402">
             x402<span> / payments</span>

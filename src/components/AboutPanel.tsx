@@ -31,7 +31,6 @@ export function AboutPanel(): ReactElement {
     >
       <div className="panel-grid">
         <div className="panel-intro section-intro">
-          <p className="eyebrow">04 / THIS IS QUANTX</p>
           <h2 id="about-title">
             Code is law.
             <br />

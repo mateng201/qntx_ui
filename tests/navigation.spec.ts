@@ -59,13 +59,15 @@ test("navigation, deep links, keyboard, and end controls stay synchronized", asy
     "page",
   );
   await expect(page.getByRole("button", { name: "Previous section" })).toBeDisabled();
-  await page.getByRole("link", { name: "Build", exact: true }).click();
-  await expect(page).toHaveURL(/#build$/);
+  await page.getByRole("link", { name: "Protocols", exact: true }).click();
+  await expect(page).toHaveURL(/#protocols$/);
   await page.keyboard.press("ArrowRight");
   await expect(page).toHaveURL(/#about$/);
 });
 
-test("small viewports retain all content with panel-local scrolling", async ({ page }) => {
+test("small viewports fit the simplified home and retain scrollable protocol content", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   const dimensions = await page.evaluate(() => ({
@@ -75,9 +77,11 @@ test("small viewports retain all content with panel-local scrolling", async ({ p
   expect(dimensions.body).toBeLessThanOrEqual(dimensions.width);
   await expect(page.getByRole("navigation", { name: "Main navigation" })).toBeVisible();
   const home = page.locator("#overview");
-  expect(await home.evaluate((element) => element.scrollHeight)).toBeGreaterThan(
-    await home.evaluate((element) => element.clientHeight),
+  expect(await home.evaluate((element) => element.scrollHeight)).toBeLessThanOrEqual(
+    (await home.evaluate((element) => element.clientHeight)) + 1,
   );
+  await expect(home.getByRole("heading", { level: 1 })).toBeInViewport();
+  await expect(home.getByRole("link", { name: /ERC–8183/ })).toBeInViewport();
   await page.getByRole("link", { name: "Protocols", exact: true }).click();
   await expect(page).toHaveURL(/#protocols$/);
   await page.locator("#protocols").evaluate((element) => {
@@ -124,7 +128,7 @@ for (const viewport of [
     await expect(protocol).toHaveCSS("overflow-y", "auto");
     await protocol.hover();
     await page.mouse.wheel(0, 120);
-    await expect(page).toHaveURL(/#build$/);
+    await expect(page).toHaveURL(/#about$/);
     expect(await protocol.evaluate((panel) => panel.scrollTop)).toBe(0);
   });
 }

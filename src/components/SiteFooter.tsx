@@ -39,7 +39,7 @@ export function SiteFooter(): ReactElement {
           SCROLL TO EXPLORE <span aria-hidden="true">→</span>
         </span>
         <span className="panel-counter mono" aria-hidden="true">
-          <span data-current-panel>01</span> / 04
+          <span data-current-panel>01</span> / {String(sections.length).padStart(2, "0")}
         </span>
         <button
           type="button"

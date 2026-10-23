@@ -14,7 +14,6 @@ export function ProtocolPanel(): ReactElement {
     >
       <div className="panel-grid">
         <div className="panel-intro section-intro">
-          <p className="eyebrow">02 / THE BUILDING BLOCKS</p>
           <h2 id="protocols-title">
             Small primitives.
             <br />
@@ -27,14 +26,6 @@ export function ProtocolPanel(): ReactElement {
           <a href="https://qntx.org/products" className="text-link section-link">
             Explore the ecosystem <Icon />
           </a>
-          <div className="protocol-note">
-            <span className="mono">OPEN PROTOCOLS</span>
-            <p>
-              Built to work together.
-              <br />
-              Open for anyone to build on.
-            </p>
-          </div>
         </div>
         <div className="primitive-list">
           {primitives.map((primitive) => (

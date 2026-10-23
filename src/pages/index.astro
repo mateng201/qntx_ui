@@ -3,7 +3,7 @@ import { HorizontalDeck } from "../components/HorizontalDeck";
 import "../styles/global.css";
 import "../styles/visual-review.css";
 import "../styles/overview-hover-fixes.css";
-import "../styles/overview-interactions.css";
+import "../styles/simplified-panels.css";
 ---
 
 <!doctype html>
@@ -30,20 +30,8 @@ import "../styles/overview-interactions.css";
     <HorizontalDeck />
     <script>
       import { initializeNavigation } from "../scripts/horizontal-navigation";
-      import { initializeLogoAnimations } from "../scripts/logo-animation";
-      import { initializeOverviewInteractions } from "../scripts/overview-interactions";
 
       initializeNavigation();
-      const disposeLogo = initializeLogoAnimations();
-      const disposeOverview = initializeOverviewInteractions();
-      document.addEventListener(
-        "astro:before-swap",
-        () => {
-          disposeLogo();
-          disposeOverview();
-        },
-        { once: true },
-      );
     </script>
   </body>
 </html>
