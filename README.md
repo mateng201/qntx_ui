@@ -2,7 +2,7 @@
 
 基于 Astro、React、TypeScript 与 Tailwind CSS 的组织介绍页。本分支为页面减法版本，通过 Overview、Protocols、About 三个横向面板介绍 QuantX 的定位、协议与组织入口。
 
-`codex/simplify-panels` 从 `main` 的 `a047b26` 创建，原来的四屏设计与首页 SVG 网络交互保留在 `main`。本分支移除首页辅助标语、三列特点及右侧网络图，删除 Build 面板与导航入口，移除 Protocols / About 标注的辅助文案；首页调整为居中的单栏内容。导航、页脚进度与计数同步使用三屏数据，About 编号为 03。原组件与动画源码仍保留在仓库，首页不再加载相关交互脚本；独立 `/logo-check/` 演示继续可用。
+减法版本由 `codex/simplify-panels` 分支实现，现已合并到 `main`。原来的四屏设计与首页 SVG 网络交互保留在历史提交 `a047b26`，可从 Git 历史查看或恢复。本版本移除首页辅助标语、三列特点及右侧网络图，删除 Build 面板与导航入口，移除 Protocols / About 标注的辅助文案；首页调整为居中的单栏内容。导航、页脚进度与计数同步使用三屏数据，About 编号为 03。原组件与动画源码仍保留在仓库，首页不再加载相关交互脚本；独立 `/logo-check/` 演示继续可用。
 
 ## 启动与构建
 
