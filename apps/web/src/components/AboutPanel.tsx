@@ -1,24 +1,9 @@
+import { aboutDestinations, aboutIntro } from "@qntx-ui/content";
 import type { ReactElement } from "react";
 
 import { links } from "../data/site";
 import { BrandMark } from "./BrandMark";
 import { Icon } from "./Icon";
-
-const destinations = [
-  {
-    number: "01",
-    label: "Explore the organization",
-    detail: "github.com/qntx",
-    href: links.github,
-  },
-  {
-    number: "02",
-    label: "Read the documentation",
-    detail: "qntx.org/developers",
-    href: links.docs,
-  },
-  { number: "03", label: "Follow the work", detail: "@qntxorg on X", href: links.social },
-] as const;
 
 export function AboutPanel(): ReactElement {
   return (
@@ -32,28 +17,26 @@ export function AboutPanel(): ReactElement {
       <div className="panel-grid">
         <div className="panel-intro section-intro">
           <h2 id="about-title">
-            Code is law.
+            {aboutIntro.titleLines[0]}
             <br />
-            We write both.
+            {aboutIntro.titleLines[1]}
           </h2>
-          <p className="intro-copy">
-            An open-source organization building the economic layer for autonomous AI agents.
-          </p>
+          <p className="intro-copy">{aboutIntro.description}</p>
           <a href={links.website} className="text-link section-link">
-            Visit qntx.org <Icon />
+            {aboutIntro.action} <Icon />
           </a>
           <div className="about-signature">
             <BrandMark className="signature-mark" />
             <span>
-              Independent agents.
+              {aboutIntro.signatureLines[0]}
               <br />
-              Shared possibilities.
+              {aboutIntro.signatureLines[1]}
             </span>
           </div>
         </div>
         <div className="about-destinations">
-          <p className="mono destination-heading">THE NEXT CHAPTER STARTS WITH YOU.</p>
-          {destinations.map((destination) => (
+          <p className="mono destination-heading">{aboutIntro.destinationHeading}</p>
+          {aboutDestinations.map((destination) => (
             <a href={destination.href} className="destination-row" key={destination.number}>
               <span className="row-number mono">{destination.number}</span>
               <div>

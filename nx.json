@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "defaultBase": "main",
+  "useDaemonProcess": false,
+  "tui": { "enabled": false },
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "sharedGlobals": [
+      "{workspaceRoot}/package-lock.json",
+      "{workspaceRoot}/tsconfig.base.json",
+      "{workspaceRoot}/oxlint.config.ts",
+      "{workspaceRoot}/eslint.config.mjs"
+    ]
+  },
+  "targetDefaults": {
+    "build": { "cache": true, "inputs": ["default", "^default"] },
+    "export": { "cache": true, "inputs": ["default", "^default"] },
+    "check": { "cache": true, "inputs": ["default", "^default"] },
+    "lint": { "cache": true, "inputs": ["default"] },
+    "boundaries": { "cache": true, "inputs": ["default", "^default"] }
+  }
+}

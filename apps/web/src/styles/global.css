@@ -8,7 +8,7 @@
 :root {
   font-family: var(--font-sans);
   color: #181918;
-  background: #fff;
+  background: var(--surface, #fff);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -677,7 +677,7 @@ h1 {
   height: 14px;
 }
 .about-panel {
-  background: #181b16;
+  background: var(--surface-dark, #181b16);
   color: #f5f6f2;
 }
 .about-panel .eyebrow {
@@ -750,7 +750,7 @@ h1 {
   font-size: 11px;
 }
 .site-shell[data-theme="dark"] {
-  background: #181b16;
+  background: var(--surface-dark, #181b16);
   color: #f5f6f2;
   --ink: #f5f6f2;
   --line: #3a4430;

@@ -1,12 +1,6 @@
 {
-  "extends": ["@qntx/tsconfig/configs/strictest.json", "astro/tsconfigs/strict"],
-  "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "node_modules", "playwright-report", "test-results"],
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "react",
-    "types": ["astro/client", "node"],
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
-  }
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": { "types": ["node"], "allowJs": true },
+  "include": ["*.ts", "*.mjs", "tools/**/*.mjs"],
+  "exclude": ["node_modules", "apps", "packages", "dist", ".nx"]
 }

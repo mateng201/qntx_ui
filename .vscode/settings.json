@@ -7,5 +7,5 @@
   "[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "files.exclude": { ".astro": true, "dist": true },
   "js/ts.tsdk.path": "./node_modules/typescript/lib",
-  "tailwindCSS.experimental.configFile": "src/styles/global.css"
+  "tailwindCSS.experimental.configFile": "apps/web/src/styles/global.css"
 }

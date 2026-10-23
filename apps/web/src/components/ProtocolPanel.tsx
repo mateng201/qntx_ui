@@ -1,3 +1,4 @@
+import { links, protocolIntro } from "@qntx-ui/content";
 import type { ReactElement } from "react";
 
 import { primitives } from "../data/site";
@@ -15,16 +16,13 @@ export function ProtocolPanel(): ReactElement {
       <div className="panel-grid">
         <div className="panel-intro section-intro">
           <h2 id="protocols-title">
-            Small primitives.
+            {protocolIntro.titleLines[0]}
             <br />
-            An open economy.
+            {protocolIntro.titleLines[1]}
           </h2>
-          <p className="intro-copy">
-            Payments, identity, commerce, and wallets. A practical foundation for software that can
-            act on its own.
-          </p>
-          <a href="https://qntx.org/products" className="text-link section-link">
-            Explore the ecosystem <Icon />
+          <p className="intro-copy">{protocolIntro.description}</p>
+          <a href={links.products} className="text-link section-link">
+            {protocolIntro.action} <Icon />
           </a>
         </div>
         <div className="primitive-list">

@@ -1,3 +1,4 @@
+import { hero, standards } from "@qntx-ui/content";
 import type { ReactElement } from "react";
 
 import { links } from "../data/site";
@@ -7,37 +8,35 @@ export function HomeIntro(): ReactElement {
   return (
     <div className="home-intro panel-intro">
       <h1>
-        The economic layer
+        {hero.titleLines[0]}
         <br />
-        for autonomous agents.
+        {hero.titleLines[1]}
       </h1>
-      <p className="intro-copy">
-        Open protocols and infrastructure for AI agents to transact, collaborate, govern, and evolve
-        autonomously on-chain.
-      </p>
+      <p className="intro-copy">{hero.description}</p>
       <div className="hero-actions flex items-center gap-6">
         <a
           className="button button-primary inline-flex items-center gap-5"
           href="#protocols"
           data-panel-link
         >
-          Start exploring <Icon />
+          {hero.primaryAction} <Icon />
         </a>
         <a className="text-link" href={links.github}>
-          Built in public <span aria-hidden="true">↗</span>
+          {hero.secondaryAction} <span aria-hidden="true">↗</span>
         </a>
       </div>
       <div className="standards">
         <div className="standard-links flex items-center">
-          <a href="https://github.com/qntx/r402" className="standard-x402">
-            x402<span> / payments</span>
-          </a>
-          <a href="https://github.com/qntx/erc8004">
-            ERC–8004<span> / identity</span>
-          </a>
-          <a href="https://github.com/qntx/erc8183">
-            ERC–8183<span> / commerce</span>
-          </a>
+          {standards.map((standard) => (
+            <a
+              href={standard.href}
+              className={standard.label === "x402" ? "standard-x402" : undefined}
+              key={standard.label}
+            >
+              {standard.label}
+              <span> / {standard.detail}</span>
+            </a>
+          ))}
         </div>
       </div>
     </div>

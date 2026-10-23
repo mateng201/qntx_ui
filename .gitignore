@@ -9,6 +9,14 @@ dist/
 .astro/
 .vite/
 .cache/
+.nx/
+.expo/
+web-build/
+apps/mobile/android/
+apps/mobile/ios/
+*.apk
+*.aab
+*.ipa
 *.tsbuildinfo
 
 # Local environment values (keep the shareable example)

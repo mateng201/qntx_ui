@@ -1,4 +1,5 @@
 ---
+import { palette } from "@qntx-ui/design-tokens";
 import { HorizontalDeck } from "../components/HorizontalDeck";
 import "../styles/global.css";
 import "../styles/visual-review.css";
@@ -7,7 +8,10 @@ import "../styles/simplified-panels.css";
 ---
 
 <!doctype html>
-<html lang="en">
+<html
+  lang="en"
+  style={`--ink:${palette.ink};--muted:${palette.muted};--line:${palette.line};--surface:${palette.surface};--surface-dark:${palette.darkSurface}`}
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

@@ -5,8 +5,14 @@ export default merge(react, {
     "**/node_modules/**",
     "**/dist/**",
     "**/.astro/**",
+    "**/.expo/**",
+    "**/.nx/**",
+    "**/android/**",
+    "**/ios/**",
     "**/playwright-report/**",
     "**/test-results/**",
   ],
-  rules: { "import/no-unassigned-import": ["error", { allow: ["**/*.css"] }] },
+  rules: {
+    "import/no-unassigned-import": ["error", { allow: ["**/*.css", "@expo/metro-runtime"] }],
+  },
 });
