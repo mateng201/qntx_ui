@@ -6,7 +6,7 @@ Astro Web 与 Expo + React Native 手机端共用一个 Git 仓库，由 Nx 和 
 
 ```powershell
 cd E:\bigshoot\qntx.ui
-npm ci
+npm ci					  # 按照 package-lock.json 锁定的版本，重新安装全部依赖
 npm run dev               # Astro Web：http://127.0.0.1:4321/
 npm run dev:mobile        # Expo / Metro，在终端显示手机连接二维码及快捷键
 npm run dev:mobile:web    # 手机组件的浏览器预览：http://localhost:8082/
