@@ -1,6 +1,6 @@
 # 手机端开发说明
 
-当前实现位于 `mobile` 分支，与 Web 共用 npm 锁文件和 Nx 工作区。Mobile 是原生 React Native 组件，不是把现有网站嵌入 WebView。
+原 `mobile` 分支的实现已合并至 `main`，与 Web 共用 npm 锁文件和 Nx 工作区。Mobile 是原生 React Native 组件，不是把现有网站嵌入 WebView。
 
 ## 日常运行
 
@@ -129,4 +129,4 @@ npm run dev:mobile -- --no-dev --minify
 
 ## Web 部署路径
 
-仓库根目录执行 `npm run build`，产物改为 `apps/web/dist/`。迁移分支上线时，应同步修改 Cloudflare 的产物目录；无需为 Mobile 部署另一份 Astro，也不要把 Expo 导出目录作为官网产物。本次没有修改现有线上配置。
+仓库根目录执行 `npm run build`，产物改为 `apps/web/dist/`。部署 `main` 时，应同步修改 Cloudflare 的产物目录；无需为 Mobile 部署另一份 Astro，也不要把 Expo 导出目录作为官网产物。本次合并没有修改平台上的部署配置。

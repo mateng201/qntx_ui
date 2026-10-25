@@ -1,6 +1,6 @@
 # QuantX UI
 
-Astro Web 与 Expo + React Native 手机端共用一个 Git 仓库，由 Nx 和 npm workspaces 管理。当前开发分支为 `mobile`；`main` 保留迁移前的三屏 Web。
+Astro Web 与 Expo + React Native 手机端共用一个 Git 仓库，由 Nx 和 npm workspaces 管理。`mobile` 分支的更新已合并至 `main`，包括 Nx 工作区、桌面滚动叙事、原生手机端及动画性能优化；迁移前的三屏 Web 保留在 Git 历史提交 `97e3dcb`。
 
 ## 启动
 
@@ -26,7 +26,7 @@ packages/
   content/              文案、组织链接、协议数据、导航数据、类型、静态 Logo 路径
   design-tokens/        颜色、间距和字号数值
   mascot/               动画目录、SVG 轮廓、路径插值与绘制数学；不含任何平台组件
-tools/                 边界规则的实际违规探针
+tools/                 边界规则的实际违规探针与动画回归测试
 ```
 
 桌面 Web（宽度 ≥761px）采用“吉祥物开场 → 组织介绍 → Protocols 功能 → 合并介绍与资源入口”的原地滚动叙事。进入时吉祥物显示静态 Q，开始滚动后播放原 SVG 动画并退为背景；滑到底归位到 QuantX 字样前时恢复静态 Q。开场与归位后，鼠标静止 5 秒才播放动画，移动即恢复静态；滚动叙事期间不受鼠标移动影响。桌面已移除顶部页面切换、底部导航、反色主题与横向切屏。详细结构、清理范围与验证方法见 [桌面首页重构说明](docs/desktop-narrative.md)。
@@ -60,7 +60,7 @@ npx nx affected -t check,lint,boundaries --base=main
 
 | 命令                            | 作用                                                             |
 | ------------------------------- | ---------------------------------------------------------------- |
-| `npm run check`                 | Web、Mobile、两个共享库分别做类型检查                            |
+| `npm run check`                 | Web、Mobile、三个共享库分别做类型检查                            |
 | `npm run lint`                  | 全仓库 qntx Oxlint 质量检查                                      |
 | `npm run lint:boundaries`       | 通过 Nx 执行五个项目的依赖边界检查                               |
 | `npm run test:boundaries`       | 实际违规与合法导入探针，包括 `.astro`                            |
@@ -77,7 +77,7 @@ npx nx affected -t check,lint,boundaries --base=main
 
 `build:mobile` 生成原生 JS / Hermes 资源，不生成 APK、AAB 或 IPA。原生安装包还需要 Android SDK / Xcode 或另行配置 EAS。浏览器测试使用本机 Google Chrome。
 
-Web 输出目录已从仓库根目录的 `dist/` 迁移为 `apps/web/dist/`。若将本分支用于 Cloudflare 自动部署，构建命令仍可使用根目录的 `npm run build`，但须把静态产物目录相应调整；本次没有修改远端或线上部署配置。
+Web 输出目录已从仓库根目录的 `dist/` 迁移为 `apps/web/dist/`。部署 `main` 时，构建命令仍可使用根目录的 `npm run build`，Cloudflare 等平台的静态产物目录须相应调整；本次合并没有修改平台上的部署配置。
 
 ## 关于复用说明
 
