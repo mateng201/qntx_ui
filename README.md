@@ -113,3 +113,7 @@ Expo SDK 58 对应的 React / React DOM 统一锁定为 19.3.0，React Native �
 | `eslint.config.mjs`                              | 架构边界与 Astro 解析                      |
 
 原四屏设计保留在 Git 历史提交 `a047b26`；三屏 Web 迁移基线为 `97e3dcb`。迁移前完整设计与配置记录保存在 [Web 设计历史](docs/web-design-history.md)。`review/` 下旧验收记录属于对应历史阶段，当前手机端验收见 [Mobile 叙事验证记录](review/mobile-narrative-20261025.md)。
+
+2026-10-25 目录清理移除了迁移前根目录的空 `src/`、旧 `.astro/` / `dist/`，以及本地构建产物、测试输出、调试截图 / 临时副本和旧任务输入 `Q1.txt`。当前源码以 `apps/` 与 `packages/` 为准。历史验收记录中的 `artifacts/` 路径仅表示当时的临时资料位置，清理后不再保证存在；设计参考图、历史文档、测试夹具与 Git 历史仍保留。
+
+构建目录可重新生成：运行 `npm run preview` 前先执行 `npm run build`；需要 Mobile 导出产物时执行 `npm run build:mobile`。清理未移除已安装依赖或运行中的开发缓存，`npm run dev` / `npm run dev:mobile` 可继续使用。
