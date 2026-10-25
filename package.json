@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "nx run web:dev --output-style=stream",
     "dev:web": "nx run web:dev --output-style=stream",
-    "dev:mobile": "nx run mobile:start --output-style=stream",
+    "dev:mobile": "npm run start --workspace=mobile --",
     "dev:mobile:web": "nx run mobile:preview --output-style=stream",
     "build": "nx run web:build --output-style=stream",
     "build:mobile": "nx run mobile:export --output-style=stream",

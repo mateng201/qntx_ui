@@ -11,7 +11,17 @@ npm ci
 npm run dev:mobile
 ```
 
-这个命令启动 Expo / Metro。要在直接连接的终端中使用 Expo 二维码与键盘快捷键，可以运行 `npm run start --workspace=mobile`。
+这个命令直接启动 Mobile 工作区的 Expo / Metro，并在 PowerShell、VSCode 集成终端等交互式终端中显示二维码与键盘快捷键。它等价于 `npm run start --workspace=mobile`。构建、检查、依赖边界与项目图仍由 Nx 管理。
+
+交互式启动不经过 Nx 的 `stream` 日志转发：当前 Nx 版本在 Windows 上默认关闭伪终端支持，转发后的 Expo 会把输出识别为非交互式环境，只打印 `Waiting on http://localhost:8081`，省略二维码和快捷键菜单。在 CI、输出重定向或编辑器的非交互式输出面板中，也不保证显示二维码。
+
+若端口被之前的服务占用，先在对应终端按 `Ctrl+C` 停止，再重新运行。也可以指定其他端口：
+
+```powershell
+npm run dev:mobile -- --port 8091
+```
+
+`Both an oxfmt and a prettier config were found` 是 Nx 发现两种格式化配置的提示，不会阻止 Expo 启动。项目有意保留两者：Oxfmt 处理普通文件，Prettier 处理 `.astro` 文件，统一使用 `npm run format`。
 
 - Android：可连接真机或使用配置了 Android SDK / ADB 的模拟器。
 - iOS：可连接支持当前 SDK 的客户端；本地 iOS 模拟器和原生编译需要 macOS / Xcode。

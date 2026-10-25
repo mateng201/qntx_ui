@@ -8,13 +8,13 @@ Astro Web 与 Expo + React Native 手机端共用一个 Git 仓库，由 Nx 和 
 cd E:\bigshoot\qntx.ui
 npm ci
 npm run dev               # Astro Web：http://127.0.0.1:4321/
-npm run dev:mobile        # Expo / Metro，供手机或原生开发客户端连接
+npm run dev:mobile        # Expo / Metro，在终端显示手机连接二维码及快捷键
 npm run dev:mobile:web    # 手机组件的浏览器预览：http://localhost:8082/
 ```
 
 三个命令分别在终端中运行。依赖已经安装时可直接启动。浏览器预览使用同一套 React Native 组件，通过 React Native Web 渲染；它用于快速检查排版和交互，不能替代 Android / iOS 真机验收。
 
-根目录 `npm run dev`、`npm run build` 和 `npm run preview` 仍对应 Web。手机调试、设备条件与安装包说明见 [手机端开发说明](docs/mobile.md)。需要 Expo 交互式二维码及快捷键时，也可以直接运行 `npm run start --workspace=mobile`。
+根目录 `npm run dev`、`npm run build` 和 `npm run preview` 仍对应 Web。`dev:mobile` 直接启动 Mobile 工作区的 Expo，保留终端交互，以显示二维码和快捷键；构建、检查和依赖边界仍由 Nx 管理。手机调试、设备条件与安装包说明见 [手机端开发说明](docs/mobile.md)。
 
 ## 目录与边界
 
