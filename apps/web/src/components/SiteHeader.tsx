@@ -1,8 +1,6 @@
 import type { ReactElement } from "react";
 
 import { links, sections } from "../data/site";
-
-import "../styles/header-navigation.css";
 import { BrandMark } from "./BrandMark";
 import { Icon } from "./Icon";
 

@@ -1,10 +1,9 @@
 ---
 import { palette } from "@qntx-ui/design-tokens";
-import { HorizontalDeck } from "../components/HorizontalDeck";
+import { MobileWebSite } from "../components/MobileWebSite";
+import { NarrativeHome } from "../components/NarrativeHome";
 import "../styles/global.css";
-import "../styles/visual-review.css";
-import "../styles/overview-hover-fixes.css";
-import "../styles/simplified-panels.css";
+import "../styles/narrative.css";
 ---
 
 <!doctype html>
@@ -31,11 +30,13 @@ import "../styles/simplified-panels.css";
     </noscript>
   </head>
   <body>
-    <HorizontalDeck />
+    <NarrativeHome />
+    <MobileWebSite />
     <script>
-      import { initializeNavigation } from "../scripts/horizontal-navigation";
+      import { initializeResponsiveHome } from "../scripts/responsive-home";
 
-      initializeNavigation();
+      const dispose = initializeResponsiveHome();
+      document.addEventListener("astro:before-swap", dispose, { once: true });
     </script>
   </body>
 </html>

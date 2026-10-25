@@ -1,15 +1,16 @@
 import { sections } from "../data/site";
 
-/** CSS owns the layout and snapping. This adapter maps vertical wheel input to the horizontal axis. */
-export function initializeNavigation(): void {
+/** Compatibility controller only for the unchanged <=760px website. */
+export function initializeMobileWebNavigation(): () => void {
   const deck = document.querySelector<HTMLElement>("[data-deck]");
   const shell = document.querySelector<HTMLElement>("[data-site-shell]");
   if (deck === null || shell === null) {
-    return;
+    return () => undefined;
   }
 
+  const events = new AbortController();
   const panels = [...deck.querySelectorAll<HTMLElement>("[data-panel]")];
-  const panelLinks = [...document.querySelectorAll<HTMLAnchorElement>("[data-panel-link]")];
+  const panelLinks = [...shell.querySelectorAll<HTMLAnchorElement>("[data-panel-link]")];
   const previous = document.querySelector<HTMLButtonElement>("[data-previous]");
   const next = document.querySelector<HTMLButtonElement>("[data-next]");
   const counter = document.querySelector<HTMLElement>("[data-current-panel]");
@@ -153,25 +154,40 @@ export function initializeNavigation(): void {
   }
 
   for (const link of panelLinks) {
-    link.addEventListener("click", (event: MouseEvent) => {
-      if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
-        return;
-      }
-      const index = sections.findIndex((section) => `#${section.id}` === link.hash);
-      if (index === -1) {
-        return;
-      }
-      event.preventDefault();
-      navigateTo(index, true);
-    });
+    link.addEventListener(
+      "click",
+      (event: MouseEvent) => {
+        if (
+          event.button !== 0 ||
+          event.ctrlKey ||
+          event.metaKey ||
+          event.shiftKey ||
+          event.altKey
+        ) {
+          return;
+        }
+        const index = sections.findIndex((section) => `#${section.id}` === link.hash);
+        if (index === -1) {
+          return;
+        }
+        event.preventDefault();
+        navigateTo(index, true);
+      },
+      { signal: events.signal },
+    );
   }
-  previous?.addEventListener("click", () => navigateTo(activeIndex - 1, true));
-  next?.addEventListener("click", () => navigateTo(activeIndex + 1, true));
-  deck.addEventListener("wheel", handleWheel, { passive: false });
-  deck.addEventListener("scroll", handleScroll, { passive: true });
-  globalThis.addEventListener("keydown", handleKeydown);
-  globalThis.addEventListener("hashchange", navigateToHash);
-  new ResizeObserver(handleScroll).observe(deck);
+  previous?.addEventListener("click", () => navigateTo(activeIndex - 1, true), {
+    signal: events.signal,
+  });
+  next?.addEventListener("click", () => navigateTo(activeIndex + 1, true), {
+    signal: events.signal,
+  });
+  deck.addEventListener("wheel", handleWheel, { passive: false, signal: events.signal });
+  deck.addEventListener("scroll", handleScroll, { passive: true, signal: events.signal });
+  globalThis.addEventListener("keydown", handleKeydown, { signal: events.signal });
+  globalThis.addEventListener("hashchange", navigateToHash, { signal: events.signal });
+  const observer = new ResizeObserver(handleScroll);
+  observer.observe(deck);
 
   const initialIndex = sections.findIndex(
     (section) => `#${section.id}` === globalThis.location.hash,
@@ -183,4 +199,9 @@ export function initializeNavigation(): void {
     }
   }
   updateActivePanel();
+  return () => {
+    events.abort();
+    observer.disconnect();
+    cancelAnimationFrame(scrollFrame);
+  };
 }

@@ -6,9 +6,10 @@ import { ProtocolPanel } from "./ProtocolPanel";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 
-export function HorizontalDeck(): ReactElement {
+/** Retained exclusively for the existing <=760px website; never initialized on desktop. */
+export function MobileWebSite(): ReactElement {
   return (
-    <div className="site-shell" data-site-shell data-theme="light">
+    <div className="mobile-web-site site-shell" data-site-shell data-theme="light">
       <a href="#main-content" className="skip-link">
         Skip to content
       </a>

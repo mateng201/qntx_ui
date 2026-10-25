@@ -16,19 +16,20 @@ import Logo from "../components/Logo.astro";
       <span>PHASE 0 / LOGO REVIEW</span>
     </header>
     <main>
-      <p class="eyebrow">阶段 0 已复核通过 · 阶段 1 已接入独立预览</p>
+      <p class="eyebrow">SVG LOGO · 独立回归检查</p>
       <h1>
         修复完成。
         <br />
-        现在，回到网络之中。
+        保留完整的表达。
       </h1>
       <p class="lead">
-        原始 SVG 的路径与边界问题已修复。Overview 现已区分区域睁眼与 Logo
-        悬停待机，点击后显示无嘴笑眼，说明在节点旁丝滑弹出。
+        原始 SVG 的路径与边界问题已修复。本页保留独立悬停与键盘聚焦演示。 桌面首页进入时显示静态
+        Q，开始滚动后播放同一套动画并退为背景，归位到导航栏后恢复静态。
+        开场与归位后，鼠标静止五秒也会播放动画。
       </p>
       <p>
         <a class="preview-link" href="/">
-          打开 Overview 交互预览 ↗
+          打开当前首页 ↗
         </a>
       </p>
       <div class="comparison">
@@ -66,7 +67,7 @@ import Logo from "../components/Logo.astro";
         </div>
         <div class="size-sample">
           <Logo size={80} label="80 像素 QNTX 动画 Logo" />
-          <span>80px / 现有中央标识尺寸</span>
+          <span>80px / 动画边界检查</span>
         </div>
         <div class="size-sample">
           <Logo size={48} label="48 像素 QNTX 动画 Logo" />
@@ -74,28 +75,29 @@ import Logo from "../components/Logo.astro";
         </div>
       </section>
       <section class="assessment">
-        <h2>阶段 0 的结论</h2>
+        <h2>实现与检查范围</h2>
         <ol>
           <li>
             <strong>修复后替换：复核通过。</strong>
-            补全路径、统一边界并隔离实例后，已按原中央标识尺寸接入；未改变外层面板高度。
+            补全路径、统一边界并隔离实例；复用提供的原始动画目录与表情几何。
           </li>
           <li>
-            <strong>节点交互：通过并已实现。</strong>
-            使用原生按钮和局部事件处理，点击在节点附近弹出说明；淡出后再切换位置，无新增组件依赖。
+            <strong>桌面首页：滚动播放与静止待机。</strong>
+            滚动叙事期间持续播放；开场与归位后静止五秒播放，移动恢复静态，不做目光跟随。
+            系统开启“减少动态效果”时使用静态标识。
           </li>
           <li>
-            <strong>小方块跟随：通过并已实现。</strong>
-            仅内部方块及表情眼部在有限范围内偏移，移出右侧区域归中；外层 Logo 不跟随鼠标移动。
+            <strong>独立演示：保留悬停和键盘访问。</strong>
+            本页三个实例分别启停；离开视口或切到后台时暂停，避免保留不可见的动画循环。
           </li>
         </ol>
         <p>
-          上方保留上一轮 Logo 修复对比。本轮接入仍使用原动画的轮廓与表情几何，没有采用 Stitch
-          示例中的固定大高度或向视口外弹出的浮层。
+          上方保留最初的 Logo 修复对比。本页与首页共用 SVG 绘制适配器，
+          但分别管理悬停演示与首页自动播放的生命周期。
         </p>
       </section>
       <footer>
-        独立预览 · 原网站与原 Logo 目录均未覆盖 · <a href="/">查看交互 Overview ↗</a>
+        独立 Logo 检查 · <a href="/">查看当前首页 ↗</a>
       </footer>
     </main>
   </body>

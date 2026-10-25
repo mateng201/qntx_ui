@@ -28,7 +28,9 @@ packages/
 tools/                 边界规则的实际违规探针
 ```
 
-Web 保留 Overview / Protocols / About 三个横向 Scroll Snap 面板和独立 `/logo-check/`。Mobile 使用三个底部标签、纵向阅读、安全区域及 Android 返回首页处理；About 沿用深色配色。首版没有引入原首页已移除的轨道动画，也没有新增 UI 组件库。
+桌面 Web（宽度 ≥761px）采用“吉祥物开场 → 组织介绍 → Protocols 功能 → 合并介绍与资源入口”的原地滚动叙事。进入时吉祥物显示静态 Q，开始滚动后播放原 SVG 动画并退为背景；滑到底归位到 QuantX 字样前时恢复静态 Q。开场与归位后，鼠标静止 5 秒才播放动画，移动即恢复静态；滚动叙事期间不受鼠标移动影响。桌面已移除顶部页面切换、底部导航、反色主题与横向切屏。详细结构、清理范围与验证方法见 [桌面首页重构说明](docs/desktop-narrative.md)。
+
+窄屏 Web（≤760px）按需求保留 Overview / Protocols / About 三个横向 Scroll Snap 面板；它的样式和控制器已独立隔离，桌面不加载该控制器。`/logo-check/` 继续用于独立 Logo 回归检查。React Native Mobile 保持三个底部标签、纵向阅读、安全区域及 Android 返回首页处理，About 仍沿用深色配色。本次没有修改手机应用或引入依赖。
 
 | 项目                       | Nx 标签                       | 允许依赖                |
 | -------------------------- | ----------------------------- | ----------------------- |
@@ -62,7 +64,7 @@ npx nx affected -t check,lint,boundaries --base=main
 | `npm run preview`         | 查看 Web 构建结果                                                |
 | `npm run build:mobile`    | 导出 Android / iOS Hermes 和浏览器 JS 产物至 `apps/mobile/dist/` |
 | `npm run doctor:mobile`   | Expo 环境和依赖诊断                                              |
-| `npm run test:e2e`        | Web 的 36 项 Chrome 回归测试                                     |
+| `npm run test:e2e`        | 桌面叙事、窄屏保留行为与独立 Logo 的 Chrome 回归测试             |
 | `npm run test:mobile`     | React Native Web 预览的交互与布局测试                            |
 | `npm run verify`          | 类型、质量、边界、格式、两端导出与浏览器检查链                   |
 
