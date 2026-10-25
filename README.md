@@ -35,6 +35,8 @@ tools/                 边界规则的实际违规探针
 
 React Native Mobile 现已跟进吉祥物开场与触摸滚动叙事：进入显示静态 Q，滑动后播放并退为背景，收尾归位后恢复静态；开场与归位后停止操作五秒播放待机动画，触摸或鼠标移动会平滑收回 Q。组织介绍与 Protocols 在原地切换，最后的合并介绍与资源入口单栏纵向阅读。移除了底部标签、深色 About 和协议功能卡片的跳转，保留安全区域与 Android 返回顶部处理。详情见 [手机端开发说明](docs/mobile.md)。
 
+真机性能优化保留原动画精度与触发规则：轮廓采样和绘制一起限频、缓存模型点、消除中间 SVG 解析，并直接更新原生路径。Expo Go 默认开发模式会增加运行开销，可用 `npm run dev:mobile -- --no-dev --minify` 对比生产模式 JS；这仍不等同 release 安装包。测量范围与真机复测方法见 [真机卡顿排查与优化](docs/mobile.md#真机卡顿排查与优化2026-10-25)。
+
 | 项目                       | Nx 标签                       | 允许依赖                        |
 | -------------------------- | ----------------------------- | ------------------------------- |
 | `web`                      | `platform:web`、`type:app`    | Web 内部代码及共享库            |
@@ -56,21 +58,22 @@ npx nx affected -t check,lint,boundaries --base=main
 
 ## 常用检查与构建
 
-| 命令                      | 作用                                                             |
-| ------------------------- | ---------------------------------------------------------------- |
-| `npm run check`           | Web、Mobile、两个共享库分别做类型检查                            |
-| `npm run lint`            | 全仓库 qntx Oxlint 质量检查                                      |
-| `npm run lint:boundaries` | 通过 Nx 执行五个项目的依赖边界检查                               |
-| `npm run test:boundaries` | 实际违规与合法导入探针，包括 `.astro`                            |
-| `npm run format`          | Oxfmt 格式化，随后 Prettier 处理 `.astro`                        |
-| `npm run format:check`    | 只检查格式，不写入文件                                           |
-| `npm run build`           | Web 静态产物：`apps/web/dist/`                                   |
-| `npm run preview`         | 查看 Web 构建结果                                                |
-| `npm run build:mobile`    | 导出 Android / iOS Hermes 和浏览器 JS 产物至 `apps/mobile/dist/` |
-| `npm run doctor:mobile`   | Expo 环境和依赖诊断                                              |
-| `npm run test:e2e`        | 桌面叙事、窄屏保留行为与独立 Logo 的 Chrome 回归测试             |
-| `npm run test:mobile`     | React Native Web 预览的交互与布局测试                            |
-| `npm run verify`          | 类型、质量、边界、格式、两端导出与浏览器检查链                   |
+| 命令                            | 作用                                                             |
+| ------------------------------- | ---------------------------------------------------------------- |
+| `npm run check`                 | Web、Mobile、两个共享库分别做类型检查                            |
+| `npm run lint`                  | 全仓库 qntx Oxlint 质量检查                                      |
+| `npm run lint:boundaries`       | 通过 Nx 执行五个项目的依赖边界检查                               |
+| `npm run test:boundaries`       | 实际违规与合法导入探针，包括 `.astro`                            |
+| `npm run format`                | Oxfmt 格式化，随后 Prettier 处理 `.astro`                        |
+| `npm run format:check`          | 只检查格式，不写入文件                                           |
+| `npm run build`                 | Web 静态产物：`apps/web/dist/`                                   |
+| `npm run preview`               | 查看 Web 构建结果                                                |
+| `npm run build:mobile`          | 导出 Android / iOS Hermes 和浏览器 JS 产物至 `apps/mobile/dist/` |
+| `npm run doctor:mobile`         | Expo 环境和依赖诊断                                              |
+| `npm run test:e2e`              | 桌面叙事、窄屏保留行为与独立 Logo 的 Chrome 回归测试             |
+| `npm run test:mobile`           | React Native Web 预览的交互与布局测试                            |
+| `npm run test:mobile:animation` | 动画几何一致性、60/90/120Hz 计算预算与播放状态回归测试           |
+| `npm run verify`                | 类型、质量、边界、格式、两端导出与浏览器检查链                   |
 
 `build:mobile` 生成原生 JS / Hermes 资源，不生成 APK、AAB 或 IPA。原生安装包还需要 Android SDK / Xcode 或另行配置 EAS。浏览器测试使用本机 Google Chrome。
 

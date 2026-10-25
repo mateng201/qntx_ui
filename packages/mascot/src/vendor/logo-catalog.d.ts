@@ -9,6 +9,9 @@ export type CatalogFrame = {
 };
 
 /** Pure animation engine extracted from the supplied second logo component. */
-export function createCatalogAnimation(now?: () => number): {
+export function createCatalogAnimation(
+  now?: () => number,
+  options?: { directGeometry?: boolean },
+): {
   sample: (time: number) => CatalogFrame;
 };

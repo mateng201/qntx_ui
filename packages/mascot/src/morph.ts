@@ -43,26 +43,34 @@ function align(from: Point[], to: Point[]): Point[] {
   if (from.length === 0 || from.length !== to.length) {
     return from;
   }
-  let best = from;
+  let bestOffset = 0;
+  let bestDirection = 1;
   let bestCost = Number.POSITIVE_INFINITY;
   for (const direction of [1, -1]) {
     for (let offset = 0; offset < from.length; offset += 1) {
-      const candidate = to.map(
-        (_, index) =>
-          from[(offset + index * direction + from.length) % from.length] ?? { x: 0, y: 0 },
-      );
       let cost = 0;
-      for (const [index, point] of candidate.entries()) {
+      for (let index = 0; index < from.length; index += 1) {
+        const point = from[(offset + index * direction + from.length) % from.length];
+        if (point === undefined) {
+          continue;
+        }
         const target = to[index] ?? point;
         cost += (point.x - target.x) ** 2 + (point.y - target.y) ** 2;
+        if (cost >= bestCost) {
+          break;
+        }
       }
       if (cost < bestCost) {
         bestCost = cost;
-        best = candidate;
+        bestOffset = offset;
+        bestDirection = direction;
       }
     }
   }
-  return best;
+  return to.map(
+    (_, index) =>
+      from[(bestOffset + index * bestDirection + from.length) % from.length] ?? { x: 0, y: 0 },
+  );
 }
 
 function blend(from: Point[], to: Point[], progress: number): Point[] {

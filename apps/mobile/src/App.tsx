@@ -15,9 +15,10 @@ import {
 import type { ScrollViewInstance } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
+import type { MascotPhase } from "./animation/playback";
 import { ExternalLink } from "./components/ExternalLink";
 import { Mascot } from "./components/Mascot";
-import type { MascotHandle, MascotPhase } from "./components/Mascot";
+import type { MascotHandle } from "./components/Mascot";
 import { ConnectContent, OriginContent, ProtocolContent } from "./components/NarrativeContent";
 import { useReducedMotion, useScreenReader } from "./hooks/useReducedMotion";
 
@@ -34,11 +35,17 @@ function MobileNarrative(): ReactElement {
     height: dimensions.height,
   });
   const [scrollY] = useState(() => new Animated.Value(0));
+  const [onScroll] = useState(() =>
+    Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+      useNativeDriver: Platform.OS !== "web",
+    }),
+  );
   const scrollRef = useRef<ScrollViewInstance>(null);
   const offset = useRef(0);
   const playback = useRef<MascotPhase>("opening");
   const [phase, setPhase] = useState<MascotPhase>("opening");
   const [scene, setScene] = useState<Scene>("opening");
+  const activeScene = useRef<Scene>("opening");
   const mascotRef = useRef<MascotHandle>(null);
   const [flowEnd, setFlowEnd] = useState(1);
   const reducedMotion = useReducedMotion();
@@ -91,7 +98,10 @@ function MobileNarrative(): ReactElement {
             : progress < 0.82
               ? "protocols"
               : "connect";
-      setScene((previous) => (previous === nextScene ? previous : nextScene));
+      if (activeScene.current !== nextScene) {
+        activeScene.current = nextScene;
+        setScene(nextScene);
+      }
     });
     return () => scrollY.removeListener(listener);
   }, [scrollY, span]);
@@ -209,9 +219,7 @@ function MobileNarrative(): ReactElement {
           contentContainerStyle={styles.scrollContent}
           scrollEventThrottle={16}
           testID="mobile-story-scroll"
-          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-            useNativeDriver: Platform.OS !== "web",
-          })}
+          onScroll={onScroll}
           onScrollBeginDrag={notifyActivity}
           onScrollEndDrag={notifyActivity}
           onMomentumScrollEnd={notifyActivity}

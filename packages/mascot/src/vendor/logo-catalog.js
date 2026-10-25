@@ -1006,32 +1006,71 @@ var ye = `-150 -150 300 300`;
 var be = 14;
 var xe = 1.5;
 var k = 120;
-function Se(e, t, n = ee) {
+// The native renderer can keep geometry as points instead of serializing and
+// parsing intermediate SVG strings. The default path remains the Web renderer.
+const bodyMeshes = new WeakMap();
+function cachedBodyMesh(body) {
+  let points = bodyMeshes.get(body);
+  if (points === undefined) {
+    points = ve(body);
+    bodyMeshes.set(body, points);
+  }
+  return points;
+}
+function rotation(yaw, pitch, roll) {
+  const sy = Math.sin((yaw * Math.PI) / 180);
+  const cy = Math.cos((yaw * Math.PI) / 180);
+  const sp = Math.sin((pitch * Math.PI) / 180);
+  const cp = Math.cos((pitch * Math.PI) / 180);
+  const sr = Math.sin((roll * Math.PI) / 180);
+  const cr = Math.cos((roll * Math.PI) / 180);
+  return (point) => {
+    const x = cy * point[0] + sy * point[2];
+    const z = -sy * point[0] + cy * point[2];
+    const y = cp * point[1] - sp * z;
+    const depth = sp * point[1] + cp * z;
+    return [cr * x - sr * y, sr * x + cr * y, depth];
+  };
+}
+function roundedContour(points) {
+  const vertices = points.length < 3 ? points : T(points, 7);
+  return vertices.map((point) => ({
+    x: Math.round(point.x * 1e4) / 1e4,
+    y: Math.round(point.y * 1e4) / 1e4,
+  }));
+}
+function Se(e, t, n = ee, direct = false) {
+  const head = direct ? rotation(t.headY, t.headX, t.headZ) : undefined;
+  const view = direct ? rotation(n.yaw, n.pitch, 0) : undefined;
+  const project = direct ? (point) => view(head(point)) : undefined;
   let r = {
       headX: t.headX,
       headY: t.headY,
       headZ: t.headZ,
     },
-    i = ve(e.body).map((e) => S(e, r, n)),
+    i = (direct ? cachedBodyMesh(e.body) : ve(e.body)).map((e) =>
+      project === undefined ? S(e, r, n) : project(e),
+    ),
     a = ae(i, n),
     o = x(x([0, 0, 1], t.headY, t.headX, t.headZ), n.yaw, n.pitch, 0)[2] > 0;
   return {
     viewBox: ye,
-    body: Ce(i, a, e.colors.body, n),
-    leftEye: we(e, t, n, -1, o, a),
-    rightEye: we(e, t, n, 1, o, a),
+    body: Ce(i, a, e.colors.body, n, direct),
+    leftEye: we(e, t, n, -1, o, a, project),
+    rightEye: we(e, t, n, 1, o, a, project),
   };
 }
-function Ce(e, t, n, r) {
+function Ce(e, t, n, r, direct) {
   let i = C(te(e), r);
   return {
-    d: re(t),
+    d: direct ? "" : re(t),
+    points: direct ? roundedContour(t) : undefined,
     fill: n,
     cx: i.x,
     cy: i.y,
   };
 }
-function we(e, t, n, r, i, a) {
+function we(e, t, n, r, i, a, project) {
   let { body: o, colors: s } = e,
     c = r < 0 ? t.left : t.right,
     l = t.blink,
@@ -1051,7 +1090,8 @@ function we(e, t, n, r, i, a) {
   let h = Oe(p),
     g = i && m > 0 && ie(h.center, a);
   return {
-    d: w(p),
+    d: project === undefined ? w(p) : "",
+    points: project === undefined ? undefined : roundedContour(p),
     cx: h.center.x,
     cy: h.center.y,
     rx: h.rx,
@@ -1676,7 +1716,7 @@ function xt(e = {}) {
         (c = B(d, n, s.sequence, !0)),
         i && (o = s.to));
     },
-    d = (e, n = ee) => {
+    d = (e, n = ee, direct = false) => {
       let s = e ?? t(),
         c = v(s);
       o = c;
@@ -1697,6 +1737,7 @@ function xt(e = {}) {
           },
           u,
           n,
+          direct,
         ),
         colors: d,
         name: r.pet.name,
@@ -1850,10 +1891,10 @@ on(Bt);
 function Jt(e) {
   return cn(
     {
-      outer: W(U(e.body.d)),
+      outer: W(e.body.points === undefined ? U(e.body.d) : Xt(e.body.points)),
       hole: null,
-      left: W(U(e.leftEye.d)),
-      right: W(U(e.rightEye.d)),
+      left: W(e.leftEye.points === undefined ? U(e.leftEye.d) : Xt(e.leftEye.points)),
+      right: W(e.rightEye.points === undefined ? U(e.rightEye.d) : Xt(e.rightEye.points)),
     },
     Ht,
   );
@@ -2162,7 +2203,7 @@ function gn(e = nt()) {
     },
   };
 }
-function createCatalogAnimation(now = () => performance.now()) {
+function createCatalogAnimation(now = () => performance.now(), options = {}) {
   const engine = xt({
     now,
     mood: r,
@@ -2171,7 +2212,7 @@ function createCatalogAnimation(now = () => performance.now()) {
   engine.play($);
   return {
     sample(time) {
-      const frame = engine.evaluate(time);
+      const frame = engine.evaluate(time, ee, options.directGeometry === true);
       const shape = Jt(frame.marks);
       const offset = frame.pose.bob * -8;
       const move = (points) =>

@@ -24,9 +24,10 @@
     "format:check": "oxfmt --check . && prettier --check \"apps/web/src/**/*.astro\"",
     "test:e2e": "nx run web:test-e2e --output-style=stream",
     "test:mobile": "nx run mobile:test-preview --output-style=stream",
+    "test:mobile:animation": "nx run mobile:test-animation --output-style=stream",
     "doctor:mobile": "nx run mobile:doctor --output-style=stream",
     "graph": "nx graph",
-    "verify": "npm run check && npm run lint && npm run lint:boundaries && npm run test:boundaries && npm run format:check && npm run build && npm run build:mobile && npm run test:e2e && npm run test:mobile"
+    "verify": "npm run check && npm run lint && npm run lint:boundaries && npm run test:boundaries && npm run test:mobile:animation && npm run format:check && npm run build && npm run build:mobile && npm run test:e2e && npm run test:mobile"
   },
   "devDependencies": {
     "@nx/devkit": "24.0.0",

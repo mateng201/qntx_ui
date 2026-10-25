@@ -35,6 +35,10 @@
       "executor": "nx:run-commands",
       "options": { "command": "npm run doctor --workspace=mobile" }
     },
+    "test-animation": {
+      "executor": "nx:run-commands",
+      "options": { "command": "node --test tools/test-mobile-animation.mts" }
+    },
     "test-preview": {
       "executor": "nx:run-commands",
       "options": { "command": "playwright test --config apps/mobile/playwright.config.ts" }
