@@ -25,24 +25,28 @@ apps/
 packages/
   content/              文案、组织链接、协议数据、导航数据、类型、静态 Logo 路径
   design-tokens/        颜色、间距和字号数值
+  mascot/               动画目录、SVG 轮廓、路径插值与绘制数学；不含任何平台组件
 tools/                 边界规则的实际违规探针
 ```
 
 桌面 Web（宽度 ≥761px）采用“吉祥物开场 → 组织介绍 → Protocols 功能 → 合并介绍与资源入口”的原地滚动叙事。进入时吉祥物显示静态 Q，开始滚动后播放原 SVG 动画并退为背景；滑到底归位到 QuantX 字样前时恢复静态 Q。开场与归位后，鼠标静止 5 秒才播放动画，移动即恢复静态；滚动叙事期间不受鼠标移动影响。桌面已移除顶部页面切换、底部导航、反色主题与横向切屏。详细结构、清理范围与验证方法见 [桌面首页重构说明](docs/desktop-narrative.md)。
 
-窄屏 Web（≤760px）按需求保留 Overview / Protocols / About 三个横向 Scroll Snap 面板；它的样式和控制器已独立隔离，桌面不加载该控制器。`/logo-check/` 继续用于独立 Logo 回归检查。React Native Mobile 保持三个底部标签、纵向阅读、安全区域及 Android 返回首页处理，About 仍沿用深色配色。本次没有修改手机应用或引入依赖。
+窄屏 Web（≤760px）按需求保留 Overview / Protocols / About 三个横向 Scroll Snap 面板；它的样式和控制器已独立隔离，桌面不加载该控制器。`/logo-check/` 继续用于独立 Logo 回归检查。本轮用户确认只更新 Expo / React Native 应用，手机浏览器网站保持原版。
 
-| 项目                       | Nx 标签                       | 允许依赖                |
-| -------------------------- | ----------------------------- | ----------------------- |
-| `web`                      | `platform:web`、`type:app`    | Web 内部代码及共享库    |
-| `mobile`                   | `platform:mobile`、`type:app` | Mobile 内部代码及共享库 |
-| `content`、`design-tokens` | `platform:shared`、`type:lib` | 纯 TypeScript 共享库    |
+React Native Mobile 现已跟进吉祥物开场与触摸滚动叙事：进入显示静态 Q，滑动后播放并退为背景，收尾归位后恢复静态；开场与归位后停止操作五秒播放待机动画，触摸或鼠标移动会平滑收回 Q。组织介绍与 Protocols 在原地切换，最后的合并介绍与资源入口单栏纵向阅读。移除了底部标签、深色 About 和协议功能卡片的跳转，保留安全区域与 Android 返回顶部处理。详情见 [手机端开发说明](docs/mobile.md)。
+
+| 项目                       | Nx 标签                       | 允许依赖                        |
+| -------------------------- | ----------------------------- | ------------------------------- |
+| `web`                      | `platform:web`、`type:app`    | Web 内部代码及共享库            |
+| `mobile`                   | `platform:mobile`、`type:app` | Mobile 内部代码及共享库         |
+| `content`、`design-tokens` | `platform:shared`、`type:lib` | 纯 TypeScript 共享库            |
+| `mascot`                   | `platform:shared`、`type:lib` | 共享 content 与平台无关动画数学 |
 
 `eslint.config.mjs` 仅负责架构边界：Nx 的 `@nx/enforce-module-boundaries` 禁止跨端导入、共享包反向依赖应用，以及引入另一端的框架。Astro 解析器覆盖 `.astro` 的前置脚本导入。共享包也禁止浏览器全局对象，并通过没有 DOM / Node 全局类型的独立配置检查。
 
-共享包以 `@qntx-ui/content`、`@qntx-ui/design-tokens` 的公开入口导入，不能使用跨项目相对路径绕过边界。`tools/test-boundaries.mjs` 会临时创建并清理真实违规文件，验证六种错误依赖 / 全局访问被拒绝，以及合法共享导入能通过。
+共享包以 `@qntx-ui/content`、`@qntx-ui/design-tokens`、`@qntx-ui/mascot` 的公开入口导入，不能使用跨项目相对路径绕过边界。网页用原生 SVG，手机用 `react-native-svg`；动画目录和轮廓插值只有一份，两端的事件、布局和绘制生命周期独立。没有新增第三方 UI 或动画库。`tools/test-boundaries.mjs` 会临时创建并清理真实违规文件，验证六种错误依赖 / 全局访问被拒绝，以及合法共享导入能通过。
 
-Nx 项目图已验证：仅修改 `apps/mobile/src/App.tsx` 时影响 `mobile`；修改共享 content 时影响 `content`、`mobile` 和 `web`。锁文件和公共配置改变可能影响所有项目。
+Nx 项目图中 Mobile 与 Web 分别依赖共享包，不互相引用。修改 `apps/mobile/src/App.tsx` 只影响 `mobile`；修改 `mascot` 会影响 `mascot`、`mobile` 和 `web`；修改 content 还会影响依赖它的 mascot。锁文件和公共配置改变可能影响所有项目。
 
 ```powershell
 npm run graph
@@ -56,7 +60,7 @@ npx nx affected -t check,lint,boundaries --base=main
 | ------------------------- | ---------------------------------------------------------------- |
 | `npm run check`           | Web、Mobile、两个共享库分别做类型检查                            |
 | `npm run lint`            | 全仓库 qntx Oxlint 质量检查                                      |
-| `npm run lint:boundaries` | 通过 Nx 执行四个项目的依赖边界检查                               |
+| `npm run lint:boundaries` | 通过 Nx 执行五个项目的依赖边界检查                               |
 | `npm run test:boundaries` | 实际违规与合法导入探针，包括 `.astro`                            |
 | `npm run format`          | Oxfmt 格式化，随后 Prettier 处理 `.astro`                        |
 | `npm run format:check`    | 只检查格式，不写入文件                                           |
@@ -92,15 +96,17 @@ Expo SDK 58 对应的 React / React DOM 统一锁定为 19.3.0，React Native �
 
 ## 源码入口与历史
 
-| 文件                                             | 用途                                   |
-| ------------------------------------------------ | -------------------------------------- |
-| `apps/web/src/components/HorizontalDeck.tsx`     | Web 三屏组合                           |
-| `apps/web/src/data/site.ts`                      | 兼容原 Web 导入路径，转出共享内容      |
-| `apps/mobile/src/App.tsx`                        | 原生三页、底部标签、安全区域与返回行为 |
-| `apps/mobile/src/components/`                    | 原生静态 Logo 与外链按钮               |
-| `packages/content/src/index.ts`                  | 两端内容和静态 Logo 路径               |
-| `packages/design-tokens/src/index.ts`            | 两端设计数值                           |
-| `apps/*/project.json`、`packages/*/project.json` | Nx 项目、标签和任务                    |
-| `eslint.config.mjs`                              | 架构边界与 Astro 解析                  |
+| 文件                                             | 用途                                       |
+| ------------------------------------------------ | ------------------------------------------ |
+| `apps/web/src/components/NarrativeHome.tsx`      | 桌面网页的吉祥物开场与滚动叙事             |
+| `apps/web/src/components/MobileWebSite.tsx`      | 保留的窄屏网页三屏组合                     |
+| `apps/web/src/data/site.ts`                      | 兼容原 Web 导入路径，转出共享内容          |
+| `apps/mobile/src/App.tsx`                        | 原生触摸叙事、精简导航、安全区域与返回顶部 |
+| `apps/mobile/src/components/`                    | 原生动画吉祥物、叙事内容与外链按钮         |
+| `packages/content/src/index.ts`                  | 两端内容和静态 Logo 路径                   |
+| `packages/design-tokens/src/index.ts`            | 两端设计数值                               |
+| `packages/mascot/src/index.ts`                   | 两端共享动画目录、轮廓插值与路径计算       |
+| `apps/*/project.json`、`packages/*/project.json` | Nx 项目、标签和任务                        |
+| `eslint.config.mjs`                              | 架构边界与 Astro 解析                      |
 
-原四屏设计保留在 Git 历史提交 `a047b26`；三屏 Web 迁移基线为 `97e3dcb`。迁移前完整设计与配置记录保存在 [Web 设计历史](docs/web-design-history.md)。`review/` 下旧验收记录属于对应历史阶段，当前手机端验收另见 [Mobile 验证记录](review/mobile-20261023.md)。
+原四屏设计保留在 Git 历史提交 `a047b26`；三屏 Web 迁移基线为 `97e3dcb`。迁移前完整设计与配置记录保存在 [Web 设计历史](docs/web-design-history.md)。`review/` 下旧验收记录属于对应历史阶段，当前手机端验收见 [Mobile 叙事验证记录](review/mobile-narrative-20261025.md)。

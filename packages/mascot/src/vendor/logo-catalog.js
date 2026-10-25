@@ -5,7 +5,6 @@
   unicorn/new-for-builtins, unicorn/throw-new-error, unicorn/explicit-length-check, unicorn/prefer-code-point,
   typescript/no-unsafe-assignment, typescript/no-unsafe-member-access, typescript/no-unsafe-return,
   typescript/no-unsafe-call, typescript/strict-boolean-expressions, typescript/no-unsafe-argument,
-  typescript/prefer-nullish-coalescing, typescript/no-unsafe-unary-minus,
   typescript/no-confusing-void-expression, typescript/restrict-template-expressions
   -- Preserve the supplied generated engine. Its typed adapter and application controller are linted normally. */
 //#region review/logo-catalog-source.mjs

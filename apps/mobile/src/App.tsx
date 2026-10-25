@@ -1,215 +1,308 @@
-import {
-  aboutDestinations,
-  aboutIntro,
-  hero,
-  links,
-  primitives,
-  protocolIntro,
-  sections,
-  standards,
-} from "@qntx-ui/content";
-import type { SectionId } from "@qntx-ui/content";
-import { palette, spacing, typeScale } from "@qntx-ui/design-tokens";
+import { links } from "@qntx-ui/content";
 import { StatusBar } from "expo-status-bar";
 import type { ReactElement } from "react";
-import { useEffect, useState } from "react";
-import { BackHandler, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  BackHandler,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import type { ScrollViewInstance } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
-import { BrandMark } from "./components/BrandMark";
 import { ExternalLink } from "./components/ExternalLink";
+import { Mascot } from "./components/Mascot";
+import type { MascotHandle, MascotPhase } from "./components/Mascot";
+import { ConnectContent, OriginContent, ProtocolContent } from "./components/NarrativeContent";
+import { useReducedMotion, useScreenReader } from "./hooks/useReducedMotion";
 
-const copyrightYear = new Date().getFullYear();
+const headerHeight = 64;
+const dockSize = 32;
+const statusBarStyle = "dark";
 
-function Overview({ explore }: { explore: () => void }): ReactElement {
-  return (
-    <View style={styles.page} testID="screen-overview">
-      <Text accessibilityRole="header" style={styles.heroTitle}>
-        {hero.titleLines.join("\n")}
-      </Text>
-      <Text style={styles.copy}>{hero.description}</Text>
-      <View style={styles.actions}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={explore}
-          style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryPressed]}
-        >
-          <Text style={styles.primaryLabel}>{hero.primaryAction}</Text>
-          <Text style={styles.primaryArrow}>↗</Text>
-        </Pressable>
-        <ExternalLink href={links.github} label={hero.secondaryAction} />
-      </View>
-      <View style={styles.standards}>
-        {standards.map((standard) => (
-          <ExternalLink
-            href={standard.href}
-            label={`${standard.label} ${standard.detail}`}
-            key={standard.label}
-          >
-            <View style={styles.standard}>
-              <Text style={styles.standardTitle}>{standard.label}</Text>
-              <Text style={styles.standardDetail}>/ {standard.detail}</Text>
-            </View>
-          </ExternalLink>
-        ))}
-      </View>
-    </View>
-  );
-}
+type Scene = "opening" | "origin" | "protocols" | "connect";
 
-function Protocols(): ReactElement {
-  return (
-    <View style={styles.page} testID="screen-protocols">
-      <Text accessibilityRole="header" style={styles.title}>
-        {protocolIntro.titleLines.join("\n")}
-      </Text>
-      <Text style={styles.copy}>{protocolIntro.description}</Text>
-      <View style={styles.ecosystem}>
-        <ExternalLink href={links.products} label={protocolIntro.action} />
-      </View>
-      <View style={styles.protocols}>
-        {primitives.map((primitive) => (
-          <ExternalLink
-            href={primitive.href}
-            label={`${primitive.title}, ${primitive.standard}`}
-            key={primitive.number}
-          >
-            <View style={styles.protocolCard}>
-              <View style={styles.cardMeta}>
-                <Text style={styles.number}>{primitive.number}</Text>
-                <Text style={styles.badge}>{primitive.standard}</Text>
-                <Text style={styles.cardArrow}>↗</Text>
-              </View>
-              <Text style={styles.cardTitle}>{primitive.title}</Text>
-              <Text style={styles.cardCopy}>{primitive.description}</Text>
-            </View>
-          </ExternalLink>
-        ))}
-      </View>
-    </View>
-  );
-}
+function MobileNarrative(): ReactElement {
+  const dimensions = useWindowDimensions();
+  const [viewport, setViewport] = useState({
+    width: Math.min(dimensions.width, 760),
+    height: dimensions.height,
+  });
+  const [scrollY] = useState(() => new Animated.Value(0));
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const offset = useRef(0);
+  const playback = useRef<MascotPhase>("opening");
+  const [phase, setPhase] = useState<MascotPhase>("opening");
+  const [scene, setScene] = useState<Scene>("opening");
+  const mascotRef = useRef<MascotHandle>(null);
+  const [flowEnd, setFlowEnd] = useState(1);
+  const reducedMotion = useReducedMotion();
+  const screenReader = useScreenReader();
+  const stageHeight = Math.max(1, viewport.height - headerHeight);
+  const flow = viewport.height < 600 || dimensions.fontScale > 1.15 || screenReader;
+  const span = flow ? Math.max(stageHeight, flowEnd) : stageHeight * 3.6;
+  const compact = stageHeight < 650;
+  const size = Math.min(190, viewport.width * 0.44);
+  const viewportKey = `${viewport.width}:${viewport.height}:${dimensions.fontScale}`;
+  const previousViewport = useRef(viewportKey);
 
-function About(): ReactElement {
-  return (
-    <View style={styles.page} testID="screen-about">
-      <Text accessibilityRole="header" style={[styles.title, styles.darkText]}>
-        {aboutIntro.titleLines.join("\n")}
-      </Text>
-      <Text style={[styles.copy, styles.darkCopy]}>{aboutIntro.description}</Text>
-      <View style={styles.ecosystem}>
-        <ExternalLink href={links.website} label={aboutIntro.action} dark />
-      </View>
-      <View style={styles.signature}>
-        <BrandMark size={34} color={palette.darkInk} />
-        <Text style={styles.signatureCopy}>{aboutIntro.signatureLines.join("\n")}</Text>
-      </View>
-      <Text style={styles.destinationHeading}>{aboutIntro.destinationHeading}</Text>
-      {aboutDestinations.map((destination) => (
-        <ExternalLink
-          href={destination.href}
-          label={destination.label}
-          dark
-          key={destination.number}
-        >
-          <View style={styles.destination}>
-            <Text style={styles.destinationNumber}>{destination.number}</Text>
-            <View style={styles.destinationCopy}>
-              <Text style={styles.destinationTitle}>{destination.label}</Text>
-              <Text style={styles.destinationDetail}>{destination.detail}</Text>
-            </View>
-            <Text style={styles.destinationArrow}>↗</Text>
-          </View>
-        </ExternalLink>
-      ))}
-    </View>
-  );
-}
+  function notifyActivity(): void {
+    mascotRef.current?.activity();
+  }
 
-function MobileShell(): ReactElement {
-  const [active, setActive] = useState<SectionId>("overview");
-  const dark = active === "about";
-  const ink = dark ? palette.darkInk : palette.ink;
-  const backgroundColor = dark
-    ? palette.darkSurface
-    : active === "protocols"
-      ? palette.protocolSurface
-      : palette.surface;
+  function home(): void {
+    scrollRef.current?.scrollTo({ y: 0, animated: !reducedMotion });
+  }
 
   useEffect(() => {
     if (Platform.OS !== "android") {
       return undefined;
     }
-    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
-      if (active === "overview") {
+    const listener = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (offset.current <= 1) {
         return false;
       }
-      setActive("overview");
+      scrollRef.current?.scrollTo({ y: 0, animated: !reducedMotion });
       return true;
     });
-    return () => subscription.remove();
-  }, [active]);
+    return () => listener.remove();
+  }, [reducedMotion]);
+
+  useEffect(() => {
+    const listener = scrollY.addListener(({ value }) => {
+      const y = Math.max(0, value);
+      offset.current = y;
+      const progress = y / span;
+      const nextPhase = progress >= 0.999 ? "docked" : progress > 0 ? "narrative" : "opening";
+      if (nextPhase !== playback.current) {
+        playback.current = nextPhase;
+        setPhase(nextPhase);
+      }
+      const nextScene =
+        progress < 0.16
+          ? "opening"
+          : progress < 0.49
+            ? "origin"
+            : progress < 0.82
+              ? "protocols"
+              : "connect";
+      setScene((previous) => (previous === nextScene ? previous : nextScene));
+    });
+    return () => scrollY.removeListener(listener);
+  }, [scrollY, span]);
+
+  useEffect(() => {
+    if (previousViewport.current !== viewportKey) {
+      previousViewport.current = viewportKey;
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      scrollY.setValue(0);
+    }
+  }, [viewportKey, scrollY]);
+
+  const bounded = { extrapolate: "clamp" as const };
+  const openingOpacity = scrollY.interpolate({
+    inputRange: [0, span * 0.12],
+    outputRange: [1, 0],
+    ...bounded,
+  });
+  const originOpacity = scrollY.interpolate({
+    inputRange: [span * 0.12, span * 0.22, span * 0.4, span * 0.5],
+    outputRange: [0, 1, 1, 0],
+    ...bounded,
+  });
+  const protocolOpacity = scrollY.interpolate({
+    inputRange: [span * 0.46, span * 0.56, span * 0.72, span * 0.82],
+    outputRange: [0, 1, 1, 0],
+    ...bounded,
+  });
+  const veilOpacity = scrollY.interpolate({
+    inputRange: [span * 0.8, span * 0.98],
+    outputRange: [1, 0],
+    ...bounded,
+  });
+  const mascotOpacity = scrollY.interpolate({
+    inputRange: [0, span * 0.2, span * 0.8, span],
+    outputRange: [1, 0.045, 0.045, 1],
+    ...bounded,
+  });
+  const mascotScale = scrollY.interpolate({
+    inputRange: [0, span * 0.2, span * 0.8, span],
+    outputRange: [1, 0.8, 0.8, dockSize / size],
+    ...bounded,
+  });
+  const mascotX = scrollY.interpolate({
+    inputRange: [0, span * 0.8, span],
+    outputRange: [
+      viewport.width / 2 - size / 2,
+      viewport.width / 2 - size / 2,
+      20 + dockSize / 2 - size / 2,
+    ],
+    ...bounded,
+  });
+  const mascotY = scrollY.interpolate({
+    inputRange: [0, span * 0.8, span],
+    outputRange: [
+      headerHeight + stageHeight / 2 - size / 2,
+      headerHeight + stageHeight / 2 - size / 2,
+      headerHeight / 2 - size / 2,
+    ],
+    ...bounded,
+  });
+  const mascotTransform = reducedMotion
+    ? [
+        {
+          translateX:
+            phase === "docked" ? 20 + dockSize / 2 - size / 2 : viewport.width / 2 - size / 2,
+        },
+        {
+          translateY:
+            phase === "docked"
+              ? headerHeight / 2 - size / 2
+              : headerHeight + stageHeight / 2 - size / 2,
+        },
+        { scale: phase === "docked" ? dockSize / size : 1 },
+      ]
+    : [{ translateX: mascotX }, { translateY: mascotY }, { scale: mascotScale }];
 
   return (
-    <SafeAreaView style={[styles.shell, { backgroundColor }]}>
-      <StatusBar style={dark ? "light" : "dark"} />
-      <View style={styles.frame}>
+    <SafeAreaView style={styles.safeArea}>
+      {/* oxlint-disable-next-line react/style-prop-object -- Expo StatusBar uses a light/dark enum, not a View style. */}
+      <StatusBar style={statusBarStyle} />
+      <View
+        style={styles.frame}
+        onLayout={(event) => {
+          const { width, height } = event.nativeEvent.layout;
+          setViewport((previous) =>
+            previous.width === width && previous.height === height ? previous : { width, height },
+          );
+        }}
+        onTouchStart={notifyActivity}
+        onTouchMove={notifyActivity}
+        onTouchEnd={notifyActivity}
+        onPointerMove={notifyActivity}
+        testID="mobile-narrative"
+      >
         <View style={styles.header}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="QuantX home"
-            onPress={() => setActive("overview")}
+            onPress={home}
             style={styles.brand}
           >
-            <BrandMark color={ink} />
-            <Text style={[styles.brandName, { color: ink }]}>QuantX</Text>
+            <View style={styles.dock} testID="mobile-mascot-dock" />
+            <Text style={styles.brandName}>QuantX</Text>
           </Pressable>
           <View style={styles.headerLinks}>
-            <ExternalLink href={links.github} label="GitHub" dark={dark} />
-            <ExternalLink href={links.docs} label="Docs" dark={dark} />
+            <ExternalLink href={links.github} label="GitHub" />
+            <ExternalLink href={links.docs} label="Docs" />
           </View>
         </View>
-        <ScrollView
-          key={active}
+
+        <Animated.ScrollView
+          ref={scrollRef}
           style={styles.scroller}
           contentContainerStyle={styles.scrollContent}
-        >
-          {active === "overview" && <Overview explore={() => setActive("protocols")} />}
-          {active === "protocols" && <Protocols />}
-          {active === "about" && <About />}
-          <Text style={[styles.copyright, dark && styles.darkCopy]}>© {copyrightYear} QuantX</Text>
-        </ScrollView>
-        <View style={[styles.tabs, { borderTopColor: dark ? palette.darkLine : palette.line }]}>
-          {sections.map((section) => {
-            const selected = section.id === active;
-            return (
-              <Pressable
-                accessibilityRole="tab"
-                accessibilityState={{ selected }}
-                aria-selected={selected}
-                accessibilityLabel={section.label}
-                key={section.id}
-                onPress={() => setActive(section.id)}
-                style={({ pressed }) => [
-                  styles.tab,
-                  pressed && { backgroundColor: dark ? palette.darkHover : palette.hover },
-                ]}
-              >
-                <View
-                  style={[styles.tabIndicator, { backgroundColor: selected ? ink : "transparent" }]}
-                />
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    { color: selected ? ink : dark ? palette.darkMuted : palette.copy },
-                  ]}
-                >
-                  {section.label}
-                </Text>
-              </Pressable>
-            );
+          scrollEventThrottle={16}
+          testID="mobile-story-scroll"
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+            useNativeDriver: Platform.OS !== "web",
           })}
-        </View>
+          onScrollBeginDrag={notifyActivity}
+          onScrollEndDrag={notifyActivity}
+          onMomentumScrollEnd={notifyActivity}
+        >
+          {flow ? (
+            <View>
+              <View style={[styles.flowOpening, { height: Math.max(stageHeight, 380) }]}>
+                <View style={[styles.openingCaption, { marginTop: size / 2 + 30 }]}>
+                  <Text style={styles.openingCopy}>
+                    Independent agents.{"\n"}Shared possibilities.
+                  </Text>
+                  <Text style={styles.openingHint}>Swipe to discover ↓</Text>
+                </View>
+              </View>
+              <View style={styles.flowSection} testID="mobile-flow-origin">
+                <OriginContent compact />
+              </View>
+              <View style={styles.flowSection} testID="mobile-flow-protocols">
+                <ProtocolContent compact flow />
+              </View>
+            </View>
+          ) : (
+            <View style={{ height: span }} testID="mobile-story-track" />
+          )}
+          <View
+            onLayout={(event) => {
+              if (flow) {
+                setFlowEnd(event.nativeEvent.layout.y);
+              }
+            }}
+          >
+            <ConnectContent />
+          </View>
+        </Animated.ScrollView>
+
+        {!flow && (
+          <>
+            <Animated.View
+              pointerEvents="none"
+              importantForAccessibility="no-hide-descendants"
+              style={[styles.veil, { opacity: veilOpacity }]}
+            />
+            <View pointerEvents="none" style={styles.stage}>
+              <Animated.View
+                style={[styles.scene, { opacity: openingOpacity }]}
+                accessibilityElementsHidden={scene !== "opening"}
+                importantForAccessibility={scene === "opening" ? "auto" : "no-hide-descendants"}
+                aria-hidden={scene !== "opening"}
+                testID="mobile-scene-opening"
+              >
+                <View style={[styles.openingCaption, { marginTop: size / 2 + 30 }]}>
+                  <Text style={styles.openingCopy}>
+                    Independent agents.{"\n"}Shared possibilities.
+                  </Text>
+                  <Text style={styles.openingHint}>Swipe to discover ↓</Text>
+                </View>
+              </Animated.View>
+              <Animated.View
+                style={[styles.scene, { opacity: originOpacity }]}
+                accessibilityElementsHidden={scene !== "origin"}
+                importantForAccessibility={scene === "origin" ? "auto" : "no-hide-descendants"}
+                aria-hidden={scene !== "origin"}
+                testID="mobile-scene-origin"
+              >
+                <OriginContent compact={compact} />
+              </Animated.View>
+              <Animated.View
+                style={[styles.scene, { opacity: protocolOpacity }]}
+                accessibilityElementsHidden={scene !== "protocols"}
+                importantForAccessibility={scene === "protocols" ? "auto" : "no-hide-descendants"}
+                aria-hidden={scene !== "protocols"}
+                testID="mobile-scene-protocols"
+              >
+                <ProtocolContent compact={compact} />
+              </Animated.View>
+            </View>
+          </>
+        )}
+        <Animated.View
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          aria-hidden
+          testID="mobile-mascot"
+          style={[
+            styles.mascot,
+            { width: size, height: size, opacity: mascotOpacity, transform: mascotTransform },
+          ]}
+        >
+          <Mascot ref={mascotRef} size={size} phase={phase} reducedMotion={reducedMotion} />
+        </Animated.View>
       </View>
     </SafeAreaView>
   );
@@ -218,153 +311,66 @@ function MobileShell(): ReactElement {
 export function App(): ReactElement {
   return (
     <SafeAreaProvider>
-      <MobileShell />
+      <MobileNarrative />
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  shell: { flex: 1 },
-  frame: { flex: 1, width: "100%", maxWidth: 760, alignSelf: "center" },
+  safeArea: { flex: 1, backgroundColor: "#fafaf8" },
+  frame: { flex: 1, width: "100%", maxWidth: 760, alignSelf: "center", position: "relative" },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 10,
+    height: headerHeight,
+    paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 16,
+    gap: 12,
+    zIndex: 20,
+    backgroundColor: "#fafaf8",
   },
   brand: { flexDirection: "row", alignItems: "center", gap: 9, minHeight: 44 },
-  brandName: { fontSize: 22, fontWeight: "600", letterSpacing: -0.9 },
-  headerLinks: { flexDirection: "row", gap: 20, alignItems: "center" },
+  dock: { width: dockSize, height: dockSize },
+  brandName: { color: "#1b1d19", fontSize: 22, fontWeight: "600", letterSpacing: -0.9 },
+  headerLinks: { flexDirection: "row", gap: 16, alignItems: "center" },
   scroller: { flex: 1 },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
+  scrollContent: { flexGrow: 1 },
+  veil: {
+    position: "absolute",
+    top: headerHeight,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#fafaf8",
+    zIndex: 4,
   },
-  page: { flexGrow: 1 },
-  heroTitle: {
-    color: palette.ink,
-    fontSize: 36,
-    lineHeight: 43,
-    letterSpacing: -1.6,
-    fontWeight: "400",
-    marginBottom: spacing.lg,
-  },
-  title: {
-    color: palette.ink,
-    fontSize: typeScale.title,
-    lineHeight: 44,
-    letterSpacing: -1.6,
-    fontWeight: "400",
-    marginBottom: spacing.lg,
-  },
-  copy: { color: palette.copy, fontSize: typeScale.body, lineHeight: 27 },
-  actions: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: spacing.md,
-    marginTop: spacing.lg,
-  },
-  primaryButton: {
-    backgroundColor: palette.ink,
-    minHeight: 50,
-    paddingHorizontal: 22,
-    paddingVertical: 14,
-    borderRadius: 28,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 24,
-  },
-  primaryPressed: { backgroundColor: palette.accent },
-  primaryLabel: { color: palette.surface, fontSize: 14, lineHeight: 22, fontWeight: "600" },
-  primaryArrow: { color: palette.surface, fontSize: 21 },
-  standards: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    columnGap: spacing.lg,
-    rowGap: spacing.md,
-    marginTop: spacing.xxl,
-    marginBottom: spacing.lg,
-  },
-  standard: { paddingVertical: 6, gap: 9 },
-  standardTitle: { color: palette.copy, fontSize: 17, letterSpacing: -0.5, fontWeight: "600" },
-  standardDetail: { color: palette.copy, fontSize: typeScale.caption, lineHeight: 18 },
-  ecosystem: { marginTop: spacing.md, alignSelf: "flex-start" },
-  protocols: { marginTop: spacing.lg, gap: spacing.sm, marginBottom: spacing.md },
-  protocolCard: { paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: "#cdd1c7" },
-  cardMeta: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: 18 },
-  number: { color: palette.copy, fontSize: typeScale.caption },
-  badge: {
-    color: palette.badgeInk,
-    backgroundColor: palette.badge,
-    borderRadius: 5,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    fontSize: typeScale.caption,
-    fontWeight: "500",
-  },
-  cardArrow: { marginLeft: "auto", color: palette.accent, fontSize: 22 },
-  cardTitle: {
-    color: palette.ink,
-    fontSize: typeScale.subtitle,
-    lineHeight: 30,
-    letterSpacing: -0.5,
-    marginBottom: 10,
-  },
-  cardCopy: { color: palette.copy, fontSize: 15, lineHeight: 25 },
-  darkText: { color: palette.darkInk },
-  darkCopy: { color: palette.darkCopy },
-  signature: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-    marginTop: spacing.lg,
-    marginBottom: spacing.xxl,
-  },
-  signatureCopy: { color: palette.darkMuted, fontSize: typeScale.label, lineHeight: 22 },
-  destinationHeading: {
-    color: palette.darkMuted,
-    fontSize: 11,
-    lineHeight: 19,
-    letterSpacing: 1,
-    marginBottom: spacing.md,
-  },
-  destination: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-    paddingVertical: 24,
-    borderTopWidth: 1,
-    borderTopColor: palette.darkLine,
-  },
-  destinationNumber: { color: palette.darkMuted, fontSize: typeScale.caption },
-  destinationCopy: { flex: 1, gap: 9 },
-  destinationTitle: { color: palette.darkInk, fontSize: 20, lineHeight: 28, letterSpacing: -0.3 },
-  destinationDetail: { color: palette.darkMuted, fontSize: typeScale.label, lineHeight: 21 },
-  destinationArrow: { color: palette.darkCopy, fontSize: 23 },
-  copyright: { color: palette.copy, fontSize: 11, lineHeight: 18, marginTop: spacing.xxl },
-  tabs: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    paddingTop: 6,
-    paddingBottom: 10,
-    paddingHorizontal: 16,
-    gap: 6,
-  },
-  tab: {
-    flex: 1,
-    alignItems: "center",
+  stage: { position: "absolute", top: headerHeight, left: 0, right: 0, bottom: 0, zIndex: 5 },
+  scene: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
     justifyContent: "center",
-    gap: 8,
-    minHeight: 58,
-    paddingVertical: 10,
-    borderRadius: 6,
+    alignItems: "center",
+    paddingVertical: 22,
   },
-  tabIndicator: { width: 24, height: 2, borderRadius: 1 },
-  tabLabel: { fontSize: 13, lineHeight: 20, fontWeight: "500" },
+  mascot: { position: "absolute", left: 0, top: 0, zIndex: 30 },
+  openingCaption: { position: "absolute", top: "50%", left: 0, right: 0 },
+  openingCopy: {
+    color: "#1b1d19",
+    fontSize: 17,
+    lineHeight: 26,
+    textAlign: "center",
+    letterSpacing: -0.3,
+  },
+  openingHint: {
+    color: "#5d6259",
+    fontSize: 11,
+    lineHeight: 20,
+    textAlign: "center",
+    marginTop: 24,
+  },
+  flowOpening: { justifyContent: "center", alignItems: "center" },
+  flowSection: { paddingVertical: 46 },
 });

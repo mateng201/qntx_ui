@@ -1,5 +1,5 @@
-import contours from "../data/logo-rest.json";
-import type { CatalogFrame } from "../vendor/logo-catalog.js";
+import contours from "./rest.json";
+import type { CatalogFrame } from "./vendor/logo-catalog.js";
 
 type Point = { x: number; y: number };
 

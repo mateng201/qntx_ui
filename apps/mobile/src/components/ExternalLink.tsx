@@ -13,12 +13,10 @@ async function openExternal(href: string): Promise<void> {
 export function ExternalLink({
   href,
   label,
-  dark = false,
   children,
 }: {
   href: string;
   label: string;
-  dark?: boolean;
   children?: ReactNode;
 }): ReactElement {
   return (
@@ -31,11 +29,11 @@ export function ExternalLink({
       }}
       style={({ pressed }) => [
         styles.link,
-        pressed && { backgroundColor: dark ? palette.darkHover : palette.hover },
+        pressed && { backgroundColor: palette.hover, opacity: 0.85 },
       ]}
     >
       {children ?? (
-        <Text style={[styles.label, { color: dark ? palette.darkInk : palette.ink }]}>
+        <Text style={[styles.label, { color: palette.ink }]}>
           {label} <Text accessibilityElementsHidden>↗</Text>
         </Text>
       )}

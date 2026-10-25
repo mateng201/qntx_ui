@@ -1,12 +1,14 @@
 # 桌面首页：吉祥物开场与滚动叙事
 
-日期：2026-10-25。实现位于当前 `mobile` 分支的 `apps/web`，未提交或推送远端。
+日期：2026-10-25。桌面实现位于 `mobile` 分支的 `apps/web`。
+
+后续手机端已更新为原生滚动叙事，见 [手机端开发说明](mobile.md)。桌面和窄屏网页的呈现不变；以下动画数学的实际存放位置现为 `packages/mascot`，两端通过各自的渲染器使用它。
 
 ## 范围与方案判断
 
 采用 Stitch 的叙事方向、浅色主题与 Overview / About 合并思路，但没有直接粘贴示例实现：
 
-- 示例 SVG 是新的眨眼方块，不能替代用户指定的原动画。实际复用 `vendor/logo-catalog.js` 中由第二版 Logo 提取的完整动画目录，保留轮廓、表情与运动几何；使用原 0.86 安全缩放防止倾斜姿态越界，以灰度处理保持黑白气质。
+- 示例 SVG 是新的眨眼方块，不能替代用户指定的原动画。实际复用 `packages/mascot/src/vendor/logo-catalog.js` 中由第二版 Logo 提取的完整动画目录，保留轮廓、表情与运动几何；使用原 0.86 安全缩放防止倾斜姿态越界，以灰度处理保持黑白气质。
 - 示例按整个文档高度计算进度，并用百分比猜导航栏坐标，分段切换还会产生尺寸、透明度跳变。实际按专用滚动轨道计算进度，用连续插值和导航栏占位元素的真实矩形精确归位。
 - 示例在透明度为零时仍允许点击内容。实际非活动场景同时设置 `inert`、`aria-hidden` 与指针禁用，避免隐藏链接抢焦点或点击。
 - 不引入动画库、UI 库或新依赖。React 输出静态结构，浏览器原生滚动提供进度，CSS 与局部 DOM 样式负责呈现。
@@ -27,23 +29,23 @@
 
 开始滚动（进度大于 0）立即进入叙事播放状态，鼠标移动不打断背景动画。到达底部或返回顶部时先恢复静态 Q，并重新开始五秒计时，不继承上一阶段的静止时间。鼠标检测覆盖当前文档，仅用于重置待机计时，不改变吉祥物位置或目光。页面进入后台、切换响应式断点时清理计时与帧循环；重新进入前台时端点重新计时，滚动叙事阶段恢复播放。
 
-静态 Q 与动画之间保留双向 SVG 轮廓插值：进入约 360ms，退出约 320ms，使用平滑缓动。`logo-rest.json` 仅保存从旧版恢复的静态外轮廓与中间留白，插值时对齐闭合路径起点并补偿动画的 0.86 安全缩放，避免轮廓扭转和尺寸跳变。中途反向触发从当前已绘制形状继续过渡；退出完成后恢复原始 Q 路径。减少动态效果、后台暂停与卸载仍立即停止，不留下帧循环。
+静态 Q 与动画之间保留双向 SVG 轮廓插值：进入约 360ms，退出约 320ms，使用平滑缓动。`packages/mascot/src/rest.json` 仅保存从旧版恢复的静态外轮廓与中间留白，插值时对齐闭合路径起点并补偿动画的 0.86 安全缩放，避免轮廓扭转和尺寸跳变。中途反向触发从当前已绘制形状继续过渡；退出完成后恢复原始 Q 路径。减少动态效果、后台暂停与卸载仍立即停止，不留下帧循环。
 
 ## 文件职责
 
-| 文件                                                                       | 职责                                                                        |
-| -------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `apps/web/src/pages/index.astro`                                           | 引入桌面、窄屏的服务器渲染结构和响应式入口                                  |
-| `apps/web/src/components/NarrativeHome.tsx`                                | 精简导航、吉祥物 SVG、组织介绍、纯文字 Protocols、Overview / About 合并版面 |
-| `apps/web/src/scripts/scroll-narrative.ts`                                 | 原生滚动进度、内容淡入淡出、精确归位、焦点和监听器清理                      |
-| `apps/web/src/scripts/mascot-animation.ts`                                 | 原动画绘制、滚动播放、开场 / 归位后五秒静止待机、后台暂停和减少动态效果处理 |
-| `apps/web/src/scripts/mascot-morph.ts`、`apps/web/src/data/logo-rest.json` | 静态轮廓、闭合路径对齐及进入 / 退出动画的连续形变                           |
-| `apps/web/src/scripts/responsive-home.ts`                                  | 只挂载当前断点的控制器，跨断点先释放旧监听器、观察器与帧循环                |
-| `apps/web/src/styles/narrative.css`                                        | ≥761px 的叙事、浅色合并版面与矮屏排版                                       |
-| `apps/web/src/components/MobileWebSite.tsx`                                | 原三屏网页的窄屏专用入口                                                    |
-| `apps/web/src/scripts/mobile-web-navigation.ts`                            | 原导航兼容逻辑，动态导入，仅在 ≤760px 时运行                                |
-| `apps/web/src/styles/mobile-web.css`                                       | 从原级联中保留实际使用的窄屏样式，以媒体条件导入                            |
-| `apps/web/src/scripts/logo-animation.ts`                                   | 独立 `/logo-check/` 的悬停 / 聚焦演示，共用 SVG 绘制器                      |
+| 文件                                                            | 职责                                                                        |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `apps/web/src/pages/index.astro`                                | 引入桌面、窄屏的服务器渲染结构和响应式入口                                  |
+| `apps/web/src/components/NarrativeHome.tsx`                     | 精简导航、吉祥物 SVG、组织介绍、纯文字 Protocols、Overview / About 合并版面 |
+| `apps/web/src/scripts/scroll-narrative.ts`                      | 原生滚动进度、内容淡入淡出、精确归位、焦点和监听器清理                      |
+| `apps/web/src/scripts/mascot-animation.ts`                      | 原动画绘制、滚动播放、开场 / 归位后五秒静止待机、后台暂停和减少动态效果处理 |
+| `packages/mascot/src/morph.ts`、`packages/mascot/src/rest.json` | 静态轮廓、闭合路径对齐及进入 / 退出动画的连续形变                           |
+| `apps/web/src/scripts/responsive-home.ts`                       | 只挂载当前断点的控制器，跨断点先释放旧监听器、观察器与帧循环                |
+| `apps/web/src/styles/narrative.css`                             | ≥761px 的叙事、浅色合并版面与矮屏排版                                       |
+| `apps/web/src/components/MobileWebSite.tsx`                     | 原三屏网页的窄屏专用入口                                                    |
+| `apps/web/src/scripts/mobile-web-navigation.ts`                 | 原导航兼容逻辑，动态导入，仅在 ≤760px 时运行                                |
+| `apps/web/src/styles/mobile-web.css`                            | 从原级联中保留实际使用的窄屏样式，以媒体条件导入                            |
+| `apps/web/src/scripts/logo-animation.ts`                        | 独立 `/logo-check/` 的悬停 / 聚焦演示，共用 SVG 绘制器                      |
 
 ## 删除与保留
 
@@ -51,7 +53,7 @@
 
 原 `HorizontalDeck` 重命名为 `MobileWebSite`，原横向控制器重命名为 `mobile-web-navigation`，不再是桌面入口。旧样式层合并为窄屏专用 CSS，并移除已失去组件引用的 Build / 轨道 / 节点规则。旧桌面横屏测试替换为新叙事验收测试；窄屏和独立 Logo 检查仍保留。
 
-共享内容包和设计 token 没有修改；这些资源仍由两端实际引用。没有变更依赖、锁文件、Expo 或 Nx 架构边界配置。About 的反色规则只存在于保留的窄屏样式中，桌面使用统一浅色。
+共享内容包和设计 token 没有修改；这些资源仍由两端实际引用。后续手机更新只新增本地 `@qntx-ui/mascot` 工作区依赖与锁文件链接，未升级外部依赖或修改 Expo / Nx 边界配置。About 的反色规则只存在于保留的窄屏样式中，桌面使用统一浅色。
 
 ## 验证方式
 
@@ -67,13 +69,13 @@ npm run build
 
 验证覆盖进入时静态 Q、滚动即播放、端点静止五秒播放与鼠标重置计时、实际滚轮正反切换五轮、纯文字功能模块、多个桌面尺寸的完整可见与 Logo 精确归位、外链 hover、原生键盘滚动、跨断点反复挂载 / 清理、减少动态效果、无 JavaScript 的纵向阅读与窄屏原交互。
 
-开发时分别保存了 390×844 下 Overview / Protocols / About 的修改前后截图，三组 PNG 逐像素一致。截图位于忽略上传的 `artifacts/narrative-20261025/`；原生手机源码保持无变更。系统启用“减少动态效果”时，吉祥物保持完整静态标识，内容仍可按滚动浏览。
+桌面重构时分别保存了 390×844 下 Overview / Protocols / About 的修改前后截图，三组 PNG 逐像素一致。截图位于忽略上传的 `artifacts/narrative-20261025/`；后续手机更新继续保留这套窄屏网页。系统启用“减少动态效果”时，吉祥物保持完整静态标识，内容仍可按滚动浏览。
 
 ### 本次验证结果
 
 - `npm run dev` 正常启动；首页与 `/logo-check/` 可访问。
-- Astro 检查：29 个文件，0 error / warning / hint；Oxlint 无 error。
-- 四个 Nx 项目的依赖边界检查通过；原生手机目录、共享包、依赖和锁文件没有变更。
+- 动画数学移入共享包后，Astro 检查为 26 个文件，0 error / warning / hint；Oxlint 无 error。
+- 五个 Nx 项目的类型与依赖边界检查通过；共享动画没有引入跨端组件依赖。
 - Chrome 回归覆盖 5 项独立 Logo 检查与 15 项叙事 / 窄屏检查。包括静止五秒的真实计时、双向轮廓形变的中间帧与反向打断，以及归位中间帧采样，确保不是瞬移。
 - 桌面布局检查覆盖 1440×900、1280×600、1024×600、761×600；窄屏导航检查覆盖 390px 和 760px。
 - Web 静态构建通过，生成首页与独立 Logo 页；本次变更文件的 Oxfmt / Astro Prettier 格式检查通过。

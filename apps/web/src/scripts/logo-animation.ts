@@ -1,4 +1,5 @@
-import { createCatalogAnimation } from "../vendor/logo-catalog.js";
+import { createCatalogAnimation } from "@qntx-ui/mascot";
+
 import { createMascotPainter } from "./mascot-animation";
 
 /** Hover/focus demonstration only. Homepage autoplay has its own pointer-free lifecycle. */
