@@ -1,0 +1,7 @@
+{
+  "name": "qntx-ui",
+  "compatibility_date": "2026-10-26",
+  "assets": {
+    "directory": "./apps/web/dist"
+  }
+}
