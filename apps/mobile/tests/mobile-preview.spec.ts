@@ -15,6 +15,11 @@ async function progress(page: Page, amount: number): Promise<void> {
 test("mobile starts with a centered static Q, light header, and no old tabs", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      errors.push(message.text());
+    }
+  });
   await page.goto("/");
   await expect(page.getByTestId("mobile-narrative")).toBeVisible();
   await expect(page.getByRole("tab")).toHaveCount(0);

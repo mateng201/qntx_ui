@@ -10,6 +10,15 @@ import type { MascotHandle, MascotPhase, Playback } from "../animation/playback"
 
 export type { MascotHandle } from "../animation/playback";
 
+// Web SVG forwards native-only accessibility props to the DOM unchanged.
+const accessibilityProps =
+  Platform.OS === "web"
+    ? { "aria-hidden": true }
+    : {
+        accessibilityElementsHidden: true,
+        importantForAccessibility: "no-hide-descendants" as const,
+      };
+
 /** Native SVG renderer; frame updates never rerender the surrounding page. */
 export function Mascot({
   ref,
@@ -74,13 +83,7 @@ export function Mascot({
   }, [phase, reducedMotion, foreground]);
 
   return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="-150 -150 300 300"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
+    <Svg width={size} height={size} viewBox="-150 -150 300 300" {...accessibilityProps}>
       <Path
         ref={body}
         d={drawing.body}

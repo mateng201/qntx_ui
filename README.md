@@ -1,54 +1,326 @@
-# QuantX UI
+# QuantX UI 工程说明
 
-Astro Web 与 Expo + React Native 手机端共用一个 Git 仓库，由 Nx 和 npm workspaces 管理。`mobile` 分支的更新已合并至 `main`，包括 Nx 工作区、桌面滚动叙事、原生手机端及动画性能优化；迁移前的三屏 Web 保留在 Git 历史提交 `97e3dcb`。
+本仓库通过 npm workspaces 和 Nx 管理 Astro Web、Expo / React Native Mobile，以及三个平台无关的共享库。本文说明工程入口、文件职责、依赖边界和维护方式；历史验收记录位于 `review/`。
 
-## 启动
+## 1. 安装、运行与构建
+
+所有命令都在仓库根目录执行，项目使用一个 `package-lock.json`。
 
 ```powershell
 cd E:\bigshoot\qntx.ui
-npm ci					  # 按照 package-lock.json 锁定的版本，重新安装全部依赖
-npm run dev               # Astro Web：http://127.0.0.1:4321/
-npm run dev:mobile        # Expo / Metro，在终端显示手机连接二维码及快捷键
-npm run dev:mobile:web    # 手机组件的浏览器预览：http://localhost:8082/
+npm ci
 ```
 
-三个命令分别在终端中运行。依赖已经安装时可直接启动。浏览器预览使用同一套 React Native 组件，通过 React Native Web 渲染；它用于快速检查排版和交互，不能替代 Android / iOS 真机验收。
+`npm ci` 按锁文件重新安装依赖，适用于首次克隆、CI 和严格复现。依赖已安装且锁文件未变化时，可以直接启动；增加或更新依赖时使用 npm 更新清单与锁文件。
 
-根目录 `npm run dev`、`npm run build` 和 `npm run preview` 仍对应 Web。`dev:mobile` 直接启动 Mobile 工作区的 Expo，保留终端交互，以显示二维码和快捷键；构建、检查和依赖边界仍由 Nx 管理。手机调试、设备条件与安装包说明见 [手机端开发说明](docs/mobile.md)。
+| 命令                              | 实际入口与用途                                                                     |
+| --------------------------------- | ---------------------------------------------------------------------------------- |
+| `npm run dev` / `npm run dev:web` | Nx `web:dev` → Astro 开发服务，默认 `http://127.0.0.1:4321/`。                     |
+| `npm run dev:mobile`              | 直接启动 Mobile 工作区的 `expo start`，用于 Expo Go / 原生客户端连接。             |
+| `npm run dev:mobile:web`          | Nx `mobile:preview` → Expo Web，地址 `http://localhost:8082/`。                    |
+| `npm run build`                   | Nx `web:build` → Astro 静态构建，输出 `apps/web/dist/`。                           |
+| `npm run preview`                 | 预览 Web 构建产物，需先执行 `npm run build`。                                      |
+| `npm run build:mobile`            | Nx `mobile:export` → 导出 Android / iOS Hermes 与 Web 资源到 `apps/mobile/dist/`。 |
 
-## 目录与边界
+三个开发入口分别在独立终端运行。Astro 网站与 Expo Web 是两个应用，使用不同的运行时和组件树；Expo Web 用于辅助验证 Mobile 代码，不能替代原生真机测试。
 
-```text
-apps/
-  web/                  Astro、React HTML 组件、CSS、浏览器脚本与 Web 测试
-  mobile/               Expo、React Native 组件、StyleSheet 与手机预览测试
-packages/
-  content/              文案、组织链接、协议数据、导航数据、类型、静态 Logo 路径
-  design-tokens/        颜色、间距和字号数值
-  mascot/               动画目录、SVG 轮廓、路径插值与绘制数学；不含任何平台组件
-tools/                 边界规则的实际违规探针与动画回归测试
+### Mobile 调试条件
+
+- 手机须能访问电脑的 Metro 服务，通常连接同一局域网；Expo Go 需支持项目锁定的 SDK。
+- `dev:mobile` 有意直接进入 Expo，保留交互式终端的二维码和快捷键。Nx 的 Windows `stream` 转发可能让 Expo 判定为非交互式终端；构建、检查和边界任务仍由 Nx 管理。
+- 本地 Android 原生编译需要 Android SDK / ADB；本地 iOS 原生编译与模拟器需要 macOS / Xcode。
+- `build:mobile` 生成 JS / Hermes 资源，不生成 APK、AAB 或 IPA。原生安装包、签名与发布需要另行配置。
+
+```powershell
+# 自定义 Metro 端口
+npm run dev:mobile -- --port 8091
+
+# 停止旧服务后清理 Metro 缓存，适用于切换工程结构后的解析异常
+npm run dev:mobile -- --clear
+
+# 使用生产模式 JS 比较性能；仍不同于 release 原生安装包
+npm run dev:mobile -- --no-dev --minify
 ```
 
-桌面 Web（宽度 ≥761px）采用“吉祥物开场 → 组织介绍 → Protocols 功能 → 合并介绍与资源入口”的原地滚动叙事。进入时吉祥物显示静态 Q，开始滚动后播放原 SVG 动画并退为背景；滑到底归位到 QuantX 字样前时恢复静态 Q。开场与归位后，鼠标静止 5 秒才播放动画，移动即恢复静态；滚动叙事期间不受鼠标移动影响。桌面已移除顶部页面切换、底部导航、反色主题与横向切屏。详细结构、清理范围与验证方法见 [桌面首页重构说明](docs/desktop-narrative.md)。
+### 锁定的主要版本
 
-窄屏 Web（≤760px）按需求保留 Overview / Protocols / About 三个横向 Scroll Snap 面板；它的样式和控制器已独立隔离，桌面不加载该控制器。`/logo-check/` 继续用于独立 Logo 回归检查。本轮用户确认只更新 Expo / React Native 应用，手机浏览器网站保持原版。
+| 范围            | 版本                                                                                              |
+| --------------- | ------------------------------------------------------------------------------------------------- |
+| 项目 Node / npm | `node` 包 `24.22.0`；`packageManager` 声明 `npm@10.9.2`。                                         |
+| 工作区工具      | Nx `24.0.0`，TypeScript `6.0.3`。                                                                 |
+| Web             | Astro `7.4.0`，`@astrojs/react` `7.1.0`，Tailwind `4.3.3`。                                       |
+| 两端 React      | React / React DOM `19.3.0`；根 `overrides` 保持版本一致。                                         |
+| Mobile          | Expo `58.0.17`，React Native `0.88.0`，React Native Web `~0.21.4`，`react-native-svg` `15.16.0`。 |
 
-React Native Mobile 现已跟进吉祥物开场与触摸滚动叙事：进入显示静态 Q，滑动后播放并退为背景，收尾归位后恢复静态；开场与归位后停止操作五秒播放待机动画，触摸或鼠标移动会平滑收回 Q。组织介绍与 Protocols 在原地切换，最后的合并介绍与资源入口单栏纵向阅读。移除了底部标签、深色 About 和协议功能卡片的跳转，保留安全区域与 Android 返回顶部处理。详情见 [手机端开发说明](docs/mobile.md)。
+准确安装结果以根锁文件为准；版本提示不等于运行错误，不应因单条提示混装不同 SDK 的依赖。
 
-真机性能优化保留原动画精度与触发规则：轮廓采样和绘制一起限频、缓存模型点、消除中间 SVG 解析，并直接更新原生路径。Expo Go 默认开发模式会增加运行开销，可用 `npm run dev:mobile -- --no-dev --minify` 对比生产模式 JS；这仍不等同 release 安装包。测量范围与真机复测方法见 [真机卡顿排查与优化](docs/mobile.md#真机卡顿排查与优化2026-10-25)。
+## 2. 根目录文件
 
-| 项目                       | Nx 标签                       | 允许依赖                        |
-| -------------------------- | ----------------------------- | ------------------------------- |
-| `web`                      | `platform:web`、`type:app`    | Web 内部代码及共享库            |
-| `mobile`                   | `platform:mobile`、`type:app` | Mobile 内部代码及共享库         |
-| `content`、`design-tokens` | `platform:shared`、`type:lib` | 纯 TypeScript 共享库            |
-| `mascot`                   | `platform:shared`、`type:lib` | 共享 content 与平台无关动画数学 |
+应用代码位于 `apps/`，共享源码位于 `packages/`。根目录承担依赖安装、任务入口和统一规则。
 
-`eslint.config.mjs` 仅负责架构边界：Nx 的 `@nx/enforce-module-boundaries` 禁止跨端导入、共享包反向依赖应用，以及引入另一端的框架。Astro 解析器覆盖 `.astro` 的前置脚本导入。共享包也禁止浏览器全局对象，并通过没有 DOM / Node 全局类型的独立配置检查。
+| 文件                                             | 职责                                                                                                 |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| [package.json](package.json)                     | 声明 `apps/*` / `packages/*` 工作区、根命令、公共开发依赖、React 版本覆盖和包管理器版本。            |
+| [package-lock.json](package-lock.json)           | 锁定第三方版本及本地 workspace 链接；两个应用不单独维护锁文件。                                      |
+| [nx.json](nx.json)                               | 设置 `main` 比较基线、任务输入、公共配置依赖及构建 / 导出 / 检查缓存；当前关闭 daemon 和交互式 TUI。 |
+| [eslint.config.mjs](eslint.config.mjs)           | 加载 Nx 依赖边界规则；为 `.astro` 配置专用解析器；限制共享库使用浏览器全局和框架依赖。               |
+| [oxlint.config.ts](oxlint.config.ts)             | 导入 qntx React 预设并合并忽略范围、CSS / Metro 初始化导入规则。                                     |
+| [oxfmt.config.ts](oxfmt.config.ts)               | 导入 qntx 格式预设，排除 `.astro`、锁文件、缓存、测试输出及原生产物。                                |
+| [.prettierrc.json](.prettierrc.json)             | 加载 `prettier-plugin-astro`，负责 `.astro` 模板格式化。                                             |
+| [tsconfig.base.json](tsconfig.base.json)         | 继承 qntx `strictest`，提供公共目标、模块解析、JSON 导入等设置，供各项目补充环境。                   |
+| [tsconfig.json](tsconfig.json)                   | 检查根目录配置与纳入范围的工具脚本；不作为 Web / Mobile 的统一运行环境。                             |
+| [wrangler.jsonc](wrangler.jsonc)                 | 声明 Cloudflare Worker 名称、兼容日期和 `./apps/web/dist` 静态资源目录。                             |
+| [.npmrc](.npmrc)                                 | 项目 npm 源、重试和审计输出设置。                                                                    |
+| [.gitignore](.gitignore)                         | 排除依赖、缓存、构建结果、测试输出、环境变量和本地备份等生成资料。                                   |
+| [qntx-ui.code-workspace](qntx-ui.code-workspace) | 以当前目录打开 VS Code 工作区。                                                                      |
+| [ollama_index.png](ollama_index.png)             | 原始设计参考图，不参与应用构建。                                                                     |
+| [README.md](README.md)                           | 当前工程的统一维护说明。                                                                             |
 
-共享包以 `@qntx-ui/content`、`@qntx-ui/design-tokens`、`@qntx-ui/mascot` 的公开入口导入，不能使用跨项目相对路径绕过边界。网页用原生 SVG，手机用 `react-native-svg`；动画目录和轮廓插值只有一份，两端的事件、布局和绘制生命周期独立。没有新增第三方 UI 或动画库。`tools/test-boundaries.mjs` 会临时创建并清理真实违规文件，验证六种错误依赖 / 全局访问被拒绝，以及合法共享导入能通过。
+### `.vscode/`
 
-Nx 项目图中 Mobile 与 Web 分别依赖共享包，不互相引用。修改 `apps/mobile/src/App.tsx` 只影响 `mobile`；修改 `mascot` 会影响 `mascot`、`mobile` 和 `web`；修改 content 还会影响依赖它的 mascot。锁文件和公共配置改变可能影响所有项目。
+| 文件                                               | 职责                                                                                                         |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| [.vscode/settings.json](.vscode/settings.json)     | 保存时格式化、Oxc 使用的项目 Node、TypeScript SDK 与 Tailwind 入口；项目迁移路径后需要核对 `oxc.path.node`。 |
+| [.vscode/extensions.json](.vscode/extensions.json) | 推荐编辑器扩展，不参与生产构建。                                                                             |
+
+`oxc.path.node` 解决 Oxc 加载 `.ts` 配置的运行时问题；`js/ts.tsdk.path` 选择编辑器的 TypeScript 语言服务，两者用途不同。项目内 Node 不会直接替换系统 Node。
+
+## 3. `apps/web/`
+
+### 3.1 配置文件
+
+| 文件                                                           | 职责                                                                                               |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| [apps/web/package.json](apps/web/package.json)                 | 声明 Astro / React / Tailwind 与共享库依赖，提供该应用的 `dev`、`build`、`preview`、`check` 命令。 |
+| [apps/web/project.json](apps/web/project.json)                 | 注册 Nx `web` 项目、标签、构建输出及开发 / 检查 / 测试目标；通过 `nx:run-commands` 调用 Astro。    |
+| [apps/web/astro.config.mjs](apps/web/astro.config.mjs)         | 接入 React 集成和 Tailwind Vite 插件，设置站点地址，沿用 Astro 静态输出。                          |
+| [apps/web/tsconfig.json](apps/web/tsconfig.json)               | 在公共配置后继承 Astro 严格配置，补齐 React JSX、Astro / Node 类型及生成文件范围。                 |
+| [apps/web/playwright.config.ts](apps/web/playwright.config.ts) | Web 浏览器测试目录、Chrome 通道、视口、4321 服务与失败时截图 / trace。                             |
+
+### 3.2 `src/pages/`
+
+Astro 根据此目录中的文件生成 URL。它们共用一个开发服务，无需分别启动。
+
+| 文件                                                                       | 职责                                                                                                   |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| [apps/web/src/pages/index.astro](apps/web/src/pages/index.astro)           | `/` 路由：导入两套 Web 组件结构和全局样式，将共享颜色映射为 CSS 变量，挂载响应式控制器并注册销毁回调。 |
+| [apps/web/src/pages/logo-check.astro](apps/web/src/pages/logo-check.astro) | `/logo-check/` 路由：挂载多个独立 Logo 实例及对照图片，供组件隔离检查与自动测试使用。                  |
+
+页面中的 React 组件由 Astro 在构建时输出 HTML / SVG；当前没有通过 `client:*` 指令进行 React 客户端水合。浏览器交互由下面的 TypeScript 控制器接管。
+
+### 3.3 `src/components/`
+
+| 文件                                                                                   | 职责与使用位置                                                                                          |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| [apps/web/src/components/NarrativeHome.tsx](apps/web/src/components/NarrativeHome.tsx) | 桌面结构入口；输出控制器需要的轨道、场景、SVG 路径及测量槽位，通过 `data-*` 与脚本解耦。                |
+| [apps/web/src/components/MobileWebSite.tsx](apps/web/src/components/MobileWebSite.tsx) | 窄屏 Web 结构入口；组合原有面板组件、导航与无障碍播报节点，不是 React Native 入口。                     |
+| [apps/web/src/components/SiteHeader.tsx](apps/web/src/components/SiteHeader.tsx)       | 窄屏网页的导航结构；读取共享链接和 section 数据，输出导航控制器识别的标记。                             |
+| [apps/web/src/components/SiteFooter.tsx](apps/web/src/components/SiteFooter.tsx)       | 窄屏网页的位置、前后导航及返回入口；只输出结构，由控制器同步状态。                                      |
+| [apps/web/src/components/HomeIntro.tsx](apps/web/src/components/HomeIntro.tsx)         | 将共享 `hero`、`standards` 与链接转换为窄屏页面的静态 React 标记。                                      |
+| [apps/web/src/components/ProtocolPanel.tsx](apps/web/src/components/ProtocolPanel.tsx) | 将共享 `primitives` 转换为窄屏网页的列表与外链，维护稳定的列表标识。                                    |
+| [apps/web/src/components/AboutPanel.tsx](apps/web/src/components/AboutPanel.tsx)       | 将共享 `aboutIntro` / `aboutDestinations` 组合为窄屏网页片段。                                          |
+| [apps/web/src/components/BrandMark.tsx](apps/web/src/components/BrandMark.tsx)         | React HTML SVG 包装；读取共享静态路径，供窄屏网页组件复用。                                             |
+| [apps/web/src/components/Icon.tsx](apps/web/src/components/Icon.tsx)                   | Web SVG 图标集合，统一箭头与 GitHub 图标的结构、尺寸入口和无障碍处理。                                  |
+| [apps/web/src/components/Logo.astro](apps/web/src/components/Logo.astro)               | 可独立复用的 Astro Logo；接收链接、标签、尺寸和 class，内部注册专用动画控制器，当前由隔离检查路由引用。 |
+
+### 3.4 `src/data/` 与环境声明
+
+| 文件                                                   | 职责                                                                                                        |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| [apps/web/src/data/site.ts](apps/web/src/data/site.ts) | 从 `@qntx-ui/content` 转出 `links`、`primitives`、`sections`，兼容原 Web 组件的导入路径，不再维护重复数据。 |
+| [apps/web/src/data/logo.ts](apps/web/src/data/logo.ts) | 将共享 `brandMarkPath` 以 `logoPath` 名称转出，供 Astro Logo 使用。                                         |
+| [apps/web/src/env.d.ts](apps/web/src/env.d.ts)         | 声明 Astro 客户端类型环境。                                                                                 |
+
+### 3.5 `src/scripts/`
+
+#### `responsive-home.ts`
+
+[源码](apps/web/src/scripts/responsive-home.ts)。入口为 `initializeResponsiveHome(): () => void`，由首页调用。它以 `761px` 为桌面边界，动态导入 `scroll-narrative` 或 `mobile-web-navigation`，同一时刻只挂载一个首页控制器。
+
+切换断点前先执行旧控制器的清理函数；异步导入使用递增 `revision` 和 `stopped` 标记，防止迟到的导入重新挂载旧控制器。返回函数移除媒体查询监听并销毁当前实例。
+
+#### `scroll-narrative.ts`
+
+[源码](apps/web/src/scripts/scroll-narrative.ts)。入口为 `initializeScrollNarrative(root): () => void`。它读取轨道、SVG 容器、目标槽位和场景节点；将原生文档滚动换算为归一化进度，并通过连续插值更新 DOM 样式。
+
+目标位置来自 `getBoundingClientRect()`，而不是固定百分比。滚动事件通过单个 `requestAnimationFrame` 合并；`ResizeObserver` 负责重新测量。活动场景同时更新 `inert`、`aria-hidden` 和指针状态，避免不可见区域接收操作。该控制器不拦截桌面 wheel / touch 输入。
+
+销毁时中止事件监听、断开 observer、取消帧任务、销毁动画控制器，并移除增强产生的属性与内联样式。
+
+#### `mobile-web-navigation.ts`
+
+[源码](apps/web/src/scripts/mobile-web-navigation.ts)。入口为 `initializeMobileWebNavigation(): () => void`，仅在窄屏 Web 分支加载。它将滚轮、方向键、Home / End、锚点及前后按钮映射到同一组 Scroll Snap 节点，按 `scrollLeft / clientWidth` 计算活动索引。
+
+它负责 URL hash、导航 `aria-current`、按钮禁用状态和播报节点的同步；对输入框保留键盘行为。面板确有纵向溢出时优先允许内部阅读，再处理横向导航。事件集中使用 `AbortController`，尺寸监听和 RAF 在销毁时一起清理。
+
+#### `mascot-animation.ts`
+
+[源码](apps/web/src/scripts/mascot-animation.ts)。包含两个接口：`createMascotPainter()` 将共享几何写入三个 SVG path；`initializeMascotAnimation()` 管理 Web 的播放状态、输入计时、过渡与生命周期。
+
+控制器接收 `setPhase()`，使用共享引擎和轮廓插值生成帧，通过 SVG 属性更新绘制，不依赖 React 重渲染。文档可见性与媒体偏好决定暂停条件；`dispose()` 负责取消 RAF、计时器及事件监听并复位绘制。此文件拥有浏览器 API，不能放入共享库。
+
+#### `logo-animation.ts`
+
+[源码](apps/web/src/scripts/logo-animation.ts)。入口为 `initializeLogoAnimations(): () => void`，由 `Logo.astro` 使用。它为每个匹配的 SVG 创建独立实例，管理悬停、键盘焦点、离屏与文档可见性，复用 `createMascotPainter()` 进行路径绘制。
+
+每个实例分别持有 RAF、引擎及 `IntersectionObserver`，统一返回清理函数。它服务于独立组件检查，与首页的播放控制器分别维护生命周期。
+
+### 3.6 `src/styles/`
+
+| 文件                                                                     | 职责                                                                                               |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| [apps/web/src/styles/global.css](apps/web/src/styles/global.css)         | Tailwind 入口、基础元素规则、字体和全局变量；以媒体条件导入窄屏 CSS。                              |
+| [apps/web/src/styles/narrative.css](apps/web/src/styles/narrative.css)   | 桌面结构的定位和响应式规则；区分默认文档布局与脚本增强后的 sticky 布局，处理减少动态效果等分支。   |
+| [apps/web/src/styles/mobile-web.css](apps/web/src/styles/mobile-web.css) | 窄屏 Web 的完整样式集合，包含导航、Scroll Snap、组件布局和高度适配；由 `global.css` 限定导入范围。 |
+
+### 3.7 `public/`
+
+| 文件                                                                           | 职责                                                                     |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| [apps/web/public/favicon.svg](apps/web/public/favicon.svg)                     | 以 `/favicon.svg` 提供的站点图标。                                       |
+| [apps/web/public/logo-check/before.png](apps/web/public/logo-check/before.png) | 独立检查路由实际引用的对照图片，属于测试夹具，不是可随意删除的截图缓存。 |
+
+### 3.8 `tests/`
+
+| 文件                                                                           | 检查范围                                                             |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| [apps/web/tests/logo-candidate.spec.ts](apps/web/tests/logo-candidate.spec.ts) | 独立 SVG 实例、键盘焦点、减少动态效果、离屏暂停和运行错误。          |
+| [apps/web/tests/narrative.spec.ts](apps/web/tests/narrative.spec.ts)           | 桌面滚动控制、轮廓插值、定位测量、响应式重挂载、无脚本与无障碍分支。 |
+| [apps/web/tests/narrow-web.spec.ts](apps/web/tests/narrow-web.spec.ts)         | 窄屏控制器、节点数量、导航与既有行为的保留。                         |
+
+## 4. `apps/mobile/`
+
+### 4.1 配置与注册入口
+
+| 文件                                                                 | 职责                                                                                             |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| [apps/mobile/package.json](apps/mobile/package.json)                 | 声明 Expo、React Native、React Native Web、SVG、安全区域及共享库依赖；`main` 指向 `index.ts`。   |
+| [apps/mobile/project.json](apps/mobile/project.json)                 | 注册 Nx `mobile` 项目，定义启动、辅助预览、导出、类型检查、边界、doctor 与两类测试目标。         |
+| [apps/mobile/app.json](apps/mobile/app.json)                         | Expo 应用名、slug、scheme、平台标识、方向和 Web 输出配置；当前原生应用标识为 `org.qntx.mobile`。 |
+| [apps/mobile/metro.config.mjs](apps/mobile/metro.config.mjs)         | 使用 Expo 默认工作区解析，只额外设置 `maxWorkers = 2`；没有手写 React 别名或跨目录复制方案。     |
+| [apps/mobile/tsconfig.json](apps/mobile/tsconfig.json)               | 叠加公共严格设置与 Expo 环境，包含 React / React Native / Node 类型；应用检查不包含 `tests/`。   |
+| [apps/mobile/playwright.config.ts](apps/mobile/playwright.config.ts) | Expo Web 的 Chrome 辅助测试、390×844 默认视口、8082 服务和失败证据输出。                         |
+| [apps/mobile/index.ts](apps/mobile/index.ts)                         | 初始化 Metro Web runtime，通过 Expo `registerRootComponent(App)` 注册 React 根组件。             |
+
+### 4.2 `src/App.tsx`
+
+[源码](apps/mobile/src/App.tsx)。这是原生应用的组合与坐标控制层：创建安全区域容器，维护视口测量、ScrollView 引用、滚动值与离散场景状态，组合其他原生组件。
+
+`Animated.ScrollView` 通过稳定的 `Animated.event` 更新 `Animated.Value`。Android/iOS 的位移、缩放和透明度使用 native driver，浏览器辅助预览使用 Web 可用的实现。JS 监听只在阶段变化时通知 React；实际尺寸改变时重新测量并重置滚动位置。
+
+Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交还系统。触摸和指针活动通过 `MascotHandle.activity()` 传给局部控制器，不为每个移动事件更新整页状态。
+
+### 4.3 `src/components/`
+
+| 文件                                                                                               | 职责                                                                                                                                         |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| [apps/mobile/src/components/NarrativeContent.tsx](apps/mobile/src/components/NarrativeContent.tsx) | 导出 `OriginContent`、`ProtocolContent`、`ConnectContent`；用 `View` / `Text` 及各自 StyleSheet 组织共享数据，接受紧凑布局参数，不读取 DOM。 |
+| [apps/mobile/src/components/ExternalLink.tsx](apps/mobile/src/components/ExternalLink.tsx)         | 用 `Pressable`、原生 `Linking.openURL` 和 `Alert` 封装外链；提供链接语义、触摸尺寸、按下态及共享颜色。                                       |
+| [apps/mobile/src/components/Mascot.tsx](apps/mobile/src/components/Mascot.tsx)                     | 将绘制与应用组件树分开；连接播放控制器、SVG 引用和 `AppState`，对外提供活动通知句柄。                                                        |
+
+`Mascot.tsx` 在 Android/iOS 通过 `setNativeProps` 只更新变化的路径，避免每帧 React 协调；Expo Web 使用局部 React state 更新 SVG。Web 传递 `aria-hidden`，原生平台传递各自的无障碍属性，避免原生属性泄漏到 SVG DOM。
+
+### 4.4 `src/animation/playback.ts`
+
+[源码](apps/mobile/src/animation/playback.ts)。导出 `createPlayback()`、`MascotPhase`、`MascotHandle` 和 `Playback`，负责采样、形变、待机截止时间、前后台与减少动态效果的协调。
+
+应用只提供阶段和活动信号，绘制函数通过 `onPaint(paths)` 接收结果。控制器先判断是否达到约 30fps 的预算，再执行完整轮廓计算；Mobile 启用共享引擎的 `directGeometry` 分支。计时器采用截止时间重排，连续输入不反复创建定时器，也不重复重启尚未完成的退出过渡。`dispose()` 释放 RAF 和计时器。
+
+该文件依赖 Mobile 的调度环境，但不导入 React / DOM，便于用 Node 假时钟单独测试。
+
+### 4.5 `src/hooks/useReducedMotion.ts`
+
+[源码](apps/mobile/src/hooks/useReducedMotion.ts)。提供 `useReducedMotion()` 和 `useScreenReader()`，封装系统偏好读取、订阅、卸载清理及异步读取后的存活判断。
+
+原生端使用 `AccessibilityInfo`。Web 分支不把该库固定返回的 screen-reader 占位结果视为真实用户状态。应用在可用高度低于 `600`、字体缩放超过 `1.15` 或原生屏幕阅读器开启时采用自然文档布局；安全区域由 `react-native-safe-area-context` 处理。
+
+### 4.6 `tests/mobile-preview.spec.ts`
+
+[源码](apps/mobile/tests/mobile-preview.spec.ts)。使用 React Native Web 验证组件树、滚动坐标、路径过渡、活动计时、多尺寸、尺寸改变、触摸与外链。入口用例同时检查 `pageerror` 和 `console.error`，覆盖 React 控制台警告。
+
+它不证明原生系统返回键、VoiceOver / TalkBack、真实安全区域或设备 FPS 已通过；这些需要原生设备验收。
+
+## 5. `packages/` 共享源码
+
+三个库都以私有 npm workspace 发布入口的形式导出 TypeScript 源码，由 Astro / Metro 分别处理，不需要预先构建或发布到 npm。
+
+### 5.1 `packages/content/`
+
+| 文件                                                             | 职责                                                                                               |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| [packages/content/package.json](packages/content/package.json)   | 声明私有包 `@qntx-ui/content` 和 `src/index.ts` 源码 exports。                                     |
+| [packages/content/project.json](packages/content/project.json)   | 注册 Nx `content` 库，标签为 `platform:shared` / `type:lib`，提供检查任务。                        |
+| [packages/content/tsconfig.json](packages/content/tsconfig.json) | 继承公共严格配置，使用 ES2022 库且不自动引入环境类型。                                             |
+| [packages/content/src/index.ts](packages/content/src/index.ts)   | 集中声明链接、section / 类型、结构化文本、协议数据及 `brandMarkPath`；不返回 JSX，不调用平台 API。 |
+
+两端组件按各自需求读取这些数据，不要求共用相同组件树。文件保留部分兼容窄屏 Web 的字段，修改前应检查所有调用方。
+
+### 5.2 `packages/design-tokens/`
+
+| 文件                                                                         | 职责                                             |
+| ---------------------------------------------------------------------------- | ------------------------------------------------ |
+| [packages/design-tokens/package.json](packages/design-tokens/package.json)   | 声明私有包 `@qntx-ui/design-tokens` 及源码导出。 |
+| [packages/design-tokens/project.json](packages/design-tokens/project.json)   | 注册 Nx 共享库及检查任务。                       |
+| [packages/design-tokens/tsconfig.json](packages/design-tokens/tsconfig.json) | 将类型环境限制为纯 ES2022。                      |
+| [packages/design-tokens/src/index.ts](packages/design-tokens/src/index.ts)   | 导出 `palette`、`spacing` 和 `typeScale`。       |
+
+当前 Web 将部分 `palette` 注入 CSS 变量，Mobile 外链组件直接读取共享颜色。两端仍有各自的局部数值；不能把此包理解成全部样式已统一或自动同步。
+
+### 5.3 `packages/mascot/`
+
+| 文件                                                                                         | 职责                                                                                                                               |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| [packages/mascot/package.json](packages/mascot/package.json)                                 | 声明私有包 `@qntx-ui/mascot`，仅依赖共享 `content`，对外导出源码。                                                                 |
+| [packages/mascot/project.json](packages/mascot/project.json)                                 | 注册 Nx 共享库、标签和类型 / lint / 边界检查目标。                                                                                 |
+| [packages/mascot/tsconfig.json](packages/mascot/tsconfig.json)                               | 使用纯 ES2022 类型环境，并纳入静态 JSON 轮廓。                                                                                     |
+| [packages/mascot/src/index.ts](packages/mascot/src/index.ts)                                 | 统一公开动画引擎、帧类型、形变与路径函数，应用通过此入口导入。                                                                     |
+| [packages/mascot/src/morph.ts](packages/mascot/src/morph.ts)                                 | 构造静态帧，对齐闭合轮廓的起点 / 方向，插值与收缩轮廓；只为选中的对齐方案分配结果数组。                                            |
+| [packages/mascot/src/paths.ts](packages/mascot/src/paths.ts)                                 | 以闭合样条生成 SVG path，统一坐标精度和安全缩放，提供静态路径与帧到路径的转换。                                                    |
+| [packages/mascot/src/rest.json](packages/mascot/src/rest.json)                               | 静态外轮廓与孔洞的点集数据，不包含 UI 状态。                                                                                       |
+| [packages/mascot/src/vendor/logo-catalog.js](packages/mascot/src/vendor/logo-catalog.js)     | 从原 Logo 提取的纯计算引擎；`sample(time)` 产生轮廓点和颜色；可选 `directGeometry` 路径缓存模型点和旋转计算，并跳过中间 SVG 往返。 |
+| [packages/mascot/src/vendor/logo-catalog.d.ts](packages/mascot/src/vendor/logo-catalog.d.ts) | 声明 `CatalogFrame`、引擎工厂和选项，为生成式 JavaScript 提供类型边界。                                                            |
+
+共享范围止于数据、几何与路径计算。Web DOM、React Native SVG、RAF 生命周期、输入事件及平台无障碍属性分别由应用层处理。vendor 文件的局部规则例外有源码说明，不应扩展为全仓库豁免。
+
+## 6. Nx 边界、共享范围与两端区别
+
+### 项目依赖
+
+```mermaid
+flowchart LR
+  W[web] --> C[content]
+  W --> D[design-tokens]
+  W --> M[mascot]
+  N[mobile] --> C
+  N --> D
+  N --> M
+  M --> C
+```
+
+| 项目标签                       | 允许访问                      | 规则限制                                                 |
+| ------------------------------ | ----------------------------- | -------------------------------------------------------- |
+| `platform:web` / `type:app`    | 本端与 `platform:shared` 库。 | 禁止引入 React Native、Expo 及其框架包。                 |
+| `platform:mobile` / `type:app` | 本端与 `platform:shared` 库。 | 禁止引入 Astro、React DOM 等 Web 框架。                  |
+| `platform:shared` / `type:lib` | 其他共享库。                  | 禁止反向依赖应用、引入两端 UI 框架及使用受限浏览器全局。 |
+
+规则由 ESLint 的 `@nx/enforce-module-boundaries` 实际执行；Oxlint 负责常规质量检查。Nx 负责识别项目关系、编排任务与缓存，不会把 HTML 组件转换为原生组件。
+
+### 实现分工
+
+| 项目层面     | Astro Web                                                      | Expo / React Native Mobile                                                              |
+| ------------ | -------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| 组件与运行时 | 构建生成 HTML / SVG，局部 TypeScript 控制 DOM。                | `registerRootComponent` 注册 React 组件树，原生平台渲染 `View` / `Text` / `Pressable`。 |
+| 样式         | Tailwind、CSS、媒体查询及 CSS 变量。                           | `StyleSheet`、测量结果和 `Animated`；不导入 Web CSS。                                   |
+| 滚动与尺寸   | 文档滚动、DOM 矩形、`ResizeObserver`；窄屏使用独立兼容控制器。 | `Animated.ScrollView`、`onLayout`、安全区域与窗口 / 字体信息。                          |
+| 连续呈现     | DOM style、CSS 和原生 SVG 属性。                               | native driver 处理支持的变换；SVG path 由独立 JS 控制器更新。                           |
+| 生命周期     | `AbortController`、observer、文档可见性、Astro 销毁回调。      | React effect 清理、`AppState`、`AccessibilityInfo` 与 Android 返回键。                  |
+| SVG 计算     | 默认共享引擎，DOM painter 写属性。                             | `directGeometry` 共享引擎，原生引用更新；Expo Web 使用局部 state。                      |
+| 外链         | HTML `<a>`。                                                   | `Linking.openURL` 封装及失败处理。                                                      |
+| 构建结果     | 可部署的静态 Web 文件。                                        | 导出的平台资源；安装包需要独立的原生构建流程。                                          |
+
+共享库不持有用户输入状态，也不决定组件布局。React、数据与几何可以共用，HTML / 原生组件、样式系统和事件适配分别实现。
+
+### 变更影响与缓存
 
 ```powershell
 npm run graph
@@ -56,64 +328,97 @@ npx nx show projects --affected --files apps/mobile/src/App.tsx
 npx nx affected -t check,lint,boundaries --base=main
 ```
 
-## 常用检查与构建
+`affected` 取决于比较基线：在功能分支上可与 `main` 比较，在已合并的 `main` 上需要选择实际旧提交作为 `--base`。缓存输入包含项目源码、上游项目和根锁文件 / 公共配置；锁文件或公共配置变化可能影响多个项目。
 
-| 命令                            | 作用                                                             |
-| ------------------------------- | ---------------------------------------------------------------- |
-| `npm run check`                 | Web、Mobile、三个共享库分别做类型检查                            |
-| `npm run lint`                  | 全仓库 qntx Oxlint 质量检查                                      |
-| `npm run lint:boundaries`       | 通过 Nx 执行五个项目的依赖边界检查                               |
-| `npm run test:boundaries`       | 实际违规与合法导入探针，包括 `.astro`                            |
-| `npm run format`                | Oxfmt 格式化，随后 Prettier 处理 `.astro`                        |
-| `npm run format:check`          | 只检查格式，不写入文件                                           |
-| `npm run build`                 | Web 静态产物：`apps/web/dist/`                                   |
-| `npm run preview`               | 查看 Web 构建结果                                                |
-| `npm run build:mobile`          | 导出 Android / iOS Hermes 和浏览器 JS 产物至 `apps/mobile/dist/` |
-| `npm run doctor:mobile`         | Expo 环境和依赖诊断                                              |
-| `npm run test:e2e`              | 桌面叙事、窄屏保留行为与独立 Logo 的 Chrome 回归测试             |
-| `npm run test:mobile`           | React Native Web 预览的交互与布局测试                            |
-| `npm run test:mobile:animation` | 动画几何一致性、60/90/120Hz 计算预算与播放状态回归测试           |
-| `npm run verify`                | 类型、质量、边界、格式、两端导出与浏览器检查链                   |
+修改 `content` 可能同时影响两端及 `mascot`；修改某个应用的组件通常只影响该应用。`design-tokens` 的导出值只有在调用方实际使用时才会生效。
 
-`build:mobile` 生成原生 JS / Hermes 资源，不生成 APK、AAB 或 IPA。原生安装包还需要 Android SDK / Xcode 或另行配置 EAS。浏览器测试使用本机 Google Chrome。
+## 7. `tools/`
 
-Web 输出目录已从仓库根目录的 `dist/` 迁移为 `apps/web/dist/`。部署 `main` 时，构建命令仍可使用根目录的 `npm run build`，Cloudflare 等平台的静态产物目录须相应调整；本次合并没有修改平台上的部署配置。
+### `test-boundaries.mjs`
 
-## 关于复用说明
+[源码](tools/test-boundaries.mjs)。创建真实的临时违规文件，通过 ESLint 检查跨端导入、共享库反向引用、受限全局及 Astro frontmatter，然后在 `finally` 中删除探针。另有合法共享导入用例，避免规则把所有访问都拒绝。
 
-| 复用项           | 版本    | 接入及生效内容                                                                                                                                                         |
-| ---------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@qntx/oxlint`   | `1.1.1` | 根目录 `oxlint.config.ts` 导入 React 严格预设。保留类型感知、Promise、React 等质量规则，补充 CSS / Metro 初始化导入及生成文件忽略规则。ESLint 不重复承担常规质量检查。 |
-| `@qntx/oxfmt`    | `1.1.1` | 根目录 `oxfmt.config.ts` 继承统一缩进、引号、分号、换行和 import 排序等设置。排除 `.astro`、锁文件、Nx / Expo 缓存、报告和原生产物。                                   |
-| `@qntx/tsconfig` | `1.0.1` | 根目录 `tsconfig.base.json` 只复用 `configs/strictest.json`。Web 叠加 Astro 严格配置；Mobile 叠加 `expo/tsconfig.base`；共享包限制为纯 TypeScript 环境。               |
+### `test-mobile-animation.mts`
 
-这些配置均来自 npm 发布包，没有引用本机 qntx-source。其他 qntx JSON 预设不会随安装自动启用，也没有把通用配置直接覆盖到 Astro 或 Expo 的专用配置上。
+[源码](tools/test-mobile-animation.mts)。使用 Node 内置测试、假时钟和受限工作区加载钩子，检查目录几何一致性、60/90/120Hz 调度预算、定时 / 输入 / 暂停协调和轮廓对齐。它验证实际采样次数，而非只检查最终绘制次数，不依赖浏览器或新增测试框架。
 
-Oxlint 对 `.astro` 模板的检查范围有限，Web 验收仍包含 `astro check` 与构建；模板格式化继续交给 Prettier + `prettier-plugin-astro`。当前格式化命令中的 Astro 路径为 `apps/web/src/**/*.astro`。
+## 8. `review/`
 
-通用预设不能整份替换 `apps/web/astro.config.mjs`、Web / Mobile 的 `tsconfig.json`、`apps/mobile/app.json`、Metro 配置、`src/env.d.ts`、`.prettierrc.json`、`.vscode/settings.json`、项目脚本和锁文件。应保留框架所需的补充。不要直接编辑 `node_modules/@qntx/` 下的文件。
+这些文件记录各历史阶段的操作与证据，不作为当前源码入口说明。
 
-项目继续通过 npm 的 `node` 包提供 Node 24.22.0，npm scripts 优先使用它。VS Code 的 Oxc 扩展通过 `oxc.path.node` 指向项目 Node；`js/ts.tsdk.path` 指向 TypeScript SDK，这与 Oxc 使用哪个 Node 是不同设置。`.ts` 配置的加载问题通过兼容的运行时处理，不需要改系统 Node。项目目录移动后须同步调整 Oxc 的绝对路径。
+| 文件                                                                           | 用途                                            |
+| ------------------------------------------------------------------------------ | ----------------------------------------------- |
+| [review/integration-manifest.json](review/integration-manifest.json)           | 早期预览同步清单、文件哈希及备份位置。          |
+| [review/integration-verification.md](review/integration-verification.md)       | 早期集成验证记录。                              |
+| [review/logo-catalog-provenance.json](review/logo-catalog-provenance.json)     | 动画来源、提取说明及校验值。                    |
+| [review/simplification-20261023.md](review/simplification-20261023.md)         | Web 删减过渡版本的代码调整记录。                |
+| [review/mobile-20261023.md](review/mobile-20261023.md)                         | 首次 Nx / Mobile 接入记录。                     |
+| [review/mobile-narrative-20261025.md](review/mobile-narrative-20261025.md)     | 后续 Mobile 实现及验证范围。                    |
+| [review/mobile-performance-20261025.md](review/mobile-performance-20261025.md) | JS 计算热点、性能修正、基准方法与设备验证限制。 |
 
-Expo SDK 58 对应的 React / React DOM 统一锁定为 19.3.0，React Native 为 0.88.0。两个应用均明确声明依赖，根目录同步版本与 overrides 防止混入第二份 React。npm 是唯一包管理器，安装结果由根 `package-lock.json` 记录。
+历史记录中的旧源码路径、测试数量和 `artifacts/` 位置只描述当时状态。本地截图、缓存及导出物可以清理，不保证历史临时文件仍存在；被路由实际引用的 `public/` 资源应保留。
 
-## 源码入口与历史
+## 9. 检查、格式化与配置复用
 
-| 文件                                             | 用途                                       |
-| ------------------------------------------------ | ------------------------------------------ |
-| `apps/web/src/components/NarrativeHome.tsx`      | 桌面网页的吉祥物开场与滚动叙事             |
-| `apps/web/src/components/MobileWebSite.tsx`      | 保留的窄屏网页三屏组合                     |
-| `apps/web/src/data/site.ts`                      | 兼容原 Web 导入路径，转出共享内容          |
-| `apps/mobile/src/App.tsx`                        | 原生触摸叙事、精简导航、安全区域与返回顶部 |
-| `apps/mobile/src/components/`                    | 原生动画吉祥物、叙事内容与外链按钮         |
-| `packages/content/src/index.ts`                  | 两端内容和静态 Logo 路径                   |
-| `packages/design-tokens/src/index.ts`            | 两端设计数值                               |
-| `packages/mascot/src/index.ts`                   | 两端共享动画目录、轮廓插值与路径计算       |
-| `apps/*/project.json`、`packages/*/project.json` | Nx 项目、标签和任务                        |
-| `eslint.config.mjs`                              | 架构边界与 Astro 解析                      |
+| 命令                            | 负责范围                                                             |
+| ------------------------------- | -------------------------------------------------------------------- |
+| `npm run check`                 | 通过 Nx 检查 Web、Mobile 和三个共享库。                              |
+| `npm run lint` / `npx oxlint`   | qntx Oxlint 的常规质量与类型感知规则。                               |
+| `npm run lint:boundaries`       | 五个项目的 ESLint 依赖边界检查。                                     |
+| `npm run test:boundaries`       | 临时边界探针与合法导入检查。                                         |
+| `npm run test:mobile:animation` | 独立动画计算与调度回归。                                             |
+| `npm run test:e2e`              | Astro Web 的 Chrome 回归。                                           |
+| `npm run test:mobile`           | React Native Web 的辅助回归。                                        |
+| `npm run doctor:mobile`         | Expo 环境与依赖诊断。                                                |
+| `npm run format`                | Oxfmt 处理支持的文件，再由 Prettier 处理 `apps/web/src/**/*.astro`。 |
+| `npm run format:check`          | 对应的只读格式检查。                                                 |
+| `npm run verify`                | 顺序执行类型、lint、边界、专项测试、格式、两端构建及浏览器测试。     |
 
-原四屏设计保留在 Git 历史提交 `a047b26`；三屏 Web 迁移基线为 `97e3dcb`。迁移前完整设计与配置记录保存在 [Web 设计历史](docs/web-design-history.md)。`review/` 下旧验收记录属于对应历史阶段，当前手机端验收见 [Mobile 叙事验证记录](review/mobile-narrative-20261025.md)。
+Chrome 测试需要本机安装 Google Chrome。通过格式检查不等于类型或运行检查通过；浏览器回归和 Hermes 导出也不能替代原生设备验收。
 
-2026-10-25 目录清理移除了迁移前根目录的空 `src/`、旧 `.astro/` / `dist/`，以及本地构建产物、测试输出、调试截图 / 临时副本和旧任务输入 `Q1.txt`。当前源码以 `apps/` 与 `packages/` 为准。历史验收记录中的 `artifacts/` 路径仅表示当时的临时资料位置，清理后不再保证存在；设计参考图、历史文档、测试夹具与 Git 历史仍保留。
+### 复用项及生效范围
 
-构建目录可重新生成：运行 `npm run preview` 前先执行 `npm run build`；需要 Mobile 导出产物时执行 `npm run build:mobile`。清理未移除已安装依赖或运行中的开发缓存，`npm run dev` / `npm run dev:mobile` 可继续使用。
+| 配置包           | 当前版本与接入                                                     | 生效内容                                                                     |
+| ---------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `@qntx/oxlint`   | `1.1.1`；`oxlint.config.ts` 导入 `react` / `merge`。               | React / TypeScript 质量、类型感知和 Promise 等规则，再合并本项目例外。       |
+| `@qntx/oxfmt`    | `1.1.1`；`oxfmt.config.ts` 导入 `fmt`。                            | 统一格式约定及 import 整理，再追加框架与生成文件忽略范围。                   |
+| `@qntx/tsconfig` | `1.0.1`；仅由 `tsconfig.base.json` 继承 `configs/strictest.json`。 | 公共严格类型设置；Web 再叠加 Astro，Mobile 再叠加 Expo，共享库限制环境类型。 |
+
+这些是 npm 配置包，不引用本机 qntx-source，也不是仓库内的 `@qntx-ui/*` 共享源码库。安装了包不代表全部预设生效；当前只显式继承上述入口。
+
+Oxlint 对 `.astro` 模板覆盖有限，仍需 `astro check` 与构建。`.astro` 交给 Prettier，禁止由 Oxfmt 格式化。通用预设不能整份覆盖 Astro / Expo / Metro、各项目 tsconfig、编辑器设置、脚本、锁文件与 Wrangler 配置；应在本项目入口补充，不直接编辑 `node_modules/@qntx/`。
+
+Nx 提示同时存在 Oxfmt 和 Prettier 配置属于本工程有意保留的格式化分工，不需要为消除提示删除其中一个。
+
+## 10. Mobile 性能与平台适配
+
+Mobile 将模型 / 轮廓计算与原生属性更新分开：不变模型点使用缓存，旋转参数按帧准备，直接使用轮廓点，避免中间 SVG 字符串往返。形变对齐不为所有候选顺序生成临时数组；SVG 更新限制在局部组件，输入计时不驱动整页重渲染。
+
+约 30fps 的限制同时覆盖采样与绘制，不随 60/90/120Hz 屏幕重复计算。native driver 负责支持的位移 / 缩放 / 透明度，SVG path 仍在 JS 线程更新，不能据此宣称全部动画已运行在原生 UI 线程。
+
+历史电脑端基准记录了采样中位耗时约 `2.02ms → 0.84ms`、P95 约 `3.14ms → 1.26ms`；这不是本轮文档整理重新测得的数据，也不代表真机 FPS 同比例提升。诊断设备卡顿时应分开观察 JS / UI 帧率，并比较开发模式和生产模式 JS；已有的详细测量范围保存在性能验收记录中。
+
+Web 无障碍属性需要单独适配：React 的 `console.error` 警告可能不会触发 `pageerror`，因此辅助预览入口同时检查两种错误渠道。平台适配应修正属性传递，不通过屏蔽日志掩盖问题。
+
+## 11. Cloudflare 部署与生成目录
+
+当前为静态 Astro 部署，根 `wrangler.jsonc` 明确指定 Worker `qntx-ui` 与 `./apps/web/dist`，不依赖 Wrangler 在 Nx 根目录自动识别框架。
+
+| 平台设置   | 值                                              |
+| ---------- | ----------------------------------------------- |
+| 仓库根目录 | `/`                                             |
+| 构建命令   | `npm run build`                                 |
+| 部署命令   | `npx wrangler deploy --config ./wrangler.jsonc` |
+
+复用此工程部署其他 Worker 时需替换配置中的实际名称。Wrangler 当前由 `npx` 获取，未锁入根开发依赖；此命令会进行真实部署。
+
+| 生成位置                         | 用途与清理条件                                             |
+| -------------------------------- | ---------------------------------------------------------- |
+| `node_modules/`                  | 已安装依赖，直接启动和项目 Node 依赖它；删除后需重新安装。 |
+| `.nx/`                           | 项目图与任务缓存，由 Nx 维护。                             |
+| `apps/web/.astro/`               | Astro 生成类型和开发数据，由 Astro 重新生成。              |
+| `apps/mobile/.expo/`             | Expo 本机开发信息。                                        |
+| `apps/*/dist/`                   | 构建 / 导出产物，清理后通过对应构建命令恢复。              |
+| `test-results/`、`artifacts/` 等 | 测试或调试输出，不属于运行源码。                           |
+
+原根目录 `src/`、`public/`、`tests/`、`dist/` 不再是当前应用入口。项目维护说明已统一到本 README；旧 `docs/` 在删除前原样归档至本机 `E:\bigshoot\第六周\资料归档\原docs`。
