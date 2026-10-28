@@ -73,7 +73,6 @@ npm run dev:mobile -- --no-dev --minify
 | [.npmrc](.npmrc)                                 | 项目 npm 源、重试和审计输出设置。                                                                    |
 | [.gitignore](.gitignore)                         | 排除依赖、缓存、构建结果、测试输出、环境变量和本地备份等生成资料。                                   |
 | [qntx-ui.code-workspace](qntx-ui.code-workspace) | 以当前目录打开 VS Code 工作区。                                                                      |
-| [ollama_index.png](ollama_index.png)             | 原始设计参考图，不参与应用构建。                                                                     |
 | [README.md](README.md)                           | 当前工程的统一维护说明。                                                                             |
 
 ### `.vscode/`
@@ -99,36 +98,33 @@ npm run dev:mobile -- --no-dev --minify
 
 ### 3.2 `src/pages/`
 
-Astro 根据此目录中的文件生成 URL。它们共用一个开发服务，无需分别启动。
+Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由同一个开发服务提供。
 
-| 文件                                                                       | 职责                                                                                                   |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| [apps/web/src/pages/index.astro](apps/web/src/pages/index.astro)           | `/` 路由：导入两套 Web 组件结构和全局样式，将共享颜色映射为 CSS 变量，挂载响应式控制器并注册销毁回调。 |
-| [apps/web/src/pages/logo-check.astro](apps/web/src/pages/logo-check.astro) | `/logo-check/` 路由：挂载多个独立 Logo 实例及对照图片，供组件隔离检查与自动测试使用。                  |
+| 文件                                                             | 职责                                                                                                   |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| [apps/web/src/pages/index.astro](apps/web/src/pages/index.astro) | `/` 路由：导入两套 Web 组件结构和全局样式，将共享颜色映射为 CSS 变量，挂载响应式控制器并注册销毁回调。 |
 
 页面中的 React 组件由 Astro 在构建时输出 HTML / SVG；当前没有通过 `client:*` 指令进行 React 客户端水合。浏览器交互由下面的 TypeScript 控制器接管。
 
 ### 3.3 `src/components/`
 
-| 文件                                                                                   | 职责与使用位置                                                                                          |
-| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [apps/web/src/components/NarrativeHome.tsx](apps/web/src/components/NarrativeHome.tsx) | 桌面结构入口；输出控制器需要的轨道、场景、SVG 路径及测量槽位，通过 `data-*` 与脚本解耦。                |
-| [apps/web/src/components/MobileWebSite.tsx](apps/web/src/components/MobileWebSite.tsx) | 窄屏 Web 结构入口；组合原有面板组件、导航与无障碍播报节点，不是 React Native 入口。                     |
-| [apps/web/src/components/SiteHeader.tsx](apps/web/src/components/SiteHeader.tsx)       | 窄屏网页的导航结构；读取共享链接和 section 数据，输出导航控制器识别的标记。                             |
-| [apps/web/src/components/SiteFooter.tsx](apps/web/src/components/SiteFooter.tsx)       | 窄屏网页的位置、前后导航及返回入口；只输出结构，由控制器同步状态。                                      |
-| [apps/web/src/components/HomeIntro.tsx](apps/web/src/components/HomeIntro.tsx)         | 将共享 `hero`、`standards` 与链接转换为窄屏页面的静态 React 标记。                                      |
-| [apps/web/src/components/ProtocolPanel.tsx](apps/web/src/components/ProtocolPanel.tsx) | 将共享 `primitives` 转换为窄屏网页的列表与外链，维护稳定的列表标识。                                    |
-| [apps/web/src/components/AboutPanel.tsx](apps/web/src/components/AboutPanel.tsx)       | 将共享 `aboutIntro` / `aboutDestinations` 组合为窄屏网页片段。                                          |
-| [apps/web/src/components/BrandMark.tsx](apps/web/src/components/BrandMark.tsx)         | React HTML SVG 包装；读取共享静态路径，供窄屏网页组件复用。                                             |
-| [apps/web/src/components/Icon.tsx](apps/web/src/components/Icon.tsx)                   | Web SVG 图标集合，统一箭头与 GitHub 图标的结构、尺寸入口和无障碍处理。                                  |
-| [apps/web/src/components/Logo.astro](apps/web/src/components/Logo.astro)               | 可独立复用的 Astro Logo；接收链接、标签、尺寸和 class，内部注册专用动画控制器，当前由隔离检查路由引用。 |
+| 文件                                                                                   | 职责与使用位置                                                                           |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [apps/web/src/components/NarrativeHome.tsx](apps/web/src/components/NarrativeHome.tsx) | 桌面结构入口；输出控制器需要的轨道、场景、SVG 路径及测量槽位，通过 `data-*` 与脚本解耦。 |
+| [apps/web/src/components/MobileWebSite.tsx](apps/web/src/components/MobileWebSite.tsx) | 窄屏 Web 结构入口；组合原有面板组件、导航与无障碍播报节点，不是 React Native 入口。      |
+| [apps/web/src/components/SiteHeader.tsx](apps/web/src/components/SiteHeader.tsx)       | 窄屏网页的导航结构；读取共享链接和 section 数据，输出导航控制器识别的标记。              |
+| [apps/web/src/components/SiteFooter.tsx](apps/web/src/components/SiteFooter.tsx)       | 窄屏网页的位置、前后导航及返回入口；只输出结构，由控制器同步状态。                       |
+| [apps/web/src/components/HomeIntro.tsx](apps/web/src/components/HomeIntro.tsx)         | 将共享 `hero`、`standards` 与链接转换为窄屏页面的静态 React 标记。                       |
+| [apps/web/src/components/ProtocolPanel.tsx](apps/web/src/components/ProtocolPanel.tsx) | 将共享 `primitives` 转换为窄屏网页的列表与外链，维护稳定的列表标识。                     |
+| [apps/web/src/components/AboutPanel.tsx](apps/web/src/components/AboutPanel.tsx)       | 将共享 `aboutIntro` / `aboutDestinations` 组合为窄屏网页片段。                           |
+| [apps/web/src/components/BrandMark.tsx](apps/web/src/components/BrandMark.tsx)         | React HTML SVG 包装；读取共享静态路径，供窄屏网页组件复用。                              |
+| [apps/web/src/components/Icon.tsx](apps/web/src/components/Icon.tsx)                   | Web SVG 图标集合，统一箭头与 GitHub 图标的结构、尺寸入口和无障碍处理。                   |
 
 ### 3.4 `src/data/` 与环境声明
 
 | 文件                                                   | 职责                                                                                                        |
 | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
 | [apps/web/src/data/site.ts](apps/web/src/data/site.ts) | 从 `@qntx-ui/content` 转出 `links`、`primitives`、`sections`，兼容原 Web 组件的导入路径，不再维护重复数据。 |
-| [apps/web/src/data/logo.ts](apps/web/src/data/logo.ts) | 将共享 `brandMarkPath` 以 `logoPath` 名称转出，供 Astro Logo 使用。                                         |
 | [apps/web/src/env.d.ts](apps/web/src/env.d.ts)         | 声明 Astro 客户端类型环境。                                                                                 |
 
 ### 3.5 `src/scripts/`
@@ -159,12 +155,6 @@ Astro 根据此目录中的文件生成 URL。它们共用一个开发服务，�
 
 控制器接收 `setPhase()`，使用共享引擎和轮廓插值生成帧，通过 SVG 属性更新绘制，不依赖 React 重渲染。文档可见性与媒体偏好决定暂停条件；`dispose()` 负责取消 RAF、计时器及事件监听并复位绘制。此文件拥有浏览器 API，不能放入共享库。
 
-#### `logo-animation.ts`
-
-[源码](apps/web/src/scripts/logo-animation.ts)。入口为 `initializeLogoAnimations(): () => void`，由 `Logo.astro` 使用。它为每个匹配的 SVG 创建独立实例，管理悬停、键盘焦点、离屏与文档可见性，复用 `createMascotPainter()` 进行路径绘制。
-
-每个实例分别持有 RAF、引擎及 `IntersectionObserver`，统一返回清理函数。它服务于独立组件检查，与首页的播放控制器分别维护生命周期。
-
 ### 3.6 `src/styles/`
 
 | 文件                                                                     | 职责                                                                                               |
@@ -175,18 +165,16 @@ Astro 根据此目录中的文件生成 URL。它们共用一个开发服务，�
 
 ### 3.7 `public/`
 
-| 文件                                                                           | 职责                                                                     |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| [apps/web/public/favicon.svg](apps/web/public/favicon.svg)                     | 以 `/favicon.svg` 提供的站点图标。                                       |
-| [apps/web/public/logo-check/before.png](apps/web/public/logo-check/before.png) | 独立检查路由实际引用的对照图片，属于测试夹具，不是可随意删除的截图缓存。 |
+| 文件                                                       | 职责                               |
+| ---------------------------------------------------------- | ---------------------------------- |
+| [apps/web/public/favicon.svg](apps/web/public/favicon.svg) | 以 `/favicon.svg` 提供的站点图标。 |
 
 ### 3.8 `tests/`
 
-| 文件                                                                           | 检查范围                                                             |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| [apps/web/tests/logo-candidate.spec.ts](apps/web/tests/logo-candidate.spec.ts) | 独立 SVG 实例、键盘焦点、减少动态效果、离屏暂停和运行错误。          |
-| [apps/web/tests/narrative.spec.ts](apps/web/tests/narrative.spec.ts)           | 桌面滚动控制、轮廓插值、定位测量、响应式重挂载、无脚本与无障碍分支。 |
-| [apps/web/tests/narrow-web.spec.ts](apps/web/tests/narrow-web.spec.ts)         | 窄屏控制器、节点数量、导航与既有行为的保留。                         |
+| 文件                                                                   | 检查范围                                                             |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| [apps/web/tests/narrative.spec.ts](apps/web/tests/narrative.spec.ts)   | 桌面滚动控制、轮廓插值、定位测量、响应式重挂载、无脚本与无障碍分支。 |
+| [apps/web/tests/narrow-web.spec.ts](apps/web/tests/narrow-web.spec.ts) | 窄屏控制器、节点数量、导航与既有行为的保留。                         |
 
 ## 4. `apps/mobile/`
 
