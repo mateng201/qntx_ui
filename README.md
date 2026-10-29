@@ -137,7 +137,7 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 #### `responsive-home.ts`
 
-**白话用途：** 负责桌面与窄屏网页的交互切换。窗口缩放或浏览器缩放跨过宽度边界时，先停掉旧控制器，再启动对应的新控制器；两套结构的显示隐藏由 CSS 配合完成。
+负责桌面与窄屏网页的交互切换。窗口缩放或浏览器缩放跨过宽度边界时，先停掉旧控制器，再启动对应的新控制器；两套结构的显示隐藏由 CSS 配合完成。
 
 [源码](apps/web/src/scripts/responsive-home.ts)。入口为 `initializeResponsiveHome(): () => void`，由首页调用。它以 `761px` 为桌面边界，动态导入 `scroll-narrative` 或 `mobile-web-navigation`，同一时刻只挂载一个首页控制器。
 
@@ -145,7 +145,7 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 #### `scroll-narrative.ts`
 
-**白话用途：** 把桌面网页的滚动距离换算成元素的位置、透明度和当前阶段，是桌面滚动交互的控制中心。
+把桌面网页的滚动距离换算成元素的位置、透明度和当前阶段，是桌面滚动交互的控制中心。
 
 [源码](apps/web/src/scripts/scroll-narrative.ts)。入口为 `initializeScrollNarrative(root): () => void`。它读取轨道、SVG 容器、目标槽位和场景节点；将原生文档滚动换算为归一化进度，并通过连续插值更新 DOM 样式。
 
@@ -155,7 +155,7 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 #### `mobile-web-navigation.ts`
 
-**白话用途：** 让窄屏网页的滚轮、键盘、导航链接和前后按钮控制同一套横向面板，并让地址、进度和按钮状态跟着变化。
+让窄屏网页的滚轮、键盘、导航链接和前后按钮控制同一套横向面板，并让地址、进度和按钮状态跟着变化。
 
 [源码](apps/web/src/scripts/mobile-web-navigation.ts)。入口为 `initializeMobileWebNavigation(): () => void`，仅在窄屏 Web 分支加载。它将滚轮、方向键、Home / End、锚点及前后按钮映射到同一组 Scroll Snap 节点，按 `scrollLeft / clientWidth` 计算活动索引。
 
@@ -163,7 +163,7 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 #### `mascot-animation.ts`
 
-**白话用途：** 控制网页 SVG 什么时候播放、暂停或切换形状，并把每一帧计算结果画到已有的 SVG 上。
+控制网页 SVG 什么时候播放、暂停或切换形状，并把每一帧计算结果画到已有的 SVG 上。
 
 [源码](apps/web/src/scripts/mascot-animation.ts)。包含两个接口：`createMascotPainter()` 将共享几何写入三个 SVG path；`initializeMascotAnimation()` 管理 Web 的播放状态、输入计时、过渡与生命周期。
 
@@ -206,7 +206,7 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 ### 4.2 `src/App.tsx`
 
-**白话用途：** 手机应用的总装配层，把内容、滚动容器、吉祥物和安全区域放到一起，并协调尺寸与滚动位置。
+手机应用的总装配层，把内容、滚动容器、吉祥物和安全区域放到一起，并协调尺寸与滚动位置。
 
 [源码](apps/mobile/src/App.tsx)。这是原生应用的组合与坐标控制层：创建安全区域容器，维护视口测量、ScrollView 引用、滚动值与离散场景状态，组合其他原生组件。
 
@@ -226,7 +226,7 @@ Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交
 
 ### 4.4 `src/animation/playback.ts`
 
-**白话用途：** 手机动画的播放控制器，决定何时计算下一帧、何时暂停，以及静态形状和动画怎样平滑衔接。
+手机动画的播放控制器，决定何时计算下一帧、何时暂停，以及静态形状和动画怎样平滑衔接。
 
 [源码](apps/mobile/src/animation/playback.ts)。导出 `createPlayback()`、`MascotPhase`、`MascotHandle` 和 `Playback`，负责采样、形变、待机截止时间、前后台与减少动态效果的协调。
 
@@ -236,7 +236,7 @@ Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交
 
 ### 4.5 `src/hooks/useReducedMotion.ts`
 
-**白话用途：** 读取并持续关注系统的减少动态效果和屏幕阅读器设置，供手机应用选择合适的交互与排版。
+读取并持续关注系统的减少动态效果和屏幕阅读器设置，供手机应用选择合适的交互与排版。
 
 [源码](apps/mobile/src/hooks/useReducedMotion.ts)。提供 `useReducedMotion()` 和 `useScreenReader()`，封装系统偏好读取、订阅、卸载清理及异步读取后的存活判断。
 
@@ -244,7 +244,7 @@ Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交
 
 ### 4.6 `tests/mobile-preview.spec.ts`
 
-**白话用途：** 在电脑浏览器里操作 React Native Web 版本，自动检查手机应用代码的交互、布局和报错情况。
+在电脑浏览器里操作 React Native Web 版本，自动检查手机应用代码的交互、布局和报错情况。
 
 [源码](apps/mobile/tests/mobile-preview.spec.ts)。使用 React Native Web 验证组件树、滚动坐标、路径过渡、活动计时、多尺寸、尺寸改变、触摸与外链。入口用例同时检查 `pageerror` 和 `console.error`，覆盖 React 控制台警告。
 
@@ -346,13 +346,13 @@ npx nx affected -t check,lint,boundaries --base=main
 
 ### `test-boundaries.mjs`
 
-**白话用途：** 故意放入几段违规引用代码，确认项目的依赖边界真的会拦截它们，测试后再清掉临时文件。
+故意放入几段违规引用代码，确认项目的依赖边界真的会拦截它们，测试后再清掉临时文件。
 
 [源码](tools/test-boundaries.mjs)。创建真实的临时违规文件，通过 ESLint 检查跨端导入、共享库反向引用、受限全局及 Astro frontmatter，然后在 `finally` 中删除探针。另有合法共享导入用例，避免规则把所有访问都拒绝。
 
 ### `test-mobile-animation.mts`
 
-**白话用途：** 不用启动网页或手机，直接检查动画计算、帧率限制和计时逻辑是否正确。
+不用启动网页或手机，直接检查动画计算、帧率限制和计时逻辑是否正确。
 
 [源码](tools/test-mobile-animation.mts)。使用 Node 内置测试、假时钟和受限工作区加载钩子，检查目录几何一致性、60/90/120Hz 调度预算、定时 / 输入 / 暂停协调和轮廓对齐。它验证实际采样次数，而非只检查最终绘制次数，不依赖浏览器或新增测试框架。
 
@@ -435,4 +435,4 @@ Web 无障碍属性需要单独适配：React 的 `console.error` 警告可能�
 | `apps/*/dist/`                   | 构建 / 导出产物，清理后通过对应构建命令恢复。              |
 | `test-results/`、`artifacts/` 等 | 测试或调试输出，不属于运行源码。                           |
 
-原根目录 `src/`、`public/`、`tests/`、`dist/` 不再是当前应用入口。项目维护说明已统一到本 README；旧 `docs/` 在删除前原样归档至本机 `E:\bigshoot\第六周\资料归档\原docs`。
+原根目录 `src/`、`public/`、`tests/`、`dist/` 不再是当前应用入口。
