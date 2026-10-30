@@ -5,10 +5,14 @@ import { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
-import { createPlayback } from "../animation/playback";
-import type { MascotHandle, MascotPhase, Playback } from "../animation/playback";
+import { createMascotPlaybackController } from "../animation/mascot-playback";
+import type {
+  MascotActivityHandle,
+  MascotPlaybackPhase,
+  MascotPlaybackController,
+} from "../animation/mascot-playback";
 
-export type { MascotHandle } from "../animation/playback";
+export type { MascotActivityHandle } from "../animation/mascot-playback";
 
 // Web SVG forwards native-only accessibility props to the DOM unchanged.
 const accessibilityProps =
@@ -19,27 +23,33 @@ const accessibilityProps =
         importantForAccessibility: "no-hide-descendants" as const,
       };
 
+type AnimatedMascotProps = {
+  ref?: Ref<MascotActivityHandle>;
+  size: number;
+  playbackPhase: MascotPlaybackPhase;
+  reducedMotion: boolean;
+};
+
 /** Native SVG renderer; frame updates never rerender the surrounding page. */
-export function Mascot({
+export function AnimatedMascot({
   ref,
   size,
-  phase,
+  playbackPhase,
   reducedMotion,
-}: {
-  ref?: Ref<MascotHandle>;
-  size: number;
-  phase: MascotPhase;
-  reducedMotion: boolean;
-}): ReactElement {
+}: AnimatedMascotProps): ReactElement {
   const [drawing, setDrawing] = useState<MascotPaths>(staticMascotPaths);
   const body = useRef<Path>(null);
   const left = useRef<Path>(null);
   const right = useRef<Path>(null);
-  const controller = useRef<Playback | undefined>(undefined);
+  const controller = useRef<MascotPlaybackController | undefined>(undefined);
   const [foreground, setForeground] = useState(
     AppState.currentState === null || AppState.currentState === "active",
   );
-  useImperativeHandle(ref, () => ({ activity: () => controller.current?.activity() }), []);
+  useImperativeHandle(
+    ref,
+    () => ({ notifyActivity: () => controller.current?.notifyActivity() }),
+    [],
+  );
 
   useEffect(() => {
     if (Platform.OS !== "web") {
@@ -49,7 +59,7 @@ export function Mascot({
       right.current?.setNativeProps({ d: staticMascotPaths.right });
     }
     let previous = staticMascotPaths;
-    const playback = createPlayback((paths) => {
+    const playback = createMascotPlaybackController((paths) => {
       if (Platform.OS === "web") {
         // react-native-svg's Web setNativeProps has a different signature.
         setDrawing(paths);
@@ -79,8 +89,8 @@ export function Mascot({
   }, []);
 
   useEffect(() => {
-    controller.current?.update({ phase, reducedMotion, foreground });
-  }, [phase, reducedMotion, foreground]);
+    controller.current?.updateOptions({ playbackPhase, reducedMotion, foreground });
+  }, [playbackPhase, reducedMotion, foreground]);
 
   return (
     <Svg width={size} height={size} viewBox="-150 -150 300 300" {...accessibilityProps}>

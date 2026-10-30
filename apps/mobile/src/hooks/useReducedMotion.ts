@@ -41,7 +41,7 @@ export function useScreenReader(): boolean {
           setEnabled(active);
         }
       } catch {
-        // Unsupported platforms retain the standard scroll narrative.
+        // Unsupported platforms retain the standard home-page scrolling.
       }
     }
     void readPreference();

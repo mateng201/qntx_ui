@@ -51,7 +51,8 @@ registerHooks({
 
 const { createCatalogAnimation, createMascotMorph, staticMascotFrame, staticMascotPaths } =
   await import("@qntx-ui/mascot");
-const { createPlayback } = await import("../apps/mobile/src/animation/playback.ts");
+const { createMascotPlaybackController } =
+  await import("../apps/mobile/src/animation/mascot-playback.ts");
 
 function clock(context: TestContext) {
   let now = 0;
@@ -136,7 +137,7 @@ for (const hz of [60, 90, 120]) {
     const time = clock(context);
     let samples = 0;
     let paints = 0;
-    const player = createPlayback(
+    const player = createMascotPlaybackController(
       () => {
         paints += 1;
       },
@@ -150,7 +151,7 @@ for (const hz of [60, 90, 120]) {
         };
       },
     );
-    player.update({ phase: "narrative", reducedMotion: false, foreground: true });
+    player.updateOptions({ playbackPhase: "scrolling", reducedMotion: false, foreground: true });
     time.advance(1000, hz);
     assert.ok(samples >= 29 && samples <= 32, `${samples} including the initial alignment sample`);
     assert.ok(paints >= 28 && paints <= 31, `${paints} paints`);
@@ -162,23 +163,23 @@ for (const hz of [60, 90, 120]) {
 void test("input moves the idle deadline without allocating timers per touch", (context) => {
   const time = clock(context);
   let drawing = staticMascotPaths;
-  const player = createPlayback((paths) => {
+  const player = createMascotPlaybackController((paths) => {
     drawing = paths;
   });
-  player.update({ phase: "opening", reducedMotion: false, foreground: true });
-  time.advance(2000, 120, player.activity);
+  player.updateOptions({ playbackPhase: "opening", reducedMotion: false, foreground: true });
+  time.advance(2000, 120, player.notifyActivity);
   assert.equal(time.scheduledTimers, 1);
   time.advance(4990);
   assert.equal(drawing, staticMascotPaths);
   time.advance(500);
   assert.notEqual(drawing.body, staticMascotPaths.body);
-  time.advance(650, 120, player.activity);
+  time.advance(650, 120, player.notifyActivity);
   assert.equal(drawing, staticMascotPaths, "continuous input must finish the return morph");
   assert.ok(time.scheduledTimers <= 3);
-  player.update({ phase: "narrative", reducedMotion: false, foreground: true });
-  time.advance(500, 120, player.activity);
-  assert.notEqual(drawing.body, staticMascotPaths.body, "narrative ignores input resets");
-  player.update({ phase: "docked", reducedMotion: false, foreground: true });
+  player.updateOptions({ playbackPhase: "scrolling", reducedMotion: false, foreground: true });
+  time.advance(500, 120, player.notifyActivity);
+  assert.notEqual(drawing.body, staticMascotPaths.body, "scroll playback ignores input resets");
+  player.updateOptions({ playbackPhase: "docked", reducedMotion: false, foreground: true });
   time.advance(400);
   assert.equal(drawing, staticMascotPaths);
   time.advance(4500);
@@ -192,16 +193,16 @@ void test("input moves the idle deadline without allocating timers per touch", (
 void test("background and reduced-motion stop animation and leave no repeating frame work", (context) => {
   const time = clock(context);
   let drawing = staticMascotPaths;
-  const player = createPlayback((paths) => {
+  const player = createMascotPlaybackController((paths) => {
     drawing = paths;
   });
-  player.update({ phase: "narrative", reducedMotion: false, foreground: true });
+  player.updateOptions({ playbackPhase: "scrolling", reducedMotion: false, foreground: true });
   time.advance(500);
-  player.update({ phase: "narrative", reducedMotion: false, foreground: false });
+  player.updateOptions({ playbackPhase: "scrolling", reducedMotion: false, foreground: false });
   time.advance(100);
   assert.equal(drawing, staticMascotPaths);
   assert.equal(time.pending, 0);
-  player.update({ phase: "narrative", reducedMotion: true, foreground: true });
+  player.updateOptions({ playbackPhase: "scrolling", reducedMotion: true, foreground: true });
   time.advance(100);
   assert.equal(drawing, staticMascotPaths);
   assert.equal(time.pending, 0);

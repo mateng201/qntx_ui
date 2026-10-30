@@ -18,7 +18,7 @@ const probes = [
   },
   {
     file: "apps/mobile/src/__boundary_probe__.ts",
-    source: 'import { HomeIntro } from "../../web/src/components/HomeIntro"; export { HomeIntro };',
+    source: 'import { HomePage } from "../../web/src/components/HomePage"; export { HomePage };',
     forbidden: true,
   },
   {

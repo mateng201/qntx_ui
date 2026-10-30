@@ -1,16 +1,12 @@
 ---
 import { palette } from "@qntx-ui/design-tokens";
-import { MobileWebSite } from "../components/MobileWebSite";
-import { NarrativeHome } from "../components/NarrativeHome";
+import { HomePage } from "../components/HomePage";
 import "../styles/global.css";
-import "../styles/narrative.css";
+import "../styles/home-page.css";
 ---
 
 <!doctype html>
-<html
-  lang="en"
-  style={`--ink:${palette.ink};--muted:${palette.muted};--line:${palette.line};--surface:${palette.surface};--surface-dark:${palette.darkSurface}`}
->
+<html lang="en" style={`--hover:${palette.hover}`}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -21,22 +17,17 @@ import "../styles/narrative.css";
     <meta name="theme-color" content="#ffffff" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>QuantX — An open economy for autonomous agents</title>
-    <noscript>
-      <style is:inline>
-        .site-shell:has(#about:target) .footer-back {
-          display: inline-flex;
-        }
-      </style>
-    </noscript>
   </head>
   <body>
-    <NarrativeHome />
-    <MobileWebSite />
+    <HomePage />
     <script>
-      import { initializeResponsiveHome } from "../scripts/responsive-home";
+      import { initializeHomePageScroll } from "../scripts/home-page-scroll";
 
-      const dispose = initializeResponsiveHome();
-      document.addEventListener("astro:before-swap", dispose, { once: true });
+      const root = document.querySelector<HTMLElement>("[data-home-page]");
+      if (root !== null) {
+        const dispose = initializeHomePageScroll(root);
+        document.addEventListener("astro:before-swap", dispose, { once: true });
+      }
     </script>
   </body>
 </html>

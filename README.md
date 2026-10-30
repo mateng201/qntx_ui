@@ -60,6 +60,8 @@ npm run dev:mobile -- --no-dev --minify
 
 下面按目录逐个说明文件。职责表先用白话概括用途，再保留技术细节；单独展开的文件也按同样顺序介绍。
 
+命名按职责区分：`HomePage` 是网页结构，`MobileHomeScreen` 是原生首页，`HomeSections` 是原生内容区块；`home-page-scroll` 控制滚动，`mascot-playback` 控制播放，`SvgMascotRenderer` 负责将计算结果写入 SVG。内容区块使用 `opening / about / protocols / resources`，动画阶段使用 `opening / scrolling / docked`；二者分别由区块 ID 和播放阶段类型表达。
+
 | 文件                                             | 职责                                                                                                                                                                    |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [package.json](package.json)                     | 整个仓库的依赖清单和命令入口，决定安装什么、如何启动与检查各项目。 声明 `apps/*` / `packages/*` 工作区、根命令、公共开发依赖、React 版本覆盖和包管理器版本。            |
@@ -102,9 +104,9 @@ npm run dev:mobile -- --no-dev --minify
 
 Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由同一个开发服务提供。
 
-| 文件                                                             | 职责                                                                                                                                                            |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [apps/web/src/pages/index.astro](apps/web/src/pages/index.astro) | 网站首页的总入口，把两套网页结构、样式和切换脚本接起来。 `/` 路由：导入两套 Web 组件结构和全局样式，将共享颜色映射为 CSS 变量，挂载响应式控制器并注册销毁回调。 |
+| 文件                                                             | 职责                                                                                                                                                                    |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [apps/web/src/pages/index.astro](apps/web/src/pages/index.astro) | 网站首页的唯一入口，把响应式网页结构、样式和滚动脚本接起来。`/` 路由只输出 `HomePage`，将共享颜色映射为 CSS 变量，初始化滚动控制器，并在 Astro 页面退出前调用清理函数。 |
 
 页面中的 React 组件由 Astro 在构建时输出 HTML / SVG；当前没有通过 `client:*` 指令进行 React 客户端水合。浏览器交互由下面的 TypeScript 控制器接管。
 
@@ -112,70 +114,46 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 ### 3.3 `src/components/`
 
-| 文件                                                                                   | 职责                                                                                                                                                                                                        |
-| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [apps/web/src/components/NarrativeHome.tsx](apps/web/src/components/NarrativeHome.tsx) | 搭出桌面网页的 HTML / SVG 结构，具体滚动和动画交给脚本控制。 桌面结构入口；输出控制器需要的轨道、场景、SVG 路径及测量槽位，通过 `data-*` 与脚本解耦。                                                       |
-| [apps/web/src/components/MobileWebSite.tsx](apps/web/src/components/MobileWebSite.tsx) | 搭出手机浏览器及电脑窄窗口使用的网页结构，不使用 React Native。 窄屏 Web 结构入口；组合原有面板组件、导航与无障碍播报节点，不是 React Native 入口。根据视口宽度启用对应布局，真实手机浏览器也使用这套网页。 |
-| [apps/web/src/components/SiteHeader.tsx](apps/web/src/components/SiteHeader.tsx)       | 生成窄屏网页的顶部导航，实际切屏行为交给导航脚本。 窄屏网页的导航结构；读取共享链接和 section 数据，输出导航控制器识别的标记。                                                                              |
-| [apps/web/src/components/SiteFooter.tsx](apps/web/src/components/SiteFooter.tsx)       | 生成窄屏网页的底部进度、前后按钮和返回入口。 窄屏网页的位置、前后导航及返回入口；只输出结构，由控制器同步状态。                                                                                             |
-| [apps/web/src/components/HomeIntro.tsx](apps/web/src/components/HomeIntro.tsx)         | 把共享介绍数据排成窄屏网页的 Overview 区块。 将共享 `hero`、`standards` 与链接转换为窄屏页面的静态 React 标记。                                                                                             |
-| [apps/web/src/components/ProtocolPanel.tsx](apps/web/src/components/ProtocolPanel.tsx) | 把共享协议数据排成窄屏网页的 Protocols 区块，并生成链接。 将共享 `primitives` 转换为窄屏网页的列表与外链，维护稳定的列表标识。                                                                              |
-| [apps/web/src/components/AboutPanel.tsx](apps/web/src/components/AboutPanel.tsx)       | 把共享组织资料和链接排成窄屏网页的 About 区块。 将共享 `aboutIntro` / `aboutDestinations` 组合为窄屏网页片段。                                                                                              |
-| [apps/web/src/components/BrandMark.tsx](apps/web/src/components/BrandMark.tsx)         | 在窄屏网页需要的位置画出静态 Q Logo。 React HTML SVG 包装；读取共享静态路径，供窄屏网页组件复用。                                                                                                           |
-| [apps/web/src/components/Icon.tsx](apps/web/src/components/Icon.tsx)                   | 让桌面和窄屏网页用同一套箭头、GitHub 等小图标。 Web SVG 图标集合，统一箭头与 GitHub 图标的结构、尺寸入口和无障碍处理。                                                                                      |
+| 文件                                                                         | 职责                                                                                                                                                          |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [apps/web/src/components/HomePage.tsx](apps/web/src/components/HomePage.tsx) | 搭出所有屏幕共用的 HTML / SVG 结构，滚动和动画由独立脚本控制。通过 `data-*` 标记提供场景、路径和测量槽位；布局由同一份响应式 CSS 调整，不重复输出手机版结构。 |
+| [apps/web/src/components/Icon.tsx](apps/web/src/components/Icon.tsx)         | 提供网页共用的箭头和 GitHub 小图标。统一 SVG 结构、尺寸入口和无障碍处理。                                                                                     |
 
-`data-*` 是 HTML 的自定义属性，后缀由项目约定，例如 `data-narrative`、`data-panel`；脚本用这些标记找到需要控制的元素，属性本身不会自动产生交互。窄屏网页按浏览器视口宽度启用，电脑窗口缩窄或页面放大也可能进入它；`npm run dev:mobile:web` 启动的则是另一个应用的 Expo Web 预览。
+`data-*` 是 HTML 的自定义属性，后缀由项目约定，例如 `data-home-page`、`data-page-section`；脚本用这些标记找到需要控制的元素，属性本身不会自动产生交互。网页在所有宽度都使用同一套结构和纵向滚动控制器；`npm run dev:mobile:web` 则启动另一个应用的 Expo Web 预览。
 
 ### 3.4 `src/data/` 与环境声明
 
-| 文件                                                   | 职责                                                                                                                                                           |
-| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [apps/web/src/data/site.ts](apps/web/src/data/site.ts) | 保留旧组件取数据的入口，实际数据统一从共享库读取。 从 `@qntx-ui/content` 转出 `links`、`primitives`、`sections`，兼容原 Web 组件的导入路径，不再维护重复数据。 |
-| [apps/web/src/env.d.ts](apps/web/src/env.d.ts)         | 让编辑器和类型检查认识 Astro 提供的环境类型。 声明 Astro 客户端类型环境。                                                                                      |
+| 文件                                                   | 职责                                                                                                                                           |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| [apps/web/src/data/site.ts](apps/web/src/data/site.ts) | 网站读取共享资料的统一入口，方便定位数据来源。转出 `@qntx-ui/content` 中的组织资料、链接、协议、标准及静态 Logo 路径；实际值仍只在共享库维护。 |
+| [apps/web/src/env.d.ts](apps/web/src/env.d.ts)         | 让编辑器和类型检查认识 Astro 提供的环境类型。 声明 Astro 客户端类型环境。                                                                      |
 
 ### 3.5 `src/scripts/`
 
-#### `responsive-home.ts`
+#### `home-page-scroll.ts`
 
-负责桌面与窄屏网页的交互切换。窗口缩放或浏览器缩放跨过宽度边界时，先停掉旧控制器，再启动对应的新控制器；两套结构的显示隐藏由 CSS 配合完成。
+把网页的纵向滚动距离换算成位置、透明度和当前阶段；窗口变窄、设备仿真或浏览器缩放时仍使用这个控制器。
 
-[源码](apps/web/src/scripts/responsive-home.ts)。入口为 `initializeResponsiveHome(): () => void`，由首页调用。它以 `761px` 为桌面边界，动态导入 `scroll-narrative` 或 `mobile-web-navigation`，同一时刻只挂载一个首页控制器。
+[源码](apps/web/src/scripts/home-page-scroll.ts)。入口为 `initializeHomePageScroll(root): () => void`。它读取轨道、SVG 容器、目标槽位和场景节点；将原生文档滚动换算为归一化进度，并通过连续插值更新 DOM 样式。
 
-切换断点前先执行旧控制器的清理函数；异步导入使用递增 `revision` 和 `stopped` 标记，防止迟到的导入重新挂载旧控制器。返回函数移除媒体查询监听并销毁当前实例。
-
-#### `scroll-narrative.ts`
-
-把桌面网页的滚动距离换算成元素的位置、透明度和当前阶段，是桌面滚动交互的控制中心。
-
-[源码](apps/web/src/scripts/scroll-narrative.ts)。入口为 `initializeScrollNarrative(root): () => void`。它读取轨道、SVG 容器、目标槽位和场景节点；将原生文档滚动换算为归一化进度，并通过连续插值更新 DOM 样式。
-
-目标位置来自 `getBoundingClientRect()`，而不是固定百分比。滚动事件通过单个 `requestAnimationFrame` 合并；`ResizeObserver` 负责重新测量。活动场景同时更新 `inert`、`aria-hidden` 和指针状态，避免不可见区域接收操作。该控制器不拦截桌面 wheel / touch 输入。
+目标位置来自 `getBoundingClientRect()`，而不是固定百分比。控制器同时测量每个场景的实际内容高度：能全部放进视口时使用 `data-scroll-layout="pinned"` 的单屏叙事；内容超高时使用 `data-scroll-layout="document"`，全部内容进入自然文档流。两种排版共用同一 DOM，恢复可用空间后可自动回到叙事排版。滚动事件通过单个 `requestAnimationFrame` 合并；`ResizeObserver` 负责重新测量。活动场景同时更新 `inert`、`aria-hidden` 和指针状态，避免不可见区域接收操作。该控制器不拦截 wheel / touch 输入，不再存在横向切屏或另一套宽度分支。
 
 销毁时中止事件监听、断开 observer、取消帧任务、销毁动画控制器，并移除增强产生的属性与内联样式。
 
-#### `mobile-web-navigation.ts`
-
-让窄屏网页的滚轮、键盘、导航链接和前后按钮控制同一套横向面板，并让地址、进度和按钮状态跟着变化。
-
-[源码](apps/web/src/scripts/mobile-web-navigation.ts)。入口为 `initializeMobileWebNavigation(): () => void`，仅在窄屏 Web 分支加载。它将滚轮、方向键、Home / End、锚点及前后按钮映射到同一组 Scroll Snap 节点，按 `scrollLeft / clientWidth` 计算活动索引。
-
-它负责 URL hash、导航 `aria-current`、按钮禁用状态和播报节点的同步；对输入框保留键盘行为。面板确有纵向溢出时优先允许内部阅读，再处理横向导航。事件集中使用 `AbortController`，尺寸监听和 RAF 在销毁时一起清理。
-
-#### `mascot-animation.ts`
+#### `mascot-playback.ts`
 
 控制网页 SVG 什么时候播放、暂停或切换形状，并把每一帧计算结果画到已有的 SVG 上。
 
-[源码](apps/web/src/scripts/mascot-animation.ts)。包含两个接口：`createMascotPainter()` 将共享几何写入三个 SVG path；`initializeMascotAnimation()` 管理 Web 的播放状态、输入计时、过渡与生命周期。
+[源码](apps/web/src/scripts/mascot-playback.ts)。包含两个入口：`createSvgMascotRenderer()` 返回 `SvgMascotRenderer`，通过 `renderFrame()` / `resetToStaticLogo()` 更新三个 SVG path；`initializeMascotPlayback()` 返回 `MascotPlaybackController`，管理播放状态、输入计时、过渡与生命周期。
 
-控制器接收 `setPhase()`，使用共享引擎和轮廓插值生成帧，通过 SVG 属性更新绘制，不依赖 React 重渲染。文档可见性与媒体偏好决定暂停条件；`dispose()` 负责取消 RAF、计时器及事件监听并复位绘制。此文件拥有浏览器 API，不能放入共享库。
+控制器接收 `setPlaybackPhase()`，使用共享引擎和轮廓插值生成帧，通过 SVG 属性更新绘制，不依赖 React 重渲染。文档可见性与媒体偏好决定暂停条件；`dispose()` 负责取消 RAF、计时器及事件监听并复位绘制。此文件拥有浏览器 API，不能放入共享库。
 
 ### 3.6 `src/styles/`
 
-| 文件                                                                     | 职责                                                                                                                                                            |
-| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [apps/web/src/styles/global.css](apps/web/src/styles/global.css)         | 设置整个网站共用的基础样式，并在窄屏时启用对应样式文件。 Tailwind 入口、基础元素规则、字体和全局变量；以媒体条件导入窄屏 CSS。                                  |
-| [apps/web/src/styles/narrative.css](apps/web/src/styles/narrative.css)   | 规定桌面网页的排版，并配合脚本控制定位、过渡和两套结构的显示。 桌面结构的定位和响应式规则；区分默认文档布局与脚本增强后的 sticky 布局，处理减少动态效果等分支。 |
-| [apps/web/src/styles/mobile-web.css](apps/web/src/styles/mobile-web.css) | 规定窄屏网页怎么排版、横向停靠和适应不同屏幕高度。 窄屏 Web 的完整样式集合，包含导航、Scroll Snap、组件布局和高度适配；由 `global.css` 限定导入范围。           |
+| 文件                                                                   | 职责                                                                                                                                                               |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [apps/web/src/styles/global.css](apps/web/src/styles/global.css)       | 设置整个网站共用的基础样式。提供 Tailwind 入口、基础元素规则、字体和全局变量，不再加载另一套窄屏网站样式。                                                         |
+| [apps/web/src/styles/home-page.css](apps/web/src/styles/home-page.css) | 为同一套网页结构适配宽屏、窄屏和矮屏。定义字号、栅格、导航尺寸及滚动叙事定位；能放进单屏时增强为 sticky 叙事，内容超高时保留自然文档排版，并支持减少动态效果偏好。 |
 
 ### 3.7 `public/`
 
@@ -185,10 +163,10 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 ### 3.8 `tests/`
 
-| 文件                                                                   | 职责                                                                                                                                |
-| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| [apps/web/tests/narrative.spec.ts](apps/web/tests/narrative.spec.ts)   | 自动操作桌面网页，检查滚动、动画定位和响应式切换有没有出问题。 桌面滚动控制、轮廓插值、定位测量、响应式重挂载、无脚本与无障碍分支。 |
-| [apps/web/tests/narrow-web.spec.ts](apps/web/tests/narrow-web.spec.ts) | 自动缩窄浏览器，检查窄屏网页的导航和面板切换是否正常。 窄屏控制器、节点数量、导航与既有行为的保留。                                 |
+| 文件                                                                   | 职责                                                                                                                     |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| [apps/web/tests/home-page.spec.ts](apps/web/tests/home-page.spec.ts)   | 自动检查滚动叙事和 SVG 动画是否正常。覆盖轮廓插值、目标定位、尺寸变化、无脚本与无障碍分支。                              |
+| [apps/web/tests/responsive.spec.ts](apps/web/tests/responsive.spec.ts) | 检查设备仿真、触摸、窗口调整和大字体下是否仍是同一个纵向网页。覆盖窄屏、横向持机、内容超高回退、无嵌套滚动与无脚本阅读。 |
 
 ## 4. `apps/mobile/`
 
@@ -212,25 +190,25 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 `Animated.ScrollView` 通过稳定的 `Animated.event` 更新 `Animated.Value`。Android/iOS 的位移、缩放和透明度使用 native driver，浏览器辅助预览使用 Web 可用的实现。JS 监听只在阶段变化时通知 React；实际尺寸改变时重新测量并重置滚动位置。
 
-Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交还系统。触摸和指针活动通过 `MascotHandle.activity()` 传给局部控制器，不为每个移动事件更新整页状态。
+Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交还系统。触摸和指针活动通过 `MascotActivityHandle.notifyActivity()` 传给局部控制器，不为每个移动事件更新整页状态。
 
 ### 4.3 `src/components/`
 
-| 文件                                                                                               | 职责                                                                                                                                                                                          |
-| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [apps/mobile/src/components/NarrativeContent.tsx](apps/mobile/src/components/NarrativeContent.tsx) | 把共享资料组织成手机应用能显示的原生文字和区块。 导出 `OriginContent`、`ProtocolContent`、`ConnectContent`；用 `View` / `Text` 及各自 StyleSheet 组织共享数据，接受紧凑布局参数，不读取 DOM。 |
-| [apps/mobile/src/components/ExternalLink.tsx](apps/mobile/src/components/ExternalLink.tsx)         | 统一处理手机应用的外链点击，以及打不开链接时的提示。 用 `Pressable`、原生 `Linking.openURL` 和 `Alert` 封装外链；提供链接语义、触摸尺寸、按下态及共享颜色。                                   |
-| [apps/mobile/src/components/Mascot.tsx](apps/mobile/src/components/Mascot.tsx)                     | 把动画计算结果画到手机端 SVG 上，并连接应用前后台状态。 将绘制与应用组件树分开；连接播放控制器、SVG 引用和 `AppState`，对外提供活动通知句柄。                                                 |
+| 文件                                                                                           | 职责                                                                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [apps/mobile/src/components/HomeSections.tsx](apps/mobile/src/components/HomeSections.tsx)     | 把共享资料组织成手机应用能显示的原生文字和区块。 导出 `AboutSection`、`ProtocolsSection`、`ResourcesSection`；用 `View` / `Text` 及各自 StyleSheet 组织共享数据，接受紧凑布局参数，不读取 DOM。 |
+| [apps/mobile/src/components/ExternalLink.tsx](apps/mobile/src/components/ExternalLink.tsx)     | 统一处理手机应用的外链点击，以及打不开链接时的提示。 用 `Pressable`、原生 `Linking.openURL` 和 `Alert` 封装外链；提供链接语义、触摸尺寸、按下态及共享颜色。                                     |
+| [apps/mobile/src/components/AnimatedMascot.tsx](apps/mobile/src/components/AnimatedMascot.tsx) | 把动画计算结果画到手机端 SVG 上，并连接应用前后台状态。 将绘制与应用组件树分开；连接播放控制器、SVG 引用和 `AppState`，对外提供活动通知句柄。                                                   |
 
-`Mascot.tsx` 在 Android/iOS 通过 `setNativeProps` 只更新变化的路径，避免每帧 React 协调；Expo Web 使用局部 React state 更新 SVG。Web 传递 `aria-hidden`，原生平台传递各自的无障碍属性，避免原生属性泄漏到 SVG DOM。
+`AnimatedMascot.tsx` 在 Android/iOS 通过 `setNativeProps` 只更新变化的路径，避免每帧 React 协调；Expo Web 使用局部 React state 更新 SVG。Web 传递 `aria-hidden`，原生平台传递各自的无障碍属性，避免原生属性泄漏到 SVG DOM。
 
-### 4.4 `src/animation/playback.ts`
+### 4.4 `src/animation/mascot-playback.ts`
 
 手机动画的播放控制器，决定何时计算下一帧、何时暂停，以及静态形状和动画怎样平滑衔接。
 
-[源码](apps/mobile/src/animation/playback.ts)。导出 `createPlayback()`、`MascotPhase`、`MascotHandle` 和 `Playback`，负责采样、形变、待机截止时间、前后台与减少动态效果的协调。
+[源码](apps/mobile/src/animation/mascot-playback.ts)。导出 `createMascotPlaybackController()`、`MascotPlaybackPhase`、`MascotActivityHandle` 和 `MascotPlaybackController`，以 `updateOptions()` 接收播放条件、以 `notifyActivity()` 接收用户活动，负责采样、形变、待机截止时间、前后台与减少动态效果的协调。
 
-应用只提供阶段和活动信号，绘制函数通过 `onPaint(paths)` 接收结果。控制器先判断是否达到约 30fps 的预算，再执行完整轮廓计算；Mobile 启用共享引擎的 `directGeometry` 分支。计时器采用截止时间重排，连续输入不反复创建定时器，也不重复重启尚未完成的退出过渡。`dispose()` 释放 RAF 和计时器。
+应用只提供阶段和活动信号，绘制函数通过 `onRenderFrame(paths)` 接收结果。控制器先判断是否达到约 30fps 的预算，再执行完整轮廓计算；Mobile 启用共享引擎的 `directGeometry` 分支。计时器采用截止时间重排，连续输入不反复创建定时器，也不重复重启尚未完成的退出过渡。`dispose()` 释放 RAF 和计时器。
 
 该文件依赖 Mobile 的调度环境，但不导入 React / DOM，便于用 Node 假时钟单独测试。
 
@@ -256,14 +234,14 @@ Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交
 
 ### 5.1 `packages/content/`
 
-| 文件                                                             | 职责                                                                                                                                                        |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [packages/content/package.json](packages/content/package.json)   | 声明共享内容库的包名和入口，让两端都能导入它。 声明私有包 `@qntx-ui/content` 和 `src/index.ts` 源码 exports。                                               |
-| [packages/content/project.json](packages/content/project.json)   | 把共享内容库登记给 Nx，并配置它的检查任务。 注册 Nx `content` 库，标签为 `platform:shared` / `type:lib`，提供检查任务。                                     |
-| [packages/content/tsconfig.json](packages/content/tsconfig.json) | 按纯数据代码的环境检查内容库，不默认引入浏览器或手机平台类型。 继承公共严格配置，使用 ES2022 库且不自动引入环境类型。                                       |
-| [packages/content/src/index.ts](packages/content/src/index.ts)   | 集中保存两端共用的文字、链接、协议资料和静态 Logo 路径。 集中声明链接、section / 类型、结构化文本、协议数据及 `brandMarkPath`；不返回 JSX，不调用平台 API。 |
+| 文件                                                             | 职责                                                                                                                                |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [packages/content/package.json](packages/content/package.json)   | 声明共享内容库的包名和入口，让两端都能导入它。 声明私有包 `@qntx-ui/content` 和 `src/index.ts` 源码 exports。                       |
+| [packages/content/project.json](packages/content/project.json)   | 把共享内容库登记给 Nx，并配置它的检查任务。 注册 Nx `content` 库，标签为 `platform:shared` / `type:lib`，提供检查任务。             |
+| [packages/content/tsconfig.json](packages/content/tsconfig.json) | 按纯数据代码的环境检查内容库，不默认引入浏览器或手机平台类型。 继承公共严格配置，使用 ES2022 库且不自动引入环境类型。               |
+| [packages/content/src/index.ts](packages/content/src/index.ts)   | 集中保存两端共用的文字、链接、协议资料和静态 Logo 路径。只提供数据，不返回 JSX 或调用平台 API；旧横向面板导航数组及对应类型已删除。 |
 
-两端组件按各自需求读取这些数据，不要求共用相同组件树。文件保留部分兼容窄屏 Web 的字段，修改前应检查所有调用方。
+两端组件按各自需求读取这些数据，不要求共用相同组件树。修改共享值前应检查两端调用方；Web 的数据入口仍保留在 `src/data/site.ts`。
 
 ### 5.2 `packages/design-tokens/`
 
@@ -317,16 +295,16 @@ flowchart LR
 
 ### 实现分工
 
-| 项目层面     | Astro Web                                                      | Expo / React Native Mobile                                                              |
-| ------------ | -------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| 组件与运行时 | 构建生成 HTML / SVG，局部 TypeScript 控制 DOM。                | `registerRootComponent` 注册 React 组件树，原生平台渲染 `View` / `Text` / `Pressable`。 |
-| 样式         | Tailwind、CSS、媒体查询及 CSS 变量。                           | `StyleSheet`、测量结果和 `Animated`；不导入 Web CSS。                                   |
-| 滚动与尺寸   | 文档滚动、DOM 矩形、`ResizeObserver`；窄屏使用独立兼容控制器。 | `Animated.ScrollView`、`onLayout`、安全区域与窗口 / 字体信息。                          |
-| 连续呈现     | DOM style、CSS 和原生 SVG 属性。                               | native driver 处理支持的变换；SVG path 由独立 JS 控制器更新。                           |
-| 生命周期     | `AbortController`、observer、文档可见性、Astro 销毁回调。      | React effect 清理、`AppState`、`AccessibilityInfo` 与 Android 返回键。                  |
-| SVG 计算     | 默认共享引擎，DOM painter 写属性。                             | `directGeometry` 共享引擎，原生引用更新；Expo Web 使用局部 state。                      |
-| 外链         | HTML `<a>`。                                                   | `Linking.openURL` 封装及失败处理。                                                      |
-| 构建结果     | 可部署的静态 Web 文件。                                        | 导出的平台资源；安装包需要独立的原生构建流程。                                          |
+| 项目层面     | Astro Web                                                                       | Expo / React Native Mobile                                                              |
+| ------------ | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| 组件与运行时 | 构建生成 HTML / SVG，局部 TypeScript 控制 DOM。                                 | `registerRootComponent` 注册 React 组件树，原生平台渲染 `View` / `Text` / `Pressable`。 |
+| 样式         | Tailwind、CSS、媒体查询及 CSS 变量。                                            | `StyleSheet`、测量结果和 `Animated`；不导入 Web CSS。                                   |
+| 滚动与尺寸   | 同一套文档滚动、DOM 测量与 `ResizeObserver`；按内容高度选择单屏叙事或自然排版。 | `Animated.ScrollView`、`onLayout`、安全区域与窗口 / 字体信息。                          |
+| 连续呈现     | DOM style、CSS 和原生 SVG 属性。                                                | native driver 处理支持的变换；SVG path 由独立 JS 控制器更新。                           |
+| 生命周期     | `AbortController`、observer、文档可见性、Astro 销毁回调。                       | React effect 清理、`AppState`、`AccessibilityInfo` 与 Android 返回键。                  |
+| SVG 计算     | 默认共享引擎，DOM painter 写属性。                                              | `directGeometry` 共享引擎，原生引用更新；Expo Web 使用局部 state。                      |
+| 外链         | HTML `<a>`。                                                                    | `Linking.openURL` 封装及失败处理。                                                      |
+| 构建结果     | 可部署的静态 Web 文件。                                                         | 导出的平台资源；安装包需要独立的原生构建流程。                                          |
 
 共享库不持有用户输入状态，也不决定组件布局。React、数据与几何可以共用，HTML / 原生组件、样式系统和事件适配分别实现。
 

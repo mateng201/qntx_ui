@@ -7,18 +7,20 @@ import {
 } from "@qntx-ui/mascot";
 import type { CatalogFrame } from "@qntx-ui/mascot";
 
-type Point = { x: number; y: number };
+type PointerPosition = { x: number; y: number };
 
-export function createMascotPainter(
+type SvgMascotRenderer = {
+  renderFrame: (frame: CatalogFrame) => void;
+  resetToStaticLogo: () => void;
+};
+
+export function createSvgMascotRenderer(
   body: SVGPathElement,
   left: SVGPathElement,
   right: SVGPathElement,
-): {
-  paint: (sample: CatalogFrame) => void;
-  reset: () => void;
-} {
+): SvgMascotRenderer {
   return {
-    paint(sample): void {
+    renderFrame(sample): void {
       body.setAttribute("d", `${contourPath(sample.outer)}${contourPath(sample.hole)}`);
       body.setAttribute("fill", sample.colors.body);
       for (const [eye, points] of [
@@ -30,7 +32,7 @@ export function createMascotPainter(
         eye.setAttribute("display", points.length > 0 ? "inline" : "none");
       }
     },
-    reset(): void {
+    resetToStaticLogo(): void {
       body.setAttribute("d", brandMarkPath);
       body.setAttribute("fill", "currentColor");
       left.setAttribute("display", "none");
@@ -39,31 +41,31 @@ export function createMascotPainter(
   };
 }
 
-type MascotPhase = "opening" | "narrative" | "docked";
+type MascotPlaybackPhase = "opening" | "scrolling" | "docked";
 
-type MascotController = {
-  setPhase: (next: MascotPhase) => void;
+type MascotPlaybackController = {
+  setPlaybackPhase: (next: MascotPlaybackPhase) => void;
   dispose: () => void;
 };
 
 /** Scroll playback takes priority; the two static endpoints have independent five-second idle waits. */
-export function initializeMascotAnimation(root: HTMLElement): MascotController {
+export function initializeMascotPlayback(root: HTMLElement): MascotPlaybackController {
   const body = root.querySelector<SVGPathElement>("[data-mascot-body]");
   const left = root.querySelector<SVGPathElement>('[data-mascot-eye="left"]');
   const right = root.querySelector<SVGPathElement>('[data-mascot-eye="right"]');
   if (body === null || left === null || right === null) {
-    return { setPhase: () => undefined, dispose: () => undefined };
+    return { setPlaybackPhase: () => undefined, dispose: () => undefined };
   }
-  const painter = createMascotPainter(body, left, right);
+  const svgRenderer = createSvgMascotRenderer(body, left, right);
   const events = new AbortController();
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let catalog: ReturnType<typeof createCatalogAnimation> | undefined;
   let frame: number | undefined;
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
-  let phase: MascotPhase = "opening";
+  let playbackPhase: MascotPlaybackPhase = "opening";
   let idle = false;
   let disposed = false;
-  let lastPointer: Point | undefined;
+  let lastPointer: PointerPosition | undefined;
   let current = staticMascotFrame;
   let playing = false;
   let transition:
@@ -74,7 +76,7 @@ export function initializeMascotAnimation(root: HTMLElement): MascotController {
       }
     | undefined;
 
-  function tick(now: number): void {
+  function renderAnimationFrame(now: number): void {
     frame = undefined;
     const target = catalog?.sample(now) ?? staticMascotFrame;
     if (transition === undefined) {
@@ -87,24 +89,28 @@ export function initializeMascotAnimation(root: HTMLElement): MascotController {
       }
     }
     if (playing || transition !== undefined) {
-      painter.paint(current);
+      svgRenderer.renderFrame(current);
     } else {
       current = staticMascotFrame;
-      painter.reset();
-      root.dataset["running"] = "false";
+      svgRenderer.resetToStaticLogo();
+      root.dataset["animationRunning"] = "false";
     }
-    root.dataset["transition"] =
+    root.dataset["morphState"] =
       transition === undefined ? "none" : playing ? "entering" : "leaving";
     if (playing || transition !== undefined) {
-      frame = requestAnimationFrame(tick);
+      frame = requestAnimationFrame(renderAnimationFrame);
     }
   }
 
-  function synchronize(): void {
+  function updatePlaybackState(): void {
     const enabled = !document.hidden && !reducedMotion.matches;
-    const wanted = enabled && (phase === "narrative" || idle);
-    root.dataset["animationPhase"] = phase;
-    root.dataset["playback"] = wanted ? (phase === "narrative" ? "scroll" : "idle") : "static";
+    const wanted = enabled && (playbackPhase === "scrolling" || idle);
+    root.dataset["playbackPhase"] = playbackPhase;
+    root.dataset["playbackMode"] = wanted
+      ? playbackPhase === "scrolling"
+        ? "scroll"
+        : "idle"
+      : "static";
     if (enabled) {
       if (playing !== wanted) {
         playing = wanted;
@@ -116,9 +122,9 @@ export function initializeMascotAnimation(root: HTMLElement): MascotController {
           duration: wanted ? 360 : 320,
         };
       }
-      root.dataset["running"] = String(playing || transition !== undefined);
+      root.dataset["animationRunning"] = String(playing || transition !== undefined);
       if (frame === undefined && (playing || transition !== undefined)) {
-        tick(performance.now());
+        renderAnimationFrame(performance.now());
       }
       return;
     }
@@ -130,33 +136,33 @@ export function initializeMascotAnimation(root: HTMLElement): MascotController {
     transition = undefined;
     catalog = undefined;
     current = staticMascotFrame;
-    painter.reset();
-    root.dataset["running"] = "false";
-    root.dataset["transition"] = "none";
+    svgRenderer.resetToStaticLogo();
+    root.dataset["animationRunning"] = "false";
+    root.dataset["morphState"] = "none";
   }
 
-  function clearIdleTimer(): void {
+  function clearIdlePlaybackTimer(): void {
     if (idleTimer !== undefined) {
       clearTimeout(idleTimer);
       idleTimer = undefined;
     }
   }
 
-  function restartIdleTimer(): void {
-    clearIdleTimer();
-    if (phase !== "narrative" && !document.hidden && !reducedMotion.matches) {
+  function scheduleIdlePlayback(): void {
+    clearIdlePlaybackTimer();
+    if (playbackPhase !== "scrolling" && !document.hidden && !reducedMotion.matches) {
       idleTimer = setTimeout(() => {
         idleTimer = undefined;
         idle = true;
-        synchronize();
+        updatePlaybackState();
       }, 5000);
     }
   }
 
-  function restart(): void {
+  function resetIdlePlayback(): void {
     idle = false;
-    restartIdleTimer();
-    synchronize();
+    scheduleIdlePlayback();
+    updatePlaybackState();
   }
 
   document.addEventListener(
@@ -169,40 +175,40 @@ export function initializeMascotAnimation(root: HTMLElement): MascotController {
         return;
       }
       lastPointer = { x: event.clientX, y: event.clientY };
-      if (phase !== "narrative") {
+      if (playbackPhase !== "scrolling") {
         const wasIdle = idle;
         idle = false;
-        restartIdleTimer();
+        scheduleIdlePlayback();
         if (wasIdle) {
-          synchronize();
+          updatePlaybackState();
         }
       }
     },
     { passive: true, signal: events.signal },
   );
-  document.addEventListener("visibilitychange", restart, { signal: events.signal });
-  reducedMotion.addEventListener("change", restart, { signal: events.signal });
-  painter.reset();
-  root.dataset["transition"] = "none";
-  restart();
+  document.addEventListener("visibilitychange", resetIdlePlayback, { signal: events.signal });
+  reducedMotion.addEventListener("change", resetIdlePlayback, { signal: events.signal });
+  svgRenderer.resetToStaticLogo();
+  root.dataset["morphState"] = "none";
+  resetIdlePlayback();
   return {
-    setPhase(next): void {
-      if (!disposed && phase !== next) {
-        phase = next;
-        restart();
+    setPlaybackPhase(next): void {
+      if (!disposed && playbackPhase !== next) {
+        playbackPhase = next;
+        resetIdlePlayback();
       }
     },
     dispose(): void {
       disposed = true;
       events.abort();
-      clearIdleTimer();
+      clearIdlePlaybackTimer();
       if (frame !== undefined) {
         cancelAnimationFrame(frame);
       }
-      painter.reset();
-      root.dataset["running"] = "false";
-      root.dataset["playback"] = "static";
-      root.dataset["transition"] = "none";
+      svgRenderer.resetToStaticLogo();
+      root.dataset["animationRunning"] = "false";
+      root.dataset["playbackMode"] = "static";
+      root.dataset["morphState"] = "none";
     },
   };
 }

@@ -6,14 +6,6 @@ export const links = {
   products: "https://qntx.org/products",
 } as const;
 
-export const sections = [
-  { id: "overview", label: "Overview", number: "01", theme: "light" },
-  { id: "protocols", label: "Protocols", number: "02", theme: "light" },
-  { id: "about", label: "About", number: "03", theme: "dark" },
-] as const;
-
-export type SectionId = (typeof sections)[number]["id"];
-
 export const hero = {
   titleLines: ["The economic layer", "for autonomous agents."],
   description:

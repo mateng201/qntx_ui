@@ -12,19 +12,19 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { ExternalLink } from "./ExternalLink";
 
-export function OriginContent({ compact = false }: { compact?: boolean }): ReactElement {
+export function AboutSection({ compact = false }: { compact?: boolean }): ReactElement {
   return (
-    <View style={styles.origin} testID="mobile-origin-content">
+    <View style={styles.about} testID="mobile-about-content">
       <Text style={styles.kicker}>A SHARED STARTING POINT</Text>
       <Text
         accessibilityRole="header"
-        style={[styles.originTitle, compact && styles.originTitleCompact]}
+        style={[styles.aboutTitle, compact && styles.aboutTitleCompact]}
       >
         {aboutIntro.titleLines[0]}
         {"\n"}
         <Text style={styles.accent}>{aboutIntro.titleLines[1]}</Text>
       </Text>
-      <Text style={[styles.originCopy, compact && styles.originCopyCompact]}>
+      <Text style={[styles.aboutCopy, compact && styles.aboutCopyCompact]}>
         {aboutIntro.description}
       </Text>
       <Text style={styles.signature}>{aboutIntro.signatureLines.join(" ")}</Text>
@@ -32,12 +32,12 @@ export function OriginContent({ compact = false }: { compact?: boolean }): React
   );
 }
 
-export function ProtocolContent({
+export function ProtocolsSection({
   compact = false,
-  flow = false,
+  isDocumentLayout = false,
 }: {
   compact?: boolean;
-  flow?: boolean;
+  isDocumentLayout?: boolean;
 }): ReactElement {
   return (
     <View testID="mobile-protocol-content" style={styles.protocols}>
@@ -54,7 +54,7 @@ export function ProtocolContent({
         {primitives.map((primitive) => (
           <View
             key={primitive.number}
-            style={[styles.feature, flow && styles.featureFlow]}
+            style={[styles.feature, isDocumentLayout && styles.featureDocument]}
             testID={`mobile-feature-${primitive.number}`}
           >
             <View style={styles.featureMeta}>
@@ -77,13 +77,13 @@ export function ProtocolContent({
   );
 }
 
-export function ConnectContent(): ReactElement {
+export function ResourcesSection(): ReactElement {
   return (
-    <View style={styles.connect} testID="mobile-connect-content">
-      <Text accessibilityRole="header" style={styles.connectTitle}>
+    <View style={styles.resources} testID="mobile-resources-content">
+      <Text accessibilityRole="header" style={styles.resourcesTitle}>
         {hero.titleLines.join("\n")}
       </Text>
-      <Text style={styles.connectCopy}>{hero.description}</Text>
+      <Text style={styles.resourcesCopy}>{hero.description}</Text>
       <View style={styles.actions}>
         <ExternalLink href={links.github} label={hero.primaryAction}>
           <View style={styles.primary}>
@@ -127,9 +127,9 @@ export function ConnectContent(): ReactElement {
 }
 
 const styles = StyleSheet.create({
-  origin: { paddingHorizontal: 26, alignItems: "center", width: "100%" },
+  about: { paddingHorizontal: 26, alignItems: "center", width: "100%" },
   kicker: { color: "#5d6259", fontSize: 11, lineHeight: 17, letterSpacing: 0.9, marginBottom: 24 },
-  originTitle: {
+  aboutTitle: {
     color: "#1b1d19",
     fontSize: 46,
     lineHeight: 52,
@@ -137,16 +137,16 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 26,
   },
-  originTitleCompact: { fontSize: 38, lineHeight: 44 },
+  aboutTitleCompact: { fontSize: 38, lineHeight: 44 },
   accent: { color: "#6c7463" },
-  originCopy: {
+  aboutCopy: {
     color: "#50564a",
     fontSize: 18,
     lineHeight: 29,
     textAlign: "center",
     maxWidth: 520,
   },
-  originCopyCompact: { fontSize: 16, lineHeight: 26 },
+  aboutCopyCompact: { fontSize: 16, lineHeight: 26 },
   signature: { color: "#5d6259", fontSize: 11, lineHeight: 19, marginTop: 26, textAlign: "center" },
   protocols: { paddingHorizontal: 22, width: "100%", maxWidth: 720, alignSelf: "center" },
   protocolTitle: {
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#c8cec0",
     paddingTop: 16,
   },
-  featureFlow: { width: "100%", marginBottom: 6 },
+  featureDocument: { width: "100%", marginBottom: 6 },
   featureMeta: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
   featureNumber: { color: "#535b4c", fontSize: 11 },
   badge: {
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   featureTitleCompact: { fontSize: 22, lineHeight: 27, marginBottom: 8 },
   featureCopy: { color: "#5d6259", fontSize: 14, lineHeight: 22 },
   featureCopyCompact: { fontSize: 13, lineHeight: 20 },
-  connect: {
+  resources: {
     paddingHorizontal: 26,
     paddingTop: 44,
     paddingBottom: 44,
@@ -201,14 +201,14 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     backgroundColor: "#fafaf8",
   },
-  connectTitle: {
+  resourcesTitle: {
     color: "#1b1d19",
     fontSize: 36,
     lineHeight: 42,
     letterSpacing: -1.7,
     marginBottom: 24,
   },
-  connectCopy: { color: "#5d6259", fontSize: 16, lineHeight: 27 },
+  resourcesCopy: { color: "#5d6259", fontSize: 16, lineHeight: 27 },
   actions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 20, marginTop: 26 },
   primary: {
     flexDirection: "row",

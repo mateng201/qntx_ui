@@ -1,12 +1,12 @@
-/* oxlint-disable no-await-in-loop -- Each gesture depends on the previous rendered native scene. */
+/* oxlint-disable no-await-in-loop -- Each gesture depends on the previous rendered native section. */
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-async function progress(page: Page, amount: number): Promise<void> {
-  await page.getByTestId("mobile-story-scroll").evaluate((element, value) => {
-    const track = document.querySelector('[data-testid="mobile-story-track"]');
+async function scrollToProgress(page: Page, amount: number): Promise<void> {
+  await page.getByTestId("mobile-scroll-view").evaluate((element, value) => {
+    const track = document.querySelector('[data-testid="mobile-scroll-track"]');
     if (track === null) {
-      throw new Error("Missing story track");
+      throw new Error("Missing scroll track");
     }
     element.scrollTop = track.getBoundingClientRect().height * value;
   }, amount);
@@ -21,11 +21,11 @@ test("mobile starts with a centered static Q, light header, and no old tabs", as
     }
   });
   await page.goto("/");
-  await expect(page.getByTestId("mobile-narrative")).toBeVisible();
+  await expect(page.getByTestId("mobile-home-screen")).toBeVisible();
   await expect(page.getByRole("tab")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "QuantX home" })).toBeVisible();
   await expect(page.getByRole("link", { name: "GitHub", exact: true })).toBeVisible();
-  await expect(page.getByTestId("mobile-scene-opening")).toHaveCSS("opacity", "1");
+  await expect(page.getByTestId("mobile-section-opening")).toHaveCSS("opacity", "1");
   const mascot = await page.getByTestId("mobile-mascot").boundingBox();
   expect(Math.abs((mascot?.x ?? 0) + (mascot?.width ?? 0) / 2 - 195)).toBeLessThan(1);
   expect(
@@ -43,16 +43,18 @@ test("real scrolling changes scenes, pure-text protocols, and docks the mascot",
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  const span = await page.getByTestId("mobile-story-track").evaluate((track) => track.clientHeight);
+  const span = await page
+    .getByTestId("mobile-scroll-track")
+    .evaluate((track) => track.clientHeight);
   await page.mouse.move(180, 400);
   await page.mouse.wheel(0, span * 0.29);
-  await expect(page.getByTestId("mobile-scene-origin")).toHaveCSS("opacity", "1");
+  await expect(page.getByTestId("mobile-section-about")).toHaveCSS("opacity", "1");
   await page.mouse.wheel(0, span * 0.34);
-  await expect(page.getByTestId("mobile-scene-protocols")).toHaveCSS("opacity", "1");
+  await expect(page.getByTestId("mobile-section-protocols")).toHaveCSS("opacity", "1");
   await expect(page.getByTestId("mobile-protocol-content").getByRole("link")).toHaveCount(0);
   await expect(page.locator('[data-testid^="mobile-feature-"]')).toHaveCount(4);
   await page.mouse.wheel(0, span * 0.37);
-  await expect(page.getByTestId("mobile-scene-protocols")).toHaveCSS("opacity", "0");
+  await expect(page.getByTestId("mobile-section-protocols")).toHaveCSS("opacity", "0");
   const mascot = page.getByTestId("mobile-mascot");
   await expect(mascot).toHaveCSS("opacity", "1");
   const box = await mascot.boundingBox();
@@ -65,7 +67,7 @@ test("real scrolling changes scenes, pure-text protocols, and docks the mascot",
   await expect(page.getByRole("link", { name: "Follow the work", exact: true })).toBeInViewport();
   await expect(page.getByRole("button", { name: "QuantX home" })).toBeInViewport();
   await page.getByRole("button", { name: "QuantX home" }).click();
-  await expect(page.getByTestId("mobile-scene-opening")).toHaveCSS("opacity", "1");
+  await expect(page.getByTestId("mobile-section-opening")).toHaveCSS("opacity", "1");
 });
 
 test("native SVG preserves five-second idle, mouse reset, and bidirectional morphing", async ({
@@ -81,36 +83,38 @@ test("native SVG preserves five-second idle, mouse reset, and bidirectional morp
   await page.waitForTimeout(2500);
   await expect(body).toHaveAttribute("d", original ?? "");
   await expect.poll(async () => body.getAttribute("d"), { timeout: 4000 }).not.toBe(original);
-  const returnedAt = await page.getByTestId("mobile-narrative").evaluate(async (element, path) => {
-    const body = element.querySelector('[data-testid="mobile-mascot-body"]');
-    const started = performance.now();
-    let settled = -1;
-    return new Promise<number>((resolve) => {
-      const move = (now: number): void => {
-        element.dispatchEvent(
-          new PointerEvent("pointermove", {
-            bubbles: true,
-            pointerType: "mouse",
-            clientX: 102 + (now - started) / 10,
-            clientY: 100,
-          }),
-        );
-        if (settled < 0 && body?.getAttribute("d") === path) {
-          settled = now - started;
-        }
-        if (now - started < 650) {
-          requestAnimationFrame(move);
-        } else {
-          resolve(settled);
-        }
-      };
-      requestAnimationFrame(move);
-    });
-  }, original);
+  const returnedAt = await page
+    .getByTestId("mobile-home-screen")
+    .evaluate(async (element, path) => {
+      const body = element.querySelector('[data-testid="mobile-mascot-body"]');
+      const started = performance.now();
+      let settled = -1;
+      return new Promise<number>((resolve) => {
+        const move = (now: number): void => {
+          element.dispatchEvent(
+            new PointerEvent("pointermove", {
+              bubbles: true,
+              pointerType: "mouse",
+              clientX: 102 + (now - started) / 10,
+              clientY: 100,
+            }),
+          );
+          if (settled < 0 && body?.getAttribute("d") === path) {
+            settled = now - started;
+          }
+          if (now - started < 650) {
+            requestAnimationFrame(move);
+          } else {
+            resolve(settled);
+          }
+        };
+        requestAnimationFrame(move);
+      });
+    }, original);
   expect(returnedAt).toBeGreaterThan(0);
   expect(returnedAt).toBeLessThan(600);
   await expect(body).toHaveAttribute("d", original ?? "");
-  await progress(page, 0.08);
+  await scrollToProgress(page, 0.08);
   await expect.poll(async () => body.getAttribute("d")).not.toBe(original);
   const poses = await body.evaluate(async (element) => {
     const paths = new Set<string>();
@@ -128,7 +132,7 @@ test("native SVG preserves five-second idle, mouse reset, and bidirectional morp
     });
   });
   expect(poses).toBeGreaterThan(5);
-  await progress(page, 1);
+  await scrollToProgress(page, 1);
   await expect(body).toHaveAttribute("d", original ?? "");
   await expect.poll(async () => body.getAttribute("d"), { timeout: 6500 }).not.toBe(original);
   await page.mouse.move(103, 100);
@@ -146,15 +150,15 @@ for (const viewport of [
     await page.setViewportSize(viewport);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    await progress(page, 0.29);
-    const origin = await page.getByTestId("mobile-origin-content").boundingBox();
-    expect(origin?.y).toBeGreaterThanOrEqual(64);
-    expect((origin?.y ?? 0) + (origin?.height ?? 0)).toBeLessThanOrEqual(viewport.height);
-    await progress(page, 0.63);
+    await scrollToProgress(page, 0.29);
+    const about = await page.getByTestId("mobile-about-content").boundingBox();
+    expect(about?.y).toBeGreaterThanOrEqual(64);
+    expect((about?.y ?? 0) + (about?.height ?? 0)).toBeLessThanOrEqual(viewport.height);
+    await scrollToProgress(page, 0.63);
     const protocols = await page.getByTestId("mobile-protocol-content").boundingBox();
     expect(protocols?.y).toBeGreaterThanOrEqual(64);
     expect((protocols?.y ?? 0) + (protocols?.height ?? 0)).toBeLessThanOrEqual(viewport.height);
-    await progress(page, 1);
+    await scrollToProgress(page, 1);
     await page.getByRole("link", { name: "Follow the work", exact: true }).scrollIntoViewIfNeeded();
     await expect(page.getByRole("link", { name: "Follow the work", exact: true })).toBeInViewport();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -168,17 +172,17 @@ test("landscape uses a normal readable document and resize restores the opening"
 }) => {
   await page.setViewportSize({ width: 844, height: 390 });
   await page.goto("/");
-  await expect(page.getByTestId("mobile-story-track")).toHaveCount(0);
-  await page.getByTestId("mobile-flow-protocols").scrollIntoViewIfNeeded();
+  await expect(page.getByTestId("mobile-scroll-track")).toHaveCount(0);
+  await page.getByTestId("mobile-document-protocols").scrollIntoViewIfNeeded();
   await expect(page.getByTestId("mobile-feature-04")).toBeAttached();
   await page.getByTestId("mobile-feature-04").scrollIntoViewIfNeeded();
   await expect(page.getByTestId("mobile-feature-04")).toBeInViewport();
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByTestId("mobile-story-track")).toBeAttached();
-  await expect(page.getByTestId("mobile-scene-opening")).toHaveCSS("opacity", "1");
+  await expect(page.getByTestId("mobile-scroll-track")).toBeAttached();
+  await expect(page.getByTestId("mobile-section-opening")).toHaveCSS("opacity", "1");
 });
 
-test("touch swipes reach the next story on a phone viewport", async ({ browser }) => {
+test("touch swipes reach the next section on a phone viewport", async ({ browser }) => {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     isMobile: true,
@@ -186,7 +190,7 @@ test("touch swipes reach the next story on a phone viewport", async ({ browser }
   });
   const page = await context.newPage();
   await page.goto("http://127.0.0.1:8082/");
-  await page.getByTestId("mobile-narrative").waitFor();
+  await page.getByTestId("mobile-home-screen").waitFor();
   const session = await context.newCDPSession(page);
   await session.send("Input.dispatchTouchEvent", {
     type: "touchStart",
@@ -201,13 +205,13 @@ test("touch swipes reach the next story on a phone viewport", async ({ browser }
   await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   await expect
     .poll(async () =>
-      page.getByTestId("mobile-story-scroll").evaluate((element) => element.scrollTop),
+      page.getByTestId("mobile-scroll-view").evaluate((element) => element.scrollTop),
     )
     .toBeGreaterThan(0);
   await context.close();
 });
 
-test("Docs opens separately while the native narrative keeps its position", async ({
+test("Docs opens separately while the native home screen keeps its position", async ({
   page,
   context,
 }) => {
@@ -215,11 +219,11 @@ test("Docs opens separately while the native narrative keeps its position", asyn
     await route.fulfill({ status: 200, body: "Documentation destination" });
   });
   await page.goto("/");
-  await progress(page, 0.29);
+  await scrollToProgress(page, 0.29);
   const popupPromise = page.waitForEvent("popup");
   await page.getByRole("link", { name: "Docs", exact: true }).click();
   const popup = await popupPromise;
   await expect(popup).toHaveURL("https://qntx.org/developers");
   await popup.close();
-  await expect(page.getByTestId("mobile-scene-origin")).toHaveCSS("opacity", "1");
+  await expect(page.getByTestId("mobile-section-about")).toHaveCSS("opacity", "1");
 });

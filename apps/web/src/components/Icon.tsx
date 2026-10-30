@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-type IconKind = "arrow" | "github" | "chevron";
+type IconKind = "arrow" | "github";
 
 export function Icon({
   kind = "arrow",
@@ -21,7 +21,6 @@ export function Icon({
       aria-hidden="true"
     >
       {kind === "arrow" && <path d="M5 19 19 5M5 5h14v14" />}
-      {kind === "chevron" && <path d="m9 5 7 7-7 7" />}
       {kind === "github" && (
         <path
           fill="currentColor"

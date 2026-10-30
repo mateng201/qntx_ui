@@ -1,2 +1,11 @@
-// Keep the existing Web import path while content lives in a platform-neutral workspace.
-export { links, primitives, sections } from "@qntx-ui/content";
+// The website's data entry point; values remain owned by the platform-neutral workspace.
+export {
+  aboutDestinations,
+  aboutIntro,
+  brandMarkPath,
+  hero,
+  links,
+  primitives,
+  protocolIntro,
+  standards,
+} from "@qntx-ui/content";

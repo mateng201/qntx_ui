@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "./mobile-web.css" screen and (max-width: 760px);
 
 @theme {
   --font-sans: "Inter", "Segoe UI", Arial, sans-serif;

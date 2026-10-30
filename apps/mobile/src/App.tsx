@@ -15,20 +15,20 @@ import {
 import type { ScrollViewInstance } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
-import type { MascotPhase } from "./animation/playback";
+import type { MascotPlaybackPhase } from "./animation/mascot-playback";
+import { AnimatedMascot } from "./components/AnimatedMascot";
+import type { MascotActivityHandle } from "./components/AnimatedMascot";
 import { ExternalLink } from "./components/ExternalLink";
-import { Mascot } from "./components/Mascot";
-import type { MascotHandle } from "./components/Mascot";
-import { ConnectContent, OriginContent, ProtocolContent } from "./components/NarrativeContent";
+import { ResourcesSection, AboutSection, ProtocolsSection } from "./components/HomeSections";
 import { useReducedMotion, useScreenReader } from "./hooks/useReducedMotion";
 
 const headerHeight = 64;
 const dockSize = 32;
 const statusBarStyle = "dark";
 
-type Scene = "opening" | "origin" | "protocols" | "connect";
+type HomeSectionId = "opening" | "about" | "protocols" | "resources";
 
-function MobileNarrative(): ReactElement {
+function MobileHomeScreen(): ReactElement {
   const dimensions = useWindowDimensions();
   const [viewport, setViewport] = useState({
     width: Math.min(dimensions.width, 760),
@@ -42,27 +42,29 @@ function MobileNarrative(): ReactElement {
   );
   const scrollRef = useRef<ScrollViewInstance>(null);
   const offset = useRef(0);
-  const playback = useRef<MascotPhase>("opening");
-  const [phase, setPhase] = useState<MascotPhase>("opening");
-  const [scene, setScene] = useState<Scene>("opening");
-  const activeScene = useRef<Scene>("opening");
-  const mascotRef = useRef<MascotHandle>(null);
-  const [flowEnd, setFlowEnd] = useState(1);
+  const previousPlaybackPhase = useRef<MascotPlaybackPhase>("opening");
+  const [playbackPhase, setPlaybackPhase] = useState<MascotPlaybackPhase>("opening");
+  const [activeSectionId, setActiveSectionId] = useState<HomeSectionId>("opening");
+  const previousSectionId = useRef<HomeSectionId>("opening");
+  const mascotRef = useRef<MascotActivityHandle>(null);
+  const [documentScrollEnd, setDocumentScrollEnd] = useState(1);
   const reducedMotion = useReducedMotion();
   const screenReader = useScreenReader();
   const stageHeight = Math.max(1, viewport.height - headerHeight);
-  const flow = viewport.height < 600 || dimensions.fontScale > 1.15 || screenReader;
-  const span = flow ? Math.max(stageHeight, flowEnd) : stageHeight * 3.6;
+  const isDocumentLayout = viewport.height < 600 || dimensions.fontScale > 1.15 || screenReader;
+  const scrollDistance = isDocumentLayout
+    ? Math.max(stageHeight, documentScrollEnd)
+    : stageHeight * 3.6;
   const compact = stageHeight < 650;
   const size = Math.min(190, viewport.width * 0.44);
   const viewportKey = `${viewport.width}:${viewport.height}:${dimensions.fontScale}`;
   const previousViewport = useRef(viewportKey);
 
   function notifyActivity(): void {
-    mascotRef.current?.activity();
+    mascotRef.current?.notifyActivity();
   }
 
-  function home(): void {
+  function scrollToTop(): void {
     scrollRef.current?.scrollTo({ y: 0, animated: !reducedMotion });
   }
 
@@ -84,27 +86,28 @@ function MobileNarrative(): ReactElement {
     const listener = scrollY.addListener(({ value }) => {
       const y = Math.max(0, value);
       offset.current = y;
-      const progress = y / span;
-      const nextPhase = progress >= 0.999 ? "docked" : progress > 0 ? "narrative" : "opening";
-      if (nextPhase !== playback.current) {
-        playback.current = nextPhase;
-        setPhase(nextPhase);
+      const progress = y / scrollDistance;
+      const nextPlaybackPhase =
+        progress >= 0.999 ? "docked" : progress > 0 ? "scrolling" : "opening";
+      if (nextPlaybackPhase !== previousPlaybackPhase.current) {
+        previousPlaybackPhase.current = nextPlaybackPhase;
+        setPlaybackPhase(nextPlaybackPhase);
       }
-      const nextScene =
+      const nextSectionId =
         progress < 0.16
           ? "opening"
           : progress < 0.49
-            ? "origin"
+            ? "about"
             : progress < 0.82
               ? "protocols"
-              : "connect";
-      if (activeScene.current !== nextScene) {
-        activeScene.current = nextScene;
-        setScene(nextScene);
+              : "resources";
+      if (previousSectionId.current !== nextSectionId) {
+        previousSectionId.current = nextSectionId;
+        setActiveSectionId(nextSectionId);
       }
     });
     return () => scrollY.removeListener(listener);
-  }, [scrollY, span]);
+  }, [scrollY, scrollDistance]);
 
   useEffect(() => {
     if (previousViewport.current !== viewportKey) {
@@ -115,38 +118,48 @@ function MobileNarrative(): ReactElement {
   }, [viewportKey, scrollY]);
 
   const bounded = { extrapolate: "clamp" as const };
-  const openingOpacity = scrollY.interpolate({
-    inputRange: [0, span * 0.12],
+  const welcomeOpacity = scrollY.interpolate({
+    inputRange: [0, scrollDistance * 0.12],
     outputRange: [1, 0],
     ...bounded,
   });
-  const originOpacity = scrollY.interpolate({
-    inputRange: [span * 0.12, span * 0.22, span * 0.4, span * 0.5],
+  const aboutOpacity = scrollY.interpolate({
+    inputRange: [
+      scrollDistance * 0.12,
+      scrollDistance * 0.22,
+      scrollDistance * 0.4,
+      scrollDistance * 0.5,
+    ],
     outputRange: [0, 1, 1, 0],
     ...bounded,
   });
   const protocolOpacity = scrollY.interpolate({
-    inputRange: [span * 0.46, span * 0.56, span * 0.72, span * 0.82],
+    inputRange: [
+      scrollDistance * 0.46,
+      scrollDistance * 0.56,
+      scrollDistance * 0.72,
+      scrollDistance * 0.82,
+    ],
     outputRange: [0, 1, 1, 0],
     ...bounded,
   });
   const veilOpacity = scrollY.interpolate({
-    inputRange: [span * 0.8, span * 0.98],
+    inputRange: [scrollDistance * 0.8, scrollDistance * 0.98],
     outputRange: [1, 0],
     ...bounded,
   });
   const mascotOpacity = scrollY.interpolate({
-    inputRange: [0, span * 0.2, span * 0.8, span],
+    inputRange: [0, scrollDistance * 0.2, scrollDistance * 0.8, scrollDistance],
     outputRange: [1, 0.045, 0.045, 1],
     ...bounded,
   });
   const mascotScale = scrollY.interpolate({
-    inputRange: [0, span * 0.2, span * 0.8, span],
+    inputRange: [0, scrollDistance * 0.2, scrollDistance * 0.8, scrollDistance],
     outputRange: [1, 0.8, 0.8, dockSize / size],
     ...bounded,
   });
   const mascotX = scrollY.interpolate({
-    inputRange: [0, span * 0.8, span],
+    inputRange: [0, scrollDistance * 0.8, scrollDistance],
     outputRange: [
       viewport.width / 2 - size / 2,
       viewport.width / 2 - size / 2,
@@ -155,7 +168,7 @@ function MobileNarrative(): ReactElement {
     ...bounded,
   });
   const mascotY = scrollY.interpolate({
-    inputRange: [0, span * 0.8, span],
+    inputRange: [0, scrollDistance * 0.8, scrollDistance],
     outputRange: [
       headerHeight + stageHeight / 2 - size / 2,
       headerHeight + stageHeight / 2 - size / 2,
@@ -167,15 +180,17 @@ function MobileNarrative(): ReactElement {
     ? [
         {
           translateX:
-            phase === "docked" ? 20 + dockSize / 2 - size / 2 : viewport.width / 2 - size / 2,
+            playbackPhase === "docked"
+              ? 20 + dockSize / 2 - size / 2
+              : viewport.width / 2 - size / 2,
         },
         {
           translateY:
-            phase === "docked"
+            playbackPhase === "docked"
               ? headerHeight / 2 - size / 2
               : headerHeight + stageHeight / 2 - size / 2,
         },
-        { scale: phase === "docked" ? dockSize / size : 1 },
+        { scale: playbackPhase === "docked" ? dockSize / size : 1 },
       ]
     : [{ translateX: mascotX }, { translateY: mascotY }, { scale: mascotScale }];
 
@@ -195,13 +210,13 @@ function MobileNarrative(): ReactElement {
         onTouchMove={notifyActivity}
         onTouchEnd={notifyActivity}
         onPointerMove={notifyActivity}
-        testID="mobile-narrative"
+        testID="mobile-home-screen"
       >
         <View style={styles.header}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="QuantX home"
-            onPress={home}
+            onPress={scrollToTop}
             style={styles.brand}
           >
             <View style={styles.dock} testID="mobile-mascot-dock" />
@@ -218,44 +233,44 @@ function MobileNarrative(): ReactElement {
           style={styles.scroller}
           contentContainerStyle={styles.scrollContent}
           scrollEventThrottle={16}
-          testID="mobile-story-scroll"
+          testID="mobile-scroll-view"
           onScroll={onScroll}
           onScrollBeginDrag={notifyActivity}
           onScrollEndDrag={notifyActivity}
           onMomentumScrollEnd={notifyActivity}
         >
-          {flow ? (
+          {isDocumentLayout ? (
             <View>
-              <View style={[styles.flowOpening, { height: Math.max(stageHeight, 380) }]}>
-                <View style={[styles.openingCaption, { marginTop: size / 2 + 30 }]}>
-                  <Text style={styles.openingCopy}>
+              <View style={[styles.documentWelcome, { height: Math.max(stageHeight, 380) }]}>
+                <View style={[styles.welcomeCaption, { marginTop: size / 2 + 30 }]}>
+                  <Text style={styles.welcomeCopy}>
                     Independent agents.{"\n"}Shared possibilities.
                   </Text>
-                  <Text style={styles.openingHint}>Swipe to discover ↓</Text>
+                  <Text style={styles.welcomeHint}>Swipe to discover ↓</Text>
                 </View>
               </View>
-              <View style={styles.flowSection} testID="mobile-flow-origin">
-                <OriginContent compact />
+              <View style={styles.documentSection} testID="mobile-document-about">
+                <AboutSection compact />
               </View>
-              <View style={styles.flowSection} testID="mobile-flow-protocols">
-                <ProtocolContent compact flow />
+              <View style={styles.documentSection} testID="mobile-document-protocols">
+                <ProtocolsSection compact isDocumentLayout />
               </View>
             </View>
           ) : (
-            <View style={{ height: span }} testID="mobile-story-track" />
+            <View style={{ height: scrollDistance }} testID="mobile-scroll-track" />
           )}
           <View
             onLayout={(event) => {
-              if (flow) {
-                setFlowEnd(event.nativeEvent.layout.y);
+              if (isDocumentLayout) {
+                setDocumentScrollEnd(event.nativeEvent.layout.y);
               }
             }}
           >
-            <ConnectContent />
+            <ResourcesSection />
           </View>
         </Animated.ScrollView>
 
-        {!flow && (
+        {!isDocumentLayout && (
           <>
             <Animated.View
               pointerEvents="none"
@@ -264,36 +279,42 @@ function MobileNarrative(): ReactElement {
             />
             <View pointerEvents="none" style={styles.stage}>
               <Animated.View
-                style={[styles.scene, { opacity: openingOpacity }]}
-                accessibilityElementsHidden={scene !== "opening"}
-                importantForAccessibility={scene === "opening" ? "auto" : "no-hide-descendants"}
-                aria-hidden={scene !== "opening"}
-                testID="mobile-scene-opening"
+                style={[styles.sectionOverlay, { opacity: welcomeOpacity }]}
+                accessibilityElementsHidden={activeSectionId !== "opening"}
+                importantForAccessibility={
+                  activeSectionId === "opening" ? "auto" : "no-hide-descendants"
+                }
+                aria-hidden={activeSectionId !== "opening"}
+                testID="mobile-section-opening"
               >
-                <View style={[styles.openingCaption, { marginTop: size / 2 + 30 }]}>
-                  <Text style={styles.openingCopy}>
+                <View style={[styles.welcomeCaption, { marginTop: size / 2 + 30 }]}>
+                  <Text style={styles.welcomeCopy}>
                     Independent agents.{"\n"}Shared possibilities.
                   </Text>
-                  <Text style={styles.openingHint}>Swipe to discover ↓</Text>
+                  <Text style={styles.welcomeHint}>Swipe to discover ↓</Text>
                 </View>
               </Animated.View>
               <Animated.View
-                style={[styles.scene, { opacity: originOpacity }]}
-                accessibilityElementsHidden={scene !== "origin"}
-                importantForAccessibility={scene === "origin" ? "auto" : "no-hide-descendants"}
-                aria-hidden={scene !== "origin"}
-                testID="mobile-scene-origin"
+                style={[styles.sectionOverlay, { opacity: aboutOpacity }]}
+                accessibilityElementsHidden={activeSectionId !== "about"}
+                importantForAccessibility={
+                  activeSectionId === "about" ? "auto" : "no-hide-descendants"
+                }
+                aria-hidden={activeSectionId !== "about"}
+                testID="mobile-section-about"
               >
-                <OriginContent compact={compact} />
+                <AboutSection compact={compact} />
               </Animated.View>
               <Animated.View
-                style={[styles.scene, { opacity: protocolOpacity }]}
-                accessibilityElementsHidden={scene !== "protocols"}
-                importantForAccessibility={scene === "protocols" ? "auto" : "no-hide-descendants"}
-                aria-hidden={scene !== "protocols"}
-                testID="mobile-scene-protocols"
+                style={[styles.sectionOverlay, { opacity: protocolOpacity }]}
+                accessibilityElementsHidden={activeSectionId !== "protocols"}
+                importantForAccessibility={
+                  activeSectionId === "protocols" ? "auto" : "no-hide-descendants"
+                }
+                aria-hidden={activeSectionId !== "protocols"}
+                testID="mobile-section-protocols"
               >
-                <ProtocolContent compact={compact} />
+                <ProtocolsSection compact={compact} />
               </Animated.View>
             </View>
           </>
@@ -309,7 +330,12 @@ function MobileNarrative(): ReactElement {
             { width: size, height: size, opacity: mascotOpacity, transform: mascotTransform },
           ]}
         >
-          <Mascot ref={mascotRef} size={size} phase={phase} reducedMotion={reducedMotion} />
+          <AnimatedMascot
+            ref={mascotRef}
+            size={size}
+            playbackPhase={playbackPhase}
+            reducedMotion={reducedMotion}
+          />
         </Animated.View>
       </View>
     </SafeAreaView>
@@ -319,7 +345,7 @@ function MobileNarrative(): ReactElement {
 export function App(): ReactElement {
   return (
     <SafeAreaProvider>
-      <MobileNarrative />
+      <MobileHomeScreen />
     </SafeAreaProvider>
   );
 }
@@ -353,7 +379,7 @@ const styles = StyleSheet.create({
     zIndex: 4,
   },
   stage: { position: "absolute", top: headerHeight, left: 0, right: 0, bottom: 0, zIndex: 5 },
-  scene: {
+  sectionOverlay: {
     position: "absolute",
     left: 0,
     right: 0,
@@ -364,21 +390,21 @@ const styles = StyleSheet.create({
     paddingVertical: 22,
   },
   mascot: { position: "absolute", left: 0, top: 0, zIndex: 30 },
-  openingCaption: { position: "absolute", top: "50%", left: 0, right: 0 },
-  openingCopy: {
+  welcomeCaption: { position: "absolute", top: "50%", left: 0, right: 0 },
+  welcomeCopy: {
     color: "#1b1d19",
     fontSize: 17,
     lineHeight: 26,
     textAlign: "center",
     letterSpacing: -0.3,
   },
-  openingHint: {
+  welcomeHint: {
     color: "#5d6259",
     fontSize: 11,
     lineHeight: 20,
     textAlign: "center",
     marginTop: 24,
   },
-  flowOpening: { justifyContent: "center", alignItems: "center" },
-  flowSection: { paddingVertical: 46 },
+  documentWelcome: { justifyContent: "center", alignItems: "center" },
+  documentSection: { paddingVertical: 46 },
 });
