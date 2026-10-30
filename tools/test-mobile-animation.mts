@@ -144,6 +144,7 @@ for (const hz of [60, 90, 120]) {
       () => {
         const animation = createCatalogAnimation(undefined, { directGeometry: true });
         return {
+          setLookDirection: animation.setLookDirection,
           sample: (now) => {
             samples += 1;
             return animation.sample(now);

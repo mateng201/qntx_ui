@@ -1,11 +1,19 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "DM Sans";
+  src: url("/fonts/dm-sans-latin-variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+}
+
 @theme {
-  --font-sans: "Inter", "Segoe UI", Arial, sans-serif;
-  --font-mono: "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
+  --font-sans: "DM Sans", Arial, sans-serif;
 }
 :root {
   font-family: var(--font-sans);
+  font-optical-sizing: auto;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

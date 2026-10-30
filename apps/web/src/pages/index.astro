@@ -16,7 +16,20 @@ import "../styles/home-page.css";
     />
     <meta name="theme-color" content="#ffffff" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link
+      rel="preload"
+      href="/fonts/dm-sans-latin-variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
     <title>QuantX — An open economy for autonomous agents</title>
+    <script is:inline type="module" {...{ blocking: "render" }}>
+      export const scrollRestorationMode = "manual";
+      history.scrollRestoration = scrollRestorationMode;
+      document.documentElement.dataset["homeStarting"] = "true";
+      scrollTo({ top: 0, left: 0, behavior: "instant" });
+    </script>
   </head>
   <body>
     <HomePage />

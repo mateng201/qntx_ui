@@ -5,7 +5,7 @@ import {
   createMascotMorph,
   staticMascotFrame,
 } from "@qntx-ui/mascot";
-import type { CatalogFrame } from "@qntx-ui/mascot";
+import type { CatalogFrame, MascotGaze } from "@qntx-ui/mascot";
 
 type PointerPosition = { x: number; y: number };
 
@@ -22,13 +22,13 @@ export function createSvgMascotRenderer(
   return {
     renderFrame(sample): void {
       body.setAttribute("d", `${contourPath(sample.outer)}${contourPath(sample.hole)}`);
-      body.setAttribute("fill", sample.colors.body);
+      body.setAttribute("fill", "currentColor");
       for (const [eye, points] of [
         [left, sample.left],
         [right, sample.right],
       ] as const) {
         eye.setAttribute("d", contourPath(points) || "M0 0Z");
-        eye.setAttribute("fill", sample.colors.eyes);
+        eye.setAttribute("fill", "#ffffff");
         eye.setAttribute("display", points.length > 0 ? "inline" : "none");
       }
     },
@@ -41,7 +41,7 @@ export function createSvgMascotRenderer(
   };
 }
 
-type MascotPlaybackPhase = "opening" | "scrolling" | "docked";
+type MascotPlaybackPhase = "opening" | "scrolling" | "arriving" | "docked";
 
 type MascotPlaybackController = {
   setPlaybackPhase: (next: MascotPlaybackPhase) => void;
@@ -66,8 +66,12 @@ export function initializeMascotPlayback(root: HTMLElement): MascotPlaybackContr
   let idle = false;
   let disposed = false;
   let lastPointer: PointerPosition | undefined;
+  let lastPointerMovedAt = Number.NEGATIVE_INFINITY;
   let current = staticMascotFrame;
   let playing = false;
+  let animationTime = 0;
+  let previousFrameTime = 0;
+  const gaze: MascotGaze = { x: 0, y: 0 };
   let transition:
     | {
         sample: ReturnType<typeof createMascotMorph>;
@@ -78,7 +82,39 @@ export function initializeMascotPlayback(root: HTMLElement): MascotPlaybackContr
 
   function renderAnimationFrame(now: number): void {
     frame = undefined;
-    const target = catalog?.sample(now) ?? staticMascotFrame;
+    const elapsed = Math.min(64, Math.max(0, now - previousFrameTime));
+    previousFrameTime = now;
+    animationTime += elapsed;
+    const bounds = root.getBoundingClientRect();
+    const pointerGaze =
+      lastPointer === undefined || playbackPhase === "arriving"
+        ? { x: 0, y: 0 }
+        : {
+            x: Math.max(
+              -1,
+              Math.min(
+                1,
+                (lastPointer.x - bounds.x - bounds.width / 2) / Math.max(260, innerWidth * 0.4),
+              ),
+            ),
+            y: Math.max(
+              -1,
+              Math.min(
+                1,
+                (lastPointer.y - bounds.y - bounds.height / 2) / Math.max(220, innerHeight * 0.4),
+              ),
+            ),
+          };
+    const follow = 1 - Math.exp(-elapsed / 180);
+    gaze.x += (pointerGaze.x - gaze.x) * follow;
+    gaze.y += (pointerGaze.y - gaze.y) * follow;
+    const expression = catalog?.setLookDirection(
+      lastPointer !== undefined && now - lastPointerMovedAt < 2200 ? pointerGaze : undefined,
+    );
+    root.dataset["lookExpression"] = expression ?? "catalog";
+    root.dataset["gazeX"] = gaze.x.toFixed(3);
+    root.dataset["gazeY"] = gaze.y.toFixed(3);
+    const target = catalog?.sample(animationTime, gaze) ?? staticMascotFrame;
     if (transition === undefined) {
       current = target;
     } else {
@@ -94,6 +130,12 @@ export function initializeMascotPlayback(root: HTMLElement): MascotPlaybackContr
       current = staticMascotFrame;
       svgRenderer.resetToStaticLogo();
       root.dataset["animationRunning"] = "false";
+      gaze.x = 0;
+      gaze.y = 0;
+      root.dataset["gazeX"] = "0.000";
+      root.dataset["gazeY"] = "0.000";
+      // Count five full static seconds, after the return morph has finished.
+      scheduleIdlePlayback();
     }
     root.dataset["morphState"] =
       transition === undefined ? "none" : playing ? "entering" : "leaving";
@@ -114,10 +156,14 @@ export function initializeMascotPlayback(root: HTMLElement): MascotPlaybackContr
     if (enabled) {
       if (playing !== wanted) {
         playing = wanted;
-        catalog = wanted ? createCatalogAnimation() : undefined;
         const now = performance.now();
+        animationTime = 0;
+        previousFrameTime = now;
+        catalog = wanted
+          ? createCatalogAnimation(() => animationTime, { directGeometry: true })
+          : undefined;
         transition = {
-          sample: createMascotMorph(current, catalog?.sample(now) ?? staticMascotFrame),
+          sample: createMascotMorph(current, catalog?.sample(animationTime) ?? staticMascotFrame),
           started: now,
           duration: wanted ? 360 : 320,
         };
@@ -150,7 +196,13 @@ export function initializeMascotPlayback(root: HTMLElement): MascotPlaybackContr
 
   function scheduleIdlePlayback(): void {
     clearIdlePlaybackTimer();
-    if (playbackPhase !== "scrolling" && !document.hidden && !reducedMotion.matches) {
+    if (
+      (playbackPhase === "opening" || playbackPhase === "docked") &&
+      !playing &&
+      transition === undefined &&
+      !document.hidden &&
+      !reducedMotion.matches
+    ) {
       idleTimer = setTimeout(() => {
         idleTimer = undefined;
         idle = true;
@@ -161,8 +213,9 @@ export function initializeMascotPlayback(root: HTMLElement): MascotPlaybackContr
 
   function resetIdlePlayback(): void {
     idle = false;
-    scheduleIdlePlayback();
+    clearIdlePlaybackTimer();
     updatePlaybackState();
+    scheduleIdlePlayback();
   }
 
   document.addEventListener(
@@ -175,16 +228,27 @@ export function initializeMascotPlayback(root: HTMLElement): MascotPlaybackContr
         return;
       }
       lastPointer = { x: event.clientX, y: event.clientY };
-      if (playbackPhase !== "scrolling") {
-        const wasIdle = idle;
-        idle = false;
-        scheduleIdlePlayback();
-        if (wasIdle) {
-          updatePlaybackState();
-        }
+      lastPointerMovedAt = performance.now();
+      // Once idle playback has started, movement drives gaze instead of cancelling the face.
+      if (!idle && (playbackPhase === "opening" || playbackPhase === "docked")) {
+        resetIdlePlayback();
       }
     },
     { passive: true, signal: events.signal },
+  );
+  document.documentElement.addEventListener(
+    "pointerleave",
+    () => {
+      lastPointer = undefined;
+    },
+    { signal: events.signal },
+  );
+  globalThis.addEventListener(
+    "blur",
+    () => {
+      lastPointer = undefined;
+    },
+    { signal: events.signal },
   );
   document.addEventListener("visibilitychange", resetIdlePlayback, { signal: events.signal });
   reducedMotion.addEventListener("change", resetIdlePlayback, { signal: events.signal });
@@ -209,6 +273,9 @@ export function initializeMascotPlayback(root: HTMLElement): MascotPlaybackContr
       root.dataset["animationRunning"] = "false";
       root.dataset["playbackMode"] = "static";
       root.dataset["morphState"] = "none";
+      delete root.dataset["lookExpression"];
+      delete root.dataset["gazeX"];
+      delete root.dataset["gazeY"];
     },
   };
 }

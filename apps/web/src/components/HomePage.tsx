@@ -5,10 +5,8 @@ import {
   aboutIntro,
   brandMarkPath,
   hero,
+  homePageCopy,
   links,
-  primitives,
-  protocolIntro,
-  standards,
 } from "../data/site";
 import { Icon } from "./Icon";
 
@@ -29,13 +27,20 @@ export function HomePage(): ReactElement {
             <Icon kind="github" /> <span>GitHub</span>
           </a>
           <a href={links.docs}>
-            <span>Docs</span> <Icon />
+            <Icon /> <span>Docs</span>
           </a>
         </nav>
       </header>
 
       <div className="page-mascot" data-mascot aria-hidden="true">
         <svg viewBox="-150 -150 300 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="mascot-material" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#60645b" />
+              <stop offset="0.4" stopColor="#363a31" />
+              <stop offset="1" stopColor="#191c17" />
+            </linearGradient>
+          </defs>
           <path data-mascot-body d={brandMarkPath} fill="currentColor" fillRule="evenodd" />
           <path data-mascot-eye="left" d="M0 0Z" fill="#ffffff" />
           <path data-mascot-eye="right" d="M0 0Z" fill="#ffffff" />
@@ -50,14 +55,8 @@ export function HomePage(): ReactElement {
             aria-label="Welcome to QuantX"
           >
             <div className="welcome-caption">
-              <p>
-                Independent agents.
-                <br />
-                Shared possibilities.
-              </p>
-              <span>
-                Scroll to discover <span aria-hidden="true">↓</span>
-              </span>
+              <h1>{homePageCopy.mission}</h1>
+              <p>{homePageCopy.missionDetail}</p>
             </div>
           </section>
 
@@ -69,45 +68,12 @@ export function HomePage(): ReactElement {
             tabIndex={-1}
           >
             <div className="about-content">
-              <p className="section-eyebrow">A shared starting point</p>
               <h2 id="about-title">
                 {aboutIntro.titleLines[0]}
                 <br />
                 <span>{aboutIntro.titleLines[1]}</span>
               </h2>
               <p className="about-description">{aboutIntro.description}</p>
-              <p className="about-signature">{aboutIntro.signatureLines.join(" ")}</p>
-            </div>
-          </section>
-
-          <section
-            className="page-section protocols-section"
-            id="protocols"
-            data-page-section="protocols"
-            aria-labelledby="protocols-title"
-          >
-            <div className="protocols-layout">
-              <div className="protocols-intro">
-                <p className="section-eyebrow">The building blocks</p>
-                <h2 id="protocols-title">
-                  {protocolIntro.titleLines[0]}
-                  <br />
-                  {protocolIntro.titleLines[1]}
-                </h2>
-                <p>{protocolIntro.description}</p>
-              </div>
-              <div className="protocols-grid">
-                {primitives.map((primitive) => (
-                  <article className="protocol-card" key={primitive.number}>
-                    <div className="protocol-meta">
-                      <span>{primitive.number}</span>
-                      <span>{primitive.standard}</span>
-                    </div>
-                    <h3>{primitive.title}</h3>
-                    <p>{primitive.description}</p>
-                  </article>
-                ))}
-              </div>
             </div>
           </section>
 
@@ -119,12 +85,12 @@ export function HomePage(): ReactElement {
           >
             <div className="resources-layout">
               <div className="resources-intro">
-                <h1 id="resources-title">
+                <h2 id="resources-title">
                   {hero.titleLines[0]}
                   <br />
                   {hero.titleLines[1]}
-                </h1>
-                <p className="resources-description">{hero.description}</p>
+                </h2>
+                <p className="resources-description">{homePageCopy.valueProposition}</p>
                 <div className="resources-actions">
                   <a className="primary-link" href={links.github}>
                     {hero.primaryAction}
@@ -135,14 +101,6 @@ export function HomePage(): ReactElement {
                     <span aria-hidden="true">↗</span>
                   </a>
                 </div>
-                <div className="standards-list" aria-label="Open standards">
-                  {standards.map((standard) => (
-                    <a href={standard.href} key={standard.label}>
-                      <strong>{standard.label}</strong>
-                      <span>/ {standard.detail}</span>
-                    </a>
-                  ))}
-                </div>
               </div>
               <div className="resources-links">
                 <p className="section-eyebrow">{aboutIntro.destinationHeading}</p>
@@ -150,7 +108,7 @@ export function HomePage(): ReactElement {
                   <a href={destination.href} className="resource-link" key={destination.number}>
                     <span className="resource-number">{destination.number}</span>
                     <div>
-                      <h2>{destination.label}</h2>
+                      <h3>{destination.label}</h3>
                       <p>{destination.detail}</p>
                     </div>
                     <Icon />

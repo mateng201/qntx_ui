@@ -3,5 +3,5 @@
   "sourceBytes": 39227,
   "note": "Original animation engine, tree-shaken to remove its page-wide DOM controller. No dependencies added.",
   "sha256": "9809612e092311b11353de9dd8114b22ce65ea27859da4599047f4260e6fc4f4",
-  "integration": "Pure runtime only: no original global DOM scan, hover controller, or new package. The existing controller supplies activation, gaze, smiles and lifecycle. Vendor lint exceptions apply only to generated upstream code."
+  "integration": "Pure runtime only: no original global DOM scan, hover controller, or new package. The adapter adds optional setLookDirection and sample gaze arguments, selecting from original poses with sector hysteresis and gentle camera/eye offsets. Existing native callers use the unchanged default catalog. Browser timing, activation, DOM events and lifecycle remain in the Web controller. Vendor lint exceptions apply only to generated upstream code."
 }

@@ -2,6 +2,76 @@
 import { expect, test } from "@playwright/test";
 
 for (const viewport of [
+  { width: 720, height: 450 },
+  { width: 480, height: 300 },
+]) {
+  test(`zoom-equivalent document layout retains section fades at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    await expect(page.locator("[data-home-page]")).toHaveAttribute(
+      "data-scroll-layout",
+      "document",
+    );
+    for (const id of ["about"]) {
+      const section = page.locator(`#${id}`);
+      const content = section.locator(":scope > div");
+      await content.evaluate((element) => {
+        scrollTo({
+          top: scrollY + element.getBoundingClientRect().top - (innerHeight - 24),
+          behavior: "instant",
+        });
+      });
+      await expect
+        .poll(async () => section.evaluate((element) => Number(getComputedStyle(element).opacity)))
+        .toBeGreaterThan(0.01);
+      await expect
+        .poll(async () => section.evaluate((element) => Number(getComputedStyle(element).opacity)))
+        .toBeLessThan(0.95);
+
+      await content.evaluate((element) => {
+        const headerBottom = document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
+        scrollTo({
+          top: scrollY + element.getBoundingClientRect().top - headerBottom - 24,
+          behavior: "instant",
+        });
+      });
+      await expect(section).toHaveCSS("opacity", "1");
+
+      await content.evaluate((element) => {
+        const headerBottom = document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
+        scrollTo({
+          top: scrollY + element.getBoundingClientRect().bottom - headerBottom - 24,
+          behavior: "instant",
+        });
+      });
+      await expect
+        .poll(async () => section.evaluate((element) => Number(getComputedStyle(element).opacity)))
+        .toBeLessThan(0.95);
+      expect(await section.evaluate((element) => element.hasAttribute("inert"))).toBe(false);
+    }
+    expect(await page.evaluate(() => scrollX)).toBe(0);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(page.locator("#about")).toHaveCSS("opacity", "1");
+    await expect(page.locator("#resources")).toHaveCSS("opacity", "1");
+
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(page.locator("[data-home-page]")).toHaveAttribute("data-scroll-layout", "pinned");
+    await page.locator("[data-scroll-track]").evaluate((track) => {
+      scrollTo({
+        top:
+          track.getBoundingClientRect().top + scrollY + (track.clientHeight - innerHeight) * 0.29,
+        behavior: "instant",
+      });
+    });
+    await expect(page.locator("#about")).toHaveCSS("opacity", "1");
+  });
+}
+
+for (const viewport of [
   { width: 320, height: 700 },
   { width: 390, height: 844 },
   { width: 760, height: 844 },
@@ -16,7 +86,7 @@ for (const viewport of [
     await page.goto("/");
     const root = page.locator("[data-home-page]");
     await expect(root).toHaveCount(1);
-    await expect(root).toHaveAttribute("data-scroll-layout", "document");
+    await expect(root).toHaveAttribute("data-scroll-layout", /pinned|document/);
     await expect(page.locator("main")).toHaveCount(1);
     await expect(page.getByRole("navigation")).toHaveCount(1);
     await expect(page.locator("footer")).toHaveCount(0);
@@ -24,17 +94,26 @@ for (const viewport of [
     expect(header?.width).toBe(viewport.width);
     await expect(page.getByRole("link", { name: "Docs", exact: true })).toBeInViewport();
 
-    for (const selector of [
-      "#about-title",
-      "#protocols-title",
-      ".protocol-card:last-child h3",
-      "#resources-title",
-      ".resource-link:last-child",
-    ]) {
-      await page.locator(selector).scrollIntoViewIfNeeded();
+    for (const selector of ["#about-title", "#resources-title", ".resource-link:last-child"]) {
+      if ((await root.getAttribute("data-scroll-layout")) === "pinned") {
+        const amount = selector === "#about-title" ? 0.36 : 1;
+        await page.locator("[data-scroll-track]").evaluate((track, value) => {
+          scrollTo({
+            top:
+              track.getBoundingClientRect().top +
+              scrollY +
+              (track.clientHeight - innerHeight) * value,
+            behavior: "instant",
+          });
+        }, amount);
+      } else {
+        await page.locator(selector).scrollIntoViewIfNeeded();
+      }
       await expect(page.locator(selector)).toBeInViewport();
     }
-    expect(await page.locator("[inert]").count()).toBe(0);
+    if ((await root.getAttribute("data-scroll-layout")) === "document") {
+      expect(await page.locator("[inert]").count()).toBe(0);
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
@@ -71,7 +150,10 @@ test("device emulation and touch keep the same vertical website when its viewpor
   });
   await session.send("Emulation.setTouchEmulationEnabled", { enabled: true });
   await expect.poll(async () => page.evaluate(() => innerWidth)).toBe(390);
-  await expect(page.locator("[data-home-page]")).toHaveAttribute("data-scroll-layout", "document");
+  await expect(page.locator("[data-home-page]")).toHaveAttribute(
+    "data-scroll-layout",
+    /pinned|document/,
+  );
   await session.send("Input.dispatchTouchEvent", {
     type: "touchStart",
     touchPoints: [{ x: 180, y: 650 }],
@@ -107,11 +189,11 @@ test("larger text falls back to document layout and restores pinned scrolling wh
   await page.goto("/");
   await expect(page.locator("[data-home-page]")).toHaveAttribute("data-scroll-layout", "pinned");
   const largerText = await page.addStyleTag({
-    content: ".protocol-card p { font-size: 32px; line-height: 2; }",
+    content: ".resources-description { font-size: 44px; line-height: 2; }",
   });
   await expect(page.locator("[data-home-page]")).toHaveAttribute("data-scroll-layout", "document");
-  await page.locator(".protocol-card:last-child").scrollIntoViewIfNeeded();
-  await expect(page.locator(".protocol-card:last-child")).toBeInViewport();
+  await page.locator(".resource-link:last-child").scrollIntoViewIfNeeded();
+  await expect(page.locator(".resource-link:last-child")).toBeInViewport();
   expect(await page.locator("[inert]").count()).toBe(0);
   await largerText.evaluate((style) => {
     if (style instanceof HTMLStyleElement) {

@@ -6,10 +6,10 @@ body {
 }
 .home-page {
   --page-gutter: clamp(32px, 5.4vw, 104px);
+  font-weight: 400;
   --mascot-size: clamp(200px, 18vw, 260px);
   --page-ink: #1b1d19;
   --page-muted: #5d6259;
-  --page-line: #dcded6;
   display: block;
   color: var(--page-ink);
   background: #fafaf8;
@@ -30,7 +30,7 @@ body {
   align-items: center;
   gap: 12px;
   font-size: 24px;
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: -1px;
 }
 .mascot-dock {
@@ -77,16 +77,31 @@ body {
   transform: translate(-50%, -50%);
   pointer-events: none;
   color: #1b1d19;
-  filter: grayscale(1);
 }
 .page-mascot svg {
   display: block;
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  overflow: visible;
+  transform: perspective(850px) rotateX(var(--mascot-flight-pitch, 0deg))
+    rotateY(var(--mascot-flight-yaw, 0deg)) rotateZ(var(--mascot-flight-roll, 0deg))
+    translateZ(var(--mascot-depth, 0px));
+  filter: drop-shadow(
+    0 var(--mascot-shadow-y, 0px) var(--mascot-shadow-blur, 0px) rgb(20 24 16 / 16%)
+  );
+}
+.page-mascot[data-animation-running="true"] [data-mascot-body] {
+  fill: url("#mascot-material");
+}
+.page-mascot[data-animation-running="true"] svg {
+  filter: drop-shadow(
+    1px calc(3px + var(--mascot-shadow-y, 0px)) calc(4px + var(--mascot-shadow-blur, 0px))
+      rgb(20 24 16 / 16%)
+  );
 }
 .scroll-viewport {
   position: relative;
+  z-index: 1;
 }
 .page-section {
   min-height: 100svh;
@@ -103,25 +118,26 @@ body {
   top: calc(50% + clamp(128px, 11vw, 174px));
   left: 0;
   right: 0;
+  width: min(620px, calc(100% - var(--page-gutter) * 2));
+  margin-inline: auto;
+}
+.welcome-caption h1 {
+  margin: 0 0 14px;
+  font-size: clamp(22px, 2vw, 28px);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
 }
 .welcome-caption p {
-  color: var(--page-ink);
-  font-size: 19px;
-  letter-spacing: -0.4px;
-  line-height: 1.55;
-  margin: 0 0 26px;
-}
-.welcome-caption > span {
-  color: var(--page-muted);
-  font-size: 11px;
-  font-family: var(--font-mono);
-  letter-spacing: 0.02em;
-}
-.welcome-caption > span > span {
-  margin-left: 12px;
+  margin: 0;
+  color: #50564a;
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 400;
 }
 .section-eyebrow {
-  font: 11px/1.6 var(--font-mono);
+  font: 500 11px/1.6 var(--font-sans);
   color: var(--page-muted);
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -134,10 +150,10 @@ body {
   text-align: center;
 }
 .about-content h2 {
-  font-weight: 450;
+  font-weight: 500;
   font-size: clamp(58px, 6.4vw, 96px);
   line-height: 1.07;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.045em;
   margin: 0 0 32px;
 }
 .about-content h2 span {
@@ -151,70 +167,6 @@ body {
   color: #50564a;
   text-wrap: pretty;
 }
-.about-signature {
-  margin: 34px 0 0;
-  color: var(--page-muted);
-  font: 12px/1.6 var(--font-mono);
-}
-.protocols-layout {
-  width: 100%;
-  max-width: 1460px;
-  margin-inline: auto;
-  display: grid;
-  grid-template-columns: 0.85fr 1.15fr;
-  align-items: center;
-  gap: clamp(38px, 7vw, 120px);
-}
-.protocols-intro h2 {
-  font-size: clamp(32px, 3.5vw, 54px);
-  line-height: 1.16;
-  font-weight: 450;
-  letter-spacing: -0.045em;
-  margin: 0 0 24px;
-}
-.protocols-intro > p:last-child {
-  max-width: 410px;
-  color: var(--page-muted);
-  font-size: 17px;
-  line-height: 1.7;
-  margin: 0;
-}
-.protocols-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 34px 32px;
-}
-.protocol-card {
-  border-top: 1px solid #c8cec0;
-  padding: 24px 0 8px;
-}
-.protocol-meta {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  font: 11px/1.6 var(--font-mono);
-  color: #535b4c;
-  margin-bottom: 24px;
-}
-.protocol-meta > span:last-child {
-  padding: 3px 8px;
-  border: 1px solid #d6dccf;
-  background: #eef0e9;
-  border-radius: 4px;
-}
-.protocol-card h3 {
-  font-size: 27px;
-  font-weight: 450;
-  letter-spacing: -0.04em;
-  margin: 0 0 13px;
-}
-.protocol-card > p {
-  font-size: 15px;
-  line-height: 1.7;
-  color: var(--page-muted);
-  max-width: 330px;
-  margin: 0;
-}
 .resources-layout {
   display: grid;
   grid-template-columns: 1.12fr 1fr;
@@ -224,11 +176,11 @@ body {
   max-width: 1460px;
   margin-inline: auto;
 }
-.resources-intro h1 {
+.resources-intro h2 {
   font-size: clamp(36px, 4.1vw, 66px);
-  font-weight: 450;
+  font-weight: 500;
   line-height: 1.14;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.04em;
   margin: 0 0 28px;
 }
 .resources-description {
@@ -278,29 +230,9 @@ body {
 .secondary-link:hover {
   color: var(--page-ink);
 }
-.standards-list {
-  display: flex;
-  gap: clamp(20px, 3vw, 46px);
-  margin-top: 42px;
-  padding-top: 26px;
-  border-top: 1px solid var(--page-line);
-}
-.standards-list a {
+.resources-links {
   display: grid;
-  gap: 8px;
-  transition: color 160ms;
-  color: #525c48;
-}
-.standards-list a:hover {
-  color: #12150e;
-}
-.standards-list strong {
-  font-size: clamp(15px, 1.4vw, 22px);
-  font-weight: 550;
-  letter-spacing: -0.04em;
-}
-.standards-list span {
-  font: 10px/1.6 var(--font-mono);
+  gap: 12px;
 }
 .resources-links .section-eyebrow {
   margin-bottom: 24px;
@@ -310,22 +242,26 @@ body {
   grid-template-columns: 24px minmax(0, 1fr) 20px;
   align-items: center;
   gap: 20px;
-  border-top: 1px solid var(--page-line);
-  padding: 32px 12px;
-  margin-inline: -12px;
-  transition: background-color 160ms;
+  border: 0;
+  border-radius: 8px;
+  padding: 24px;
+  background: transparent;
+  transition:
+    background-color 160ms,
+    transform 200ms;
 }
 .resource-link:hover {
   background: var(--hover);
+  transform: translateX(4px);
 }
 .resource-number {
   color: var(--page-muted);
-  font: 11px/1.6 var(--font-mono);
+  font: 500 12px/1.6 var(--font-sans);
 }
-.resource-link h2 {
+.resource-link h3 {
   font-size: clamp(19px, 1.6vw, 25px);
-  font-weight: 450;
-  letter-spacing: -0.03em;
+  font-weight: 500;
+  letter-spacing: -0.02em;
   line-height: 1.3;
   margin: 0 0 10px;
 }
@@ -360,7 +296,7 @@ body {
 
 /* Native document scrolling supplies progress; the scenes stay inside one viewport. */
 .home-page[data-scroll-layout="pinned"] .scroll-track {
-  height: 460svh;
+  height: 380svh;
 }
 .home-page[data-scroll-layout="pinned"] .scroll-viewport {
   height: 100svh;
@@ -383,6 +319,9 @@ body {
   visibility: visible;
   transition-delay: 0s;
 }
+.home-page[data-scroll-layout="document"] .page-section {
+  transition: opacity 180ms ease-out;
+}
 .home-page[data-scroll-ready] .page-mascot {
   position: fixed;
   z-index: 35;
@@ -390,15 +329,41 @@ body {
   top: 0;
   width: var(--mascot-size);
   will-change: transform, opacity;
-  transition:
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 240ms ease-out;
+  transition: opacity 180ms ease-out;
 }
 .home-page[data-scroll-ready] .page-mascot[data-mascot-background="true"] {
   z-index: 0;
 }
-.home-page[data-scroll-layout="pinned"] .scroll-viewport {
-  z-index: 1;
+.home-page[data-scroll-ready] .page-mascot[data-mascot-travelling="true"] {
+  z-index: 40;
+}
+/* The render-blocking head script enables this gate; no-JS document flow is unchanged. */
+html[data-home-starting] .home-page:not([data-scroll-ready]) .page-section:not(.welcome-section) {
+  visibility: hidden;
+  opacity: 0;
+}
+html[data-home-starting] .page-section,
+html[data-home-starting] .page-mascot {
+  transition: none !important;
+}
+html[data-home-starting] .page-mascot {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 35;
+  transform: translate3d(
+    calc(50vw - var(--mascot-size) / 2),
+    calc(50vh - var(--mascot-size) / 2),
+    0
+  );
+}
+.home-page[data-scroll-layout="document"] .welcome-section {
+  padding-top: calc(50svh + var(--mascot-size) / 2 + 26px);
+  align-items: start;
+}
+.home-page[data-scroll-layout="document"] .welcome-caption {
+  position: static;
+  width: 100%;
 }
 
 @media (max-height: 700px) {
@@ -415,25 +380,7 @@ body {
     font-size: clamp(54px, 5.5vw, 76px);
     margin-bottom: 24px;
   }
-  .about-signature {
-    margin-top: 22px;
-  }
-  .protocols-grid {
-    row-gap: 24px;
-  }
-  .protocol-card {
-    padding-top: 16px;
-  }
-  .protocol-meta {
-    margin-bottom: 14px;
-  }
-  .protocol-card h3 {
-    font-size: 24px;
-  }
-  .protocol-card > p {
-    font-size: 14px;
-  }
-  .resources-intro h1 {
+  .resources-intro h2 {
     font-size: clamp(34px, 3.6vw, 52px);
     margin-bottom: 20px;
   }
@@ -448,28 +395,11 @@ body {
   .primary-link {
     padding-block: 13px;
   }
-  .standards-list {
-    margin-top: 28px;
-    padding-top: 20px;
-  }
   .resource-link {
     padding-block: 24px;
   }
 }
 @media (max-width: 1000px) {
-  .protocols-layout {
-    gap: 36px;
-    grid-template-columns: 0.9fr 1.1fr;
-  }
-  .protocols-grid {
-    gap: 24px;
-  }
-  .protocols-intro > p:last-child {
-    font-size: 15px;
-  }
-  .protocol-card > p {
-    font-size: 13px;
-  }
   .resources-layout {
     gap: 36px;
   }
@@ -480,9 +410,6 @@ body {
   .primary-link {
     padding-inline: 18px;
     gap: 16px;
-  }
-  .standards-list {
-    gap: 20px;
   }
   .resource-link {
     gap: 12px;
@@ -503,7 +430,7 @@ body {
   }
   .home-page {
     --page-gutter: clamp(16px, 5vw, 32px);
-    --mascot-size: clamp(160px, 42vw, 210px);
+    --mascot-size: clamp(144px, 38vw, 190px);
   }
   .site-header {
     height: 64px;
@@ -534,9 +461,11 @@ body {
   .welcome-caption {
     top: calc(50% + 112px);
   }
+  .welcome-caption h1 {
+    font-size: 21px;
+  }
   .welcome-caption p {
-    font-size: 17px;
-    margin-bottom: 20px;
+    font-size: 15px;
   }
   .about-content h2 {
     font-size: clamp(42px, 10vw, 62px);
@@ -544,46 +473,11 @@ body {
   .about-description {
     font-size: 16px;
   }
-  .about-signature {
-    font-size: 11px;
-  }
-  .protocols-layout,
   .resources-layout {
     grid-template-columns: minmax(0, 1fr);
     gap: 28px;
   }
-  .protocols-intro h2 {
-    font-size: clamp(30px, 7vw, 42px);
-    margin-bottom: 16px;
-  }
-  .protocols-intro > p:last-child {
-    max-width: none;
-    font-size: 15px;
-    line-height: 1.6;
-  }
-  .protocols-grid {
-    gap: 20px 16px;
-  }
-  .protocol-card {
-    padding-top: 16px;
-  }
-  .protocol-meta {
-    gap: 8px;
-    margin-bottom: 12px;
-    font-size: 10px;
-  }
-  .protocol-meta > span:last-child {
-    padding-inline: 5px;
-  }
-  .protocol-card h3 {
-    font-size: 23px;
-    margin-bottom: 10px;
-  }
-  .protocol-card > p {
-    font-size: 14px;
-    line-height: 1.6;
-  }
-  .resources-intro h1 {
+  .resources-intro h2 {
     font-size: clamp(34px, 8vw, 48px);
     margin-bottom: 22px;
   }
@@ -595,14 +489,8 @@ body {
     margin-top: 24px;
     gap: 18px;
   }
-  .standards-list {
-    margin-top: 28px;
-    padding-top: 20px;
-    justify-content: space-between;
-    gap: 12px;
-  }
   .resource-link {
-    padding-block: 24px;
+    padding: 20px 16px;
   }
 }
 @media (max-height: 550px) {
@@ -614,8 +502,10 @@ body {
     bottom: 24px;
   }
   .welcome-caption p {
-    font-size: 15px;
-    line-height: 1.4;
-    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  .welcome-caption h1 {
+    font-size: 18px;
+    line-height: 1.35;
   }
 }

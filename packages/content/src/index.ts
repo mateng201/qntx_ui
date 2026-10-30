@@ -14,6 +14,13 @@ export const hero = {
   secondaryAction: "Built in public",
 } as const;
 
+export const homePageCopy = {
+  mission: "Building open protocols and sovereign infrastructure for autonomous AI agents.",
+  missionDetail: "To transact, coordinate, and govern on-chain.",
+  valueProposition:
+    "Modular primitives powering machine-to-machine commerce, verified identity, and self-custodial coordination.",
+} as const;
+
 export const standards = [
   { label: "x402", detail: "payments", href: "https://github.com/qntx/r402" },
   { label: "ERC–8004", detail: "identity", href: "https://github.com/qntx/erc8004" },

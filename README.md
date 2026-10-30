@@ -60,7 +60,7 @@ npm run dev:mobile -- --no-dev --minify
 
 下面按目录逐个说明文件。职责表先用白话概括用途，再保留技术细节；单独展开的文件也按同样顺序介绍。
 
-命名按职责区分：`HomePage` 是网页结构，`MobileHomeScreen` 是原生首页，`HomeSections` 是原生内容区块；`home-page-scroll` 控制滚动，`mascot-playback` 控制播放，`SvgMascotRenderer` 负责将计算结果写入 SVG。内容区块使用 `opening / about / protocols / resources`，动画阶段使用 `opening / scrolling / docked`；二者分别由区块 ID 和播放阶段类型表达。
+命名按职责区分：`HomePage` 是网页结构，`MobileHomeScreen` 是原生首页，`HomeSections` 是原生内容区块；`home-page-scroll` 控制滚动，`mascot-playback` 控制播放，`SvgMascotRenderer` 负责将计算结果写入 SVG。网页区块使用 `opening / about / resources`，原生应用区块保持 `opening / about / protocols / resources`。动画阶段使用 `opening / scrolling / docked`；网页额外用 `arriving` 提前收拢归位中的表情。区块 ID 与播放阶段分别表达内容位置和播放状态。
 
 | 文件                                             | 职责                                                                                                                                                                    |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -104,11 +104,13 @@ npm run dev:mobile -- --no-dev --minify
 
 Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由同一个开发服务提供。
 
-| 文件                                                             | 职责                                                                                                                                                                    |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [apps/web/src/pages/index.astro](apps/web/src/pages/index.astro) | 网站首页的唯一入口，把响应式网页结构、样式和滚动脚本接起来。`/` 路由只输出 `HomePage`，将共享颜色映射为 CSS 变量，初始化滚动控制器，并在 Astro 页面退出前调用清理函数。 |
+| 文件                                                             | 职责                                                                                                                                                                                                  |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [apps/web/src/pages/index.astro](apps/web/src/pages/index.astro) | 网站首页的唯一入口，把响应式网页结构、样式和滚动脚本接起来。`/` 路由只输出 `HomePage`，将共享颜色映射为 CSS 变量，初始化滚动控制器，首次进入与刷新时重置滚动位置，并在 Astro 页面退出前调用清理函数。 |
 
 页面中的 React 组件由 Astro 在构建时输出 HTML / SVG；当前没有通过 `client:*` 指令进行 React 客户端水合。浏览器交互由下面的 TypeScript 控制器接管。
+
+首帧初始化分两步：head 内的小脚本通过原生 `blocking="render"` 在绘制前关闭浏览器滚动恢复、回到顶部并设置 `data-home-starting`。CSS 在此期间固定 SVG 的初始位置、隐藏后续区块并暂停过渡。滚动控制器完成测量和首次样式写入后才标记 `data-scroll-ready`，再经过两次 RAF 释放启动标记，避免将布局接管渲染成一次淡出动画。禁用 JavaScript 时不会设置启动标记，原有自然文档降级仍可阅读。
 
 这里的 `client:*` 是 Astro 客户端指令的统称，例如 `client:load` 表示页面加载时启动组件的客户端代码；水合就是让浏览器中的 React 接管已生成的 HTML，接上 React 的事件和状态更新。本项目不使用这条路径，而是由独立脚本操作页面元素。
 
@@ -123,10 +125,10 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 ### 3.4 `src/data/` 与环境声明
 
-| 文件                                                   | 职责                                                                                                                                           |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| [apps/web/src/data/site.ts](apps/web/src/data/site.ts) | 网站读取共享资料的统一入口，方便定位数据来源。转出 `@qntx-ui/content` 中的组织资料、链接、协议、标准及静态 Logo 路径；实际值仍只在共享库维护。 |
-| [apps/web/src/env.d.ts](apps/web/src/env.d.ts)         | 让编辑器和类型检查认识 Astro 提供的环境类型。 声明 Astro 客户端类型环境。                                                                      |
+| 文件                                                   | 职责                                                                                                                                                            |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [apps/web/src/data/site.ts](apps/web/src/data/site.ts) | 网站读取共享资料的统一入口，方便定位数据来源。转出 `@qntx-ui/content` 中网页实际使用的组织资料、链接、`homePageCopy` 及静态 Logo 路径；实际值仍只在共享库维护。 |
+| [apps/web/src/env.d.ts](apps/web/src/env.d.ts)         | 让编辑器和类型检查认识 Astro 提供的环境类型。 声明 Astro 客户端类型环境。                                                                                       |
 
 ### 3.5 `src/scripts/`
 
@@ -136,9 +138,15 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 [源码](apps/web/src/scripts/home-page-scroll.ts)。入口为 `initializeHomePageScroll(root): () => void`。它读取轨道、SVG 容器、目标槽位和场景节点；将原生文档滚动换算为归一化进度，并通过连续插值更新 DOM 样式。
 
-目标位置来自 `getBoundingClientRect()`，而不是固定百分比。控制器同时测量每个场景的实际内容高度：能全部放进视口时使用 `data-scroll-layout="pinned"` 的单屏叙事；内容超高时使用 `data-scroll-layout="document"`，全部内容进入自然文档流。两种排版共用同一 DOM，恢复可用空间后可自动回到叙事排版。滚动事件通过单个 `requestAnimationFrame` 合并；`ResizeObserver` 负责重新测量。活动场景同时更新 `inert`、`aria-hidden` 和指针状态，避免不可见区域接收操作。该控制器不拦截 wheel / touch 输入，不再存在横向切屏或另一套宽度分支。
+目标位置来自 `getBoundingClientRect()`，而不是固定百分比。控制器同时测量每个场景的实际内容高度：能全部放进视口时使用 `data-scroll-layout="pinned"` 的单屏叙事；内容超高时使用 `data-scroll-layout="document"`，全部内容进入自然文档流。两种排版共用同一 DOM，恢复可用空间后可自动回到叙事排版。自然文档排版按内容实际进入、离开视口的位置计算淡入淡出，阅读中部保持完全不透明；减少动态效果开启时直接显示内容。滚动事件通过单个 `requestAnimationFrame` 合并；`ResizeObserver` 负责重新测量。活动场景同时更新 `inert`、`aria-hidden` 和指针状态，避免不可见区域接收操作。该控制器不拦截 wheel / touch 输入，不再存在横向切屏或另一套宽度分支。
 
-销毁时中止事件监听、断开 observer、取消帧任务、销毁动画控制器，并移除增强产生的属性与内联样式。
+导航栏归位只在最后 10% 的滚动区间触发，完整行程约 0.9 秒，与表情播放时钟独立。控制器对曲线进度执行独立 RAF 过渡，因此直接跳到页面底部也沿曲线移动；末段进入 `arriving` 收拢表情，到达槽位后进入 `docked`。SVG 的透视倾斜、深度和阴影通过 CSS 变量更新，不添加渲染组件。背景停留时位于正文后方，行程中提升到导航栏上方，降低透明度并保持 `pointer-events: none`；滚动终点容忍 2 个 CSS 像素的舍入误差。销毁时中止事件监听、断开 observer、取消帧任务、销毁动画控制器，并移除增强产生的属性与内联样式。
+
+#### `mascot-docking.ts`
+
+计算 Logo 从视口中央到导航栏槽位的曲线路径，不管理页面状态或创建动画循环。
+
+[源码](apps/web/src/scripts/mascot-docking.ts)。`createMascotDockingCurve()` 为每次行程选定曲率，`getMascotDockingPosition()` 用二次曲线和端点缓动计算位置；反向行程可以另选曲线，途中反转保留当前路径，避免逐帧随机造成抖动。最终位置仍来自导航栏实际测量。
 
 #### `mascot-playback.ts`
 
@@ -146,7 +154,9 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 [源码](apps/web/src/scripts/mascot-playback.ts)。包含两个入口：`createSvgMascotRenderer()` 返回 `SvgMascotRenderer`，通过 `renderFrame()` / `resetToStaticLogo()` 更新三个 SVG path；`initializeMascotPlayback()` 返回 `MascotPlaybackController`，管理播放状态、输入计时、过渡与生命周期。
 
-控制器接收 `setPlaybackPhase()`，使用共享引擎和轮廓插值生成帧，通过 SVG 属性更新绘制，不依赖 React 重渲染。文档可见性与媒体偏好决定暂停条件；`dispose()` 负责取消 RAF、计时器及事件监听并复位绘制。此文件拥有浏览器 API，不能放入共享库。
+控制器接收 `setPlaybackPhase()`，使用共享引擎和轮廓插值生成帧，通过 SVG 属性更新绘制，不依赖 React 重渲染。网页表情使用原来的 1 倍速，Q 与面部切换恢复 360 / 320ms 插值；渲染器忽略表情的配色数据，保持中性主体与白色眼睛。进入首屏或归位后先恢复静态 Q，再开始 5 秒等待；等待期间鼠标移动会重新计时，动画启动后则由鼠标驱动目光，不再因移动而立即中断。鼠标离开窗口后，目光平滑归中并恢复目录循环。文档可见性与媒体偏好决定暂停条件；`dispose()` 负责取消 RAF、计时器及事件监听并复位绘制。此文件拥有浏览器 API，不能放入共享库。
+
+目光只移动面部和投影视角，不移动整个 Logo。控制器将相对 SVG 中心的指针位置限幅、平滑处理，调用共享引擎的可选 `setLookDirection()` 从原有表情中选取相近方向；方向按八个扇区分类并带边界滞后，避免微小移动反复随机切换。停止移动 2.2 秒后恢复原目录循环，保留轻微目光偏移；移出窗口后完全归中。原生应用不调用此接口，继续使用原来的目录播放。
 
 ### 3.6 `src/styles/`
 
@@ -157,9 +167,11 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 ### 3.7 `public/`
 
-| 文件                                                       | 职责                                                                |
-| ---------------------------------------------------------- | ------------------------------------------------------------------- |
-| [apps/web/public/favicon.svg](apps/web/public/favicon.svg) | 浏览器标签页上使用的网站小图标。 以 `/favicon.svg` 提供的站点图标。 |
+| 文件                                                                                                     | 职责                                                                                                                                         |
+| -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| [apps/web/public/favicon.svg](apps/web/public/favicon.svg)                                               | 浏览器标签页上使用的网站小图标。 以 `/favicon.svg` 提供的站点图标。                                                                          |
+| [apps/web/public/fonts/dm-sans-latin-variable.woff2](apps/web/public/fonts/dm-sans-latin-variable.woff2) | 实际加载的网页字体文件。由 `@font-face` 本地提供 DM Sans 可变字体，入口预加载，避免依赖用户电脑是否装有字体；不需要外部字体服务或新 npm 包。 |
+| [apps/web/public/fonts/DM-Sans-OFL.txt](apps/web/public/fonts/DM-Sans-OFL.txt)                           | 随字体保留的许可与版权说明。字体来源为 [Google Fonts](https://github.com/google/fonts/tree/main/ofl/dmsans)，按 SIL Open Font License 分发。 |
 
 ### 3.8 `tests/`
 
@@ -234,12 +246,12 @@ Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交
 
 ### 5.1 `packages/content/`
 
-| 文件                                                             | 职责                                                                                                                                |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| [packages/content/package.json](packages/content/package.json)   | 声明共享内容库的包名和入口，让两端都能导入它。 声明私有包 `@qntx-ui/content` 和 `src/index.ts` 源码 exports。                       |
-| [packages/content/project.json](packages/content/project.json)   | 把共享内容库登记给 Nx，并配置它的检查任务。 注册 Nx `content` 库，标签为 `platform:shared` / `type:lib`，提供检查任务。             |
-| [packages/content/tsconfig.json](packages/content/tsconfig.json) | 按纯数据代码的环境检查内容库，不默认引入浏览器或手机平台类型。 继承公共严格配置，使用 ES2022 库且不自动引入环境类型。               |
-| [packages/content/src/index.ts](packages/content/src/index.ts)   | 集中保存两端共用的文字、链接、协议资料和静态 Logo 路径。只提供数据，不返回 JSX 或调用平台 API；旧横向面板导航数组及对应类型已删除。 |
+| 文件                                                             | 职责                                                                                                                                                                                     |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [packages/content/package.json](packages/content/package.json)   | 声明共享内容库的包名和入口，让两端都能导入它。 声明私有包 `@qntx-ui/content` 和 `src/index.ts` 源码 exports。                                                                            |
+| [packages/content/project.json](packages/content/project.json)   | 把共享内容库登记给 Nx，并配置它的检查任务。 注册 Nx `content` 库，标签为 `platform:shared` / `type:lib`，提供检查任务。                                                                  |
+| [packages/content/tsconfig.json](packages/content/tsconfig.json) | 按纯数据代码的环境检查内容库，不默认引入浏览器或手机平台类型。 继承公共严格配置，使用 ES2022 库且不自动引入环境类型。                                                                    |
+| [packages/content/src/index.ts](packages/content/src/index.ts)   | 集中保存文字、链接、协议资料和静态 Logo 路径，`homePageCopy` 单独提供当前网页文案；原生应用继续使用原有数据。只提供数据，不返回 JSX 或调用平台 API；旧横向面板导航数组及对应类型已删除。 |
 
 两端组件按各自需求读取这些数据，不要求共用相同组件树。修改共享值前应检查两端调用方；Web 的数据入口仍保留在 `src/data/site.ts`。
 
@@ -256,17 +268,17 @@ Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交
 
 ### 5.3 `packages/mascot/`
 
-| 文件                                                                                         | 职责                                                                                                                                                                                |
-| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [packages/mascot/package.json](packages/mascot/package.json)                                 | 声明共享动画计算库的入口，以及它依赖的共享内容库。 声明私有包 `@qntx-ui/mascot`，仅依赖共享 `content`，对外导出源码。                                                               |
-| [packages/mascot/project.json](packages/mascot/project.json)                                 | 把共享动画计算库登记给 Nx，并配置检查任务。 注册 Nx 共享库、标签和类型 / lint / 边界检查目标。                                                                                      |
-| [packages/mascot/tsconfig.json](packages/mascot/tsconfig.json)                               | 检查动画计算代码和配套数据，不引入网页或原生 UI 环境。 使用纯 ES2022 类型环境，并纳入静态 JSON 轮廓。                                                                               |
-| [packages/mascot/src/index.ts](packages/mascot/src/index.ts)                                 | 作为动画库的统一导入入口，两端从这里取得所需计算函数。 统一公开动画引擎、帧类型、形变与路径函数，应用通过此入口导入。                                                               |
-| [packages/mascot/src/morph.ts](packages/mascot/src/morph.ts)                                 | 计算两种轮廓之间的中间形状，让形状切换连续。 构造静态帧，对齐闭合轮廓的起点 / 方向，插值与收缩轮廓；只为选中的对齐方案分配结果数组。                                                |
-| [packages/mascot/src/paths.ts](packages/mascot/src/paths.ts)                                 | 把轮廓坐标转换成 SVG 能绘制的路径文字。 以闭合样条生成 SVG path，统一坐标精度和安全缩放，提供静态路径与帧到路径的转换。                                                             |
-| [packages/mascot/src/rest.json](packages/mascot/src/rest.json)                               | 保存静态 Q 外轮廓和内部孔洞的坐标。 静态外轮廓与孔洞的点集数据，不包含 UI 状态。                                                                                                    |
-| [packages/mascot/src/vendor/logo-catalog.js](packages/mascot/src/vendor/logo-catalog.js)     | 根据播放时间算出当前动画形状和颜色，供两端绘制。 从原 Logo 提取的纯计算引擎；`sample(time)` 产生轮廓点和颜色；可选 `directGeometry` 路径缓存模型点和旋转计算，并跳过中间 SVG 往返。 |
-| [packages/mascot/src/vendor/logo-catalog.d.ts](packages/mascot/src/vendor/logo-catalog.d.ts) | 告诉 TypeScript 上面的 JavaScript 动画引擎可以传什么、会返回什么。 声明 `CatalogFrame`、引擎工厂和选项，为生成式 JavaScript 提供类型边界。                                          |
+| 文件                                                                                         | 职责                                                                                                                                                                                                                                             |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [packages/mascot/package.json](packages/mascot/package.json)                                 | 声明共享动画计算库的入口，以及它依赖的共享内容库。 声明私有包 `@qntx-ui/mascot`，仅依赖共享 `content`，对外导出源码。                                                                                                                            |
+| [packages/mascot/project.json](packages/mascot/project.json)                                 | 把共享动画计算库登记给 Nx，并配置检查任务。 注册 Nx 共享库、标签和类型 / lint / 边界检查目标。                                                                                                                                                   |
+| [packages/mascot/tsconfig.json](packages/mascot/tsconfig.json)                               | 检查动画计算代码和配套数据，不引入网页或原生 UI 环境。 使用纯 ES2022 类型环境，并纳入静态 JSON 轮廓。                                                                                                                                            |
+| [packages/mascot/src/index.ts](packages/mascot/src/index.ts)                                 | 作为动画库的统一导入入口，两端从这里取得所需计算函数。 统一公开动画引擎、帧类型、形变与路径函数，应用通过此入口导入。                                                                                                                            |
+| [packages/mascot/src/morph.ts](packages/mascot/src/morph.ts)                                 | 计算两种轮廓之间的中间形状，让形状切换连续。 构造静态帧，对齐闭合轮廓的起点 / 方向，插值与收缩轮廓；只为选中的对齐方案分配结果数组。                                                                                                             |
+| [packages/mascot/src/paths.ts](packages/mascot/src/paths.ts)                                 | 把轮廓坐标转换成 SVG 能绘制的路径文字。 以闭合样条生成 SVG path，统一坐标精度和安全缩放，提供静态路径与帧到路径的转换。                                                                                                                          |
+| [packages/mascot/src/rest.json](packages/mascot/src/rest.json)                               | 保存静态 Q 外轮廓和内部孔洞的坐标。 静态外轮廓与孔洞的点集数据，不包含 UI 状态。                                                                                                                                                                 |
+| [packages/mascot/src/vendor/logo-catalog.js](packages/mascot/src/vendor/logo-catalog.js)     | 根据播放时间算出当前动画形状和颜色，供两端绘制。`sample(time)` 保留原目录行为，`sample(time, gaze)` 与 `setLookDirection()` 可选择启用方向表情和目光偏移；`directGeometry` 路径缓存模型点和旋转计算，跳过中间 SVG 往返。没有 DOM、事件或定时器。 |
+| [packages/mascot/src/vendor/logo-catalog.d.ts](packages/mascot/src/vendor/logo-catalog.d.ts) | 告诉 TypeScript 动画引擎可以传什么、会返回什么。声明 `CatalogFrame`、归一化目光向量 `MascotGaze`、引擎工厂、方向接口和选项，为生成式 JavaScript 提供类型边界。                                                                                   |
 
 共享范围止于数据、几何与路径计算。Web DOM、React Native SVG、RAF 生命周期、输入事件及平台无障碍属性分别由应用层处理。vendor 文件的局部规则例外有源码说明，不应扩展为全仓库豁免。
 

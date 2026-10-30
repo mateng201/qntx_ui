@@ -2210,21 +2210,62 @@ function createCatalogAnimation(now = () => performance.now(), options = {}) {
     payload: gn(),
   });
   engine.play($);
+  let lookSector;
+  let lookExpression;
   return {
-    sample(time) {
-      const frame = engine.evaluate(time, ee, options.directGeometry === true);
+    // Optional directional playback keeps native callers on the unchanged catalog loop.
+    setLookDirection(direction) {
+      if (direction === undefined || Math.hypot(direction.x, direction.y) < 0.12) {
+        if (lookSector !== undefined) engine.play($);
+        lookSector = undefined;
+        lookExpression = undefined;
+        return undefined;
+      }
+      const angle = Math.atan2(direction.y, direction.x);
+      const sector = ((Math.round(angle / (Math.PI / 4)) % 8) + 8) % 8;
+      if (sector === lookSector) return lookExpression;
+      if (lookSector !== undefined) {
+        const difference = angle - lookSector * (Math.PI / 4);
+        if (Math.abs(Math.atan2(Math.sin(difference), Math.cos(difference))) < Math.PI / 8 + 0.1) {
+          return lookExpression;
+        }
+      }
+      const nearest = a
+        .map((pose) => {
+          const difference = Math.atan2(pose.headX, pose.headY) - angle;
+          return {
+            pose,
+            distance: Math.abs(Math.atan2(Math.sin(difference), Math.cos(difference))),
+          };
+        })
+        .sort((first, second) => first.distance - second.distance)
+        .slice(0, 3)
+        .filter((candidate, index) => index === 0 || candidate.distance < Math.PI / 3);
+      const alternatives = nearest.filter((candidate) => candidate.pose.id !== lookExpression);
+      const candidates = alternatives.length > 0 ? alternatives : nearest;
+      const selected = candidates[Math.floor(Math.random() * candidates.length)]?.pose;
+      if (selected !== undefined) {
+        lookExpression = selected.id;
+        lookSector = sector;
+        engine.play(selected.id);
+      }
+      return lookExpression;
+    },
+    sample(time, gaze) {
+      const camera = gaze === undefined ? ee : { ...ee, yaw: gaze.x * 7, pitch: gaze.y * 6 };
+      const frame = engine.evaluate(time, camera, options.directGeometry === true);
       const shape = Jt(frame.marks);
       const offset = frame.pose.bob * -8;
-      const move = (points) =>
+      const move = (points, isEye = false) =>
         (points ?? []).map((point) => ({
-          x: point.x,
-          y: point.y + offset,
+          x: point.x + (isEye ? (gaze?.x ?? 0) * 4 : 0),
+          y: point.y + offset + (isEye ? (gaze?.y ?? 0) * 3 : 0),
         }));
       return {
         outer: move(shape.outer),
         hole: move(shape.hole),
-        left: move(shape.left),
-        right: move(shape.right),
+        left: move(shape.left, true),
+        right: move(shape.right, true),
         colors: frame.colors,
       };
     },

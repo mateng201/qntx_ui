@@ -1,3 +1,4 @@
+import { createMascotDockingCurve, getMascotDockingPosition } from "./mascot-docking";
 import { initializeMascotPlayback } from "./mascot-playback";
 
 function clampProgress(value: number): number {
@@ -11,6 +12,13 @@ function smoothStep(value: number): number {
 
 function getSectionOpacity(progress: number, start: number, end: number): number {
   return smoothStep((progress - start) / 0.1) * (1 - smoothStep((progress - end) / 0.1));
+}
+
+function getDocumentSectionOpacity(bounds: DOMRect, headerBottom: number): number {
+  const fadeDistance = Math.min(140, Math.max(60, (innerHeight - headerBottom) * 0.16));
+  const entering = smoothStep((innerHeight - bounds.top) / fadeDistance);
+  const leaving = smoothStep((bounds.bottom - headerBottom) / fadeDistance);
+  return entering * leaving;
 }
 
 /** One scroll controller for all viewports; long sections use ordinary document flow. */
@@ -29,41 +37,89 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let renderFrameId: number | undefined;
   let measureFrameId: number | undefined;
+  let startupFrameId: number | undefined;
   let top = 0;
   let scrollDistance = 1;
   let size = 220;
+  let headerBottom = 0;
   let target = { x: 0, y: 0, size: 40 };
   let previousSectionId = "";
+  let docking = 0;
+  let targetDocking = 0;
+  let dockingCurve = createMascotDockingCurve();
+  let dockingTransition: { from: number; to: number; started: number } | undefined;
 
-  root.dataset["scrollReady"] = "true";
+  scrollTo({ top: 0, left: 0, behavior: "instant" });
 
-  function renderScrollFrame(): void {
+  function renderScrollFrame(now = performance.now()): void {
     if (renderFrameId !== undefined) {
       cancelAnimationFrame(renderFrameId);
     }
     renderFrameId = undefined;
-    const progress = clampProgress((scrollY - top) / scrollDistance);
+    // Fractional viewport sizes can leave the browser's real endpoint just below 1.
+    const progress =
+      top + scrollDistance - scrollY <= 2 ? 1 : clampProgress((scrollY - top) / scrollDistance);
+    const desiredDocking = progress === 1 ? 1 : clampProgress((progress - 0.9) / 0.1);
+    if (dockingTransition !== undefined) {
+      const elapsed = clampProgress((now - dockingTransition.started) / 900);
+      docking = dockingTransition.from + (dockingTransition.to - dockingTransition.from) * elapsed;
+      if (elapsed === 1) {
+        dockingTransition = undefined;
+      }
+    }
+    if (reducedMotion.matches) {
+      docking = desiredDocking;
+      targetDocking = desiredDocking;
+      dockingTransition = undefined;
+    } else if (desiredDocking !== targetDocking) {
+      if (
+        (targetDocking === 0 && docking <= 0.001 && desiredDocking > 0) ||
+        (targetDocking === 1 && docking >= 0.999 && desiredDocking < 1)
+      ) {
+        dockingCurve = createMascotDockingCurve(dockingCurve);
+      }
+      dockingTransition = { from: docking, to: desiredDocking, started: now };
+      targetDocking = desiredDocking;
+    }
+    const isDocked = progress >= 0.999 && docking >= 0.999;
     animation.setPlaybackPhase(
-      progress >= 0.999 ? "docked" : progress > 0 ? "scrolling" : "opening",
+      isDocked
+        ? "docked"
+        : docking > 0.6
+          ? "arriving"
+          : progress <= 0 && docking <= 0.001
+            ? "opening"
+            : "scrolling",
     );
-    const docking = smoothStep((progress - 0.8) / 0.2);
     const receding = smoothStep(progress / 0.2);
     const backgroundScale = 1 - receding * 0.2;
-    const scale = backgroundScale + (target.size / size - backgroundScale) * docking;
-    const x = innerWidth / 2 + (target.x - innerWidth / 2) * docking;
-    const y = innerHeight / 2 + (target.y - innerHeight / 2) * docking;
+    const scale = backgroundScale + (target.size / size - backgroundScale) * smoothStep(docking);
+    const position = getMascotDockingPosition(
+      { x: innerWidth / 2, y: innerHeight / 2 },
+      target,
+      docking,
+      dockingCurve,
+    );
     // Translate in screen coordinates; scale about the mascot's center so the dock is exact.
-    mascot.style.transform = `translate3d(${x - size / 2}px, ${y - size / 2}px, 0) scale(${scale})`;
-    mascot.style.opacity = String((1 - receding * 0.955) * (1 - docking) + docking);
-    mascot.dataset["mascotBackground"] = String(progress >= 0.12 && progress < 0.82);
-    let activeSectionId =
-      progress < 0.16
-        ? "opening"
-        : progress < 0.49
-          ? "about"
-          : progress < 0.82
-            ? "protocols"
-            : "resources";
+    mascot.style.transform = `translate3d(${position.x - size / 2}px, ${position.y - size / 2}px, 0) scale(${scale})`;
+    const arrival = smoothStep((docking - 0.78) / 0.22);
+    const flightLift = Math.sin(Math.PI * docking);
+    const backgroundOpacity = 1 - receding * 0.955 + 0.22 * flightLift;
+    mascot.style.opacity = String(Math.min(1, backgroundOpacity * (1 - arrival) + arrival));
+    const flightSide = Math.sign(dockingCurve.bend);
+    const flightDepth = flightLift * flightLift;
+    mascot.style.setProperty("--mascot-flight-pitch", `${-12 * flightDepth}deg`);
+    mascot.style.setProperty("--mascot-flight-yaw", `${flightSide * 20 * flightDepth}deg`);
+    mascot.style.setProperty("--mascot-flight-roll", `${flightSide * 5 * flightDepth}deg`);
+    mascot.style.setProperty("--mascot-depth", `${36 * flightDepth}px`);
+    mascot.style.setProperty("--mascot-shadow-y", `${16 * flightDepth}px`);
+    mascot.style.setProperty("--mascot-shadow-blur", `${12 * flightDepth}px`);
+    mascot.dataset["mascotBackground"] = String(progress >= 0.12 && docking < 0.95);
+    mascot.dataset["mascotTravelling"] = String(
+      dockingTransition !== undefined || (docking > 0.001 && docking < 0.999),
+    );
+    mascot.dataset["dockingCurve"] = dockingCurve.bend.toFixed(5);
+    let activeSectionId = progress < 0.2 ? "opening" : progress < 0.58 ? "about" : "resources";
     const isDocumentLayout = root.dataset["scrollLayout"] === "document";
     if (isDocumentLayout) {
       for (const section of sections) {
@@ -74,15 +130,19 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
     }
     const sectionOpacities: Record<string, number> = {
       opening: 1 - smoothStep(progress / 0.12),
-      about: getSectionOpacity(progress, 0.12, 0.4),
-      protocols: getSectionOpacity(progress, 0.46, 0.72),
-      resources: smoothStep((progress - 0.82) / 0.12),
+      about: getSectionOpacity(progress, 0.18, 0.48),
+      resources: smoothStep((progress - 0.58) / 0.14),
     };
     for (const section of sections) {
       if (isDocumentLayout) {
         section.inert = false;
         section.removeAttribute("aria-hidden");
-        section.removeAttribute("style");
+        section.style.removeProperty("transform");
+        section.style.removeProperty("pointer-events");
+        const contentBounds = (section.firstElementChild ?? section).getBoundingClientRect();
+        section.style.opacity = String(
+          reducedMotion.matches ? 1 : getDocumentSectionOpacity(contentBounds, headerBottom),
+        );
         delete section.dataset["visible"];
         continue;
       }
@@ -105,7 +165,10 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
     previousSectionId = activeSectionId;
     root.dataset["activeSection"] = activeSectionId;
     root.dataset["scrollProgress"] = progress.toFixed(4);
-    mascot.dataset["logoDocked"] = String(progress >= 0.999);
+    mascot.dataset["logoDocked"] = String(isDocked);
+    if (dockingTransition !== undefined) {
+      renderFrameId = requestAnimationFrame(renderScrollFrame);
+    }
   }
 
   function scheduleScrollRender(): void {
@@ -132,6 +195,7 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
       : "document";
     const box = track.getBoundingClientRect();
     const slot = dock.getBoundingClientRect();
+    headerBottom = root.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
     top = box.top + scrollY;
     scrollDistance = Math.max(1, track.offsetHeight - innerHeight);
     size = Number(getComputedStyle(mascot).width.replace("px", ""));
@@ -177,6 +241,14 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
   const animation = initializeMascotPlayback(mascot);
   measureScrollLayout();
   renderScrollFrame();
+  root.dataset["scrollReady"] = "true";
+  // Paint the prepared opening once before allowing normal section transitions.
+  startupFrameId = requestAnimationFrame(() => {
+    startupFrameId = requestAnimationFrame(() => {
+      startupFrameId = undefined;
+      delete document.documentElement.dataset["homeStarting"];
+    });
+  });
 
   return () => {
     events.abort();
@@ -188,6 +260,10 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
     if (measureFrameId !== undefined) {
       cancelAnimationFrame(measureFrameId);
     }
+    if (startupFrameId !== undefined) {
+      cancelAnimationFrame(startupFrameId);
+    }
+    delete document.documentElement.dataset["homeStarting"];
     for (const section of sections) {
       section.inert = false;
       section.removeAttribute("aria-hidden");
@@ -195,6 +271,8 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
       delete section.dataset["visible"];
     }
     mascot.removeAttribute("style");
+    delete mascot.dataset["dockingCurve"];
+    delete mascot.dataset["mascotTravelling"];
     delete root.dataset["scrollReady"];
     delete root.dataset["activeSection"];
     delete root.dataset["scrollProgress"];

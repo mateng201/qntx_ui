@@ -4,8 +4,6 @@ export {
   aboutIntro,
   brandMarkPath,
   hero,
+  homePageCopy,
   links,
-  primitives,
-  protocolIntro,
-  standards,
 } from "@qntx-ui/content";
