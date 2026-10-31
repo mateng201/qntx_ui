@@ -1,12 +1,18 @@
 ---
-import { palette } from "@qntx-ui/design-tokens";
+import { fontFamilies, homeTheme, palette } from "@qntx-ui/design-tokens";
 import { HomePage } from "../components/HomePage";
 import "../styles/global.css";
 import "../styles/home-page.css";
+
+const homeVariables = Object.entries(homeTheme)
+  .flatMap(([section, colors]) =>
+    Object.entries(colors).map(([role, color]) => `--${section}-${role}:${color}`),
+  )
+  .join(";");
 ---
 
 <!doctype html>
-<html lang="en" style={`--hover:${palette.hover}`}>
+<html lang="en" style={`--hover:${palette.hover};--font-sans:${fontFamilies.web};${homeVariables}`}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -16,13 +22,6 @@ import "../styles/home-page.css";
     />
     <meta name="theme-color" content="#ffffff" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link
-      rel="preload"
-      href="/fonts/dm-sans-latin-variable.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin="anonymous"
-    />
     <title>QuantX — An open economy for autonomous agents</title>
     <script is:inline type="module" {...{ blocking: "render" }}>
       export const scrollRestorationMode = "manual";

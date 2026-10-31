@@ -4,6 +4,7 @@ export {
   aboutIntro,
   brandMarkPath,
   hero,
+  githubIconPath,
   homePageCopy,
   links,
 } from "@qntx-ui/content";

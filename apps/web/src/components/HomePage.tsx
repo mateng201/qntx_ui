@@ -55,7 +55,11 @@ export function HomePage(): ReactElement {
             aria-label="Welcome to QuantX"
           >
             <div className="welcome-caption">
-              <h1>{homePageCopy.mission}</h1>
+              <h1>
+                {homePageCopy.missionLead}
+                <br />
+                <span>{homePageCopy.missionAccent}</span>
+              </h1>
               <p>{homePageCopy.missionDetail}</p>
             </div>
           </section>
@@ -88,7 +92,7 @@ export function HomePage(): ReactElement {
                 <h2 id="resources-title">
                   {hero.titleLines[0]}
                   <br />
-                  {hero.titleLines[1]}
+                  <span>{hero.titleLines[1]}</span>
                 </h2>
                 <p className="resources-description">{homePageCopy.valueProposition}</p>
                 <div className="resources-actions">
@@ -103,7 +107,6 @@ export function HomePage(): ReactElement {
                 </div>
               </div>
               <div className="resources-links">
-                <p className="section-eyebrow">{aboutIntro.destinationHeading}</p>
                 {aboutDestinations.map((destination) => (
                   <a href={destination.href} className="resource-link" key={destination.number}>
                     <span className="resource-number">{destination.number}</span>

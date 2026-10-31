@@ -1,89 +1,59 @@
-import {
-  aboutDestinations,
-  aboutIntro,
-  hero,
-  links,
-  primitives,
-  protocolIntro,
-  standards,
-} from "@qntx-ui/content";
+import { aboutDestinations, aboutIntro, hero, homePageCopy, links } from "@qntx-ui/content";
+import { fontFamilies, homeTheme } from "@qntx-ui/design-tokens";
 import type { ReactElement } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 
 import { ExternalLink } from "./ExternalLink";
 
+const fontFamily =
+  Platform.OS === "web"
+    ? fontFamilies.web
+    : Platform.OS === "ios"
+      ? fontFamilies.ios
+      : fontFamilies.android;
+
+export function OpeningSection(): ReactElement {
+  return (
+    <View style={styles.opening} testID="mobile-opening-content">
+      <Text accessibilityRole="header" style={styles.mission}>
+        {homePageCopy.missionLead}
+        {"\n"}
+        <Text style={styles.missionAccent}>{homePageCopy.missionAccent}</Text>
+      </Text>
+      <Text style={styles.missionDetail}>{homePageCopy.missionDetail}</Text>
+    </View>
+  );
+}
 export function AboutSection({ compact = false }: { compact?: boolean }): ReactElement {
   return (
     <View style={styles.about} testID="mobile-about-content">
-      <Text style={styles.kicker}>A SHARED STARTING POINT</Text>
       <Text
         accessibilityRole="header"
         style={[styles.aboutTitle, compact && styles.aboutTitleCompact]}
       >
         {aboutIntro.titleLines[0]}
         {"\n"}
-        <Text style={styles.accent}>{aboutIntro.titleLines[1]}</Text>
+        <Text style={styles.aboutAccent}>{aboutIntro.titleLines[1]}</Text>
       </Text>
-      <Text style={[styles.aboutCopy, compact && styles.aboutCopyCompact]}>
-        {aboutIntro.description}
-      </Text>
-      <Text style={styles.signature}>{aboutIntro.signatureLines.join(" ")}</Text>
+      <Text style={styles.aboutCopy}>{aboutIntro.description}</Text>
     </View>
   );
 }
-
-export function ProtocolsSection({
-  compact = false,
-  isDocumentLayout = false,
-}: {
-  compact?: boolean;
-  isDocumentLayout?: boolean;
-}): ReactElement {
+export function ResourcesSection({ compact = false }: { compact?: boolean }): ReactElement {
   return (
-    <View testID="mobile-protocol-content" style={styles.protocols}>
+    <View
+      style={[styles.resources, compact && styles.resourcesCompact]}
+      testID="mobile-resources-content"
+    >
       <Text
         accessibilityRole="header"
-        style={[styles.protocolTitle, compact && styles.protocolTitleCompact]}
+        style={[styles.resourcesTitle, compact && styles.resourcesTitleCompact]}
       >
-        {protocolIntro.titleLines.join("\n")}
+        {hero.titleLines[0]}
+        {"\n"}
+        <Text style={styles.resourcesAccent}>{hero.titleLines[1]}</Text>
       </Text>
-      <Text style={[styles.protocolIntro, compact && styles.protocolIntroCompact]}>
-        {protocolIntro.description}
-      </Text>
-      <View style={[styles.features, compact && styles.featuresCompact]}>
-        {primitives.map((primitive) => (
-          <View
-            key={primitive.number}
-            style={[styles.feature, isDocumentLayout && styles.featureDocument]}
-            testID={`mobile-feature-${primitive.number}`}
-          >
-            <View style={styles.featureMeta}>
-              <Text style={styles.featureNumber}>{primitive.number}</Text>
-              <Text style={styles.badge}>{primitive.standard}</Text>
-            </View>
-            <Text
-              accessibilityRole="header"
-              style={[styles.featureTitle, compact && styles.featureTitleCompact]}
-            >
-              {primitive.title}
-            </Text>
-            <Text style={[styles.featureCopy, compact && styles.featureCopyCompact]}>
-              {primitive.description}
-            </Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-export function ResourcesSection(): ReactElement {
-  return (
-    <View style={styles.resources} testID="mobile-resources-content">
-      <Text accessibilityRole="header" style={styles.resourcesTitle}>
-        {hero.titleLines.join("\n")}
-      </Text>
-      <Text style={styles.resourcesCopy}>{hero.description}</Text>
+      <Text style={styles.resourcesCopy}>{homePageCopy.valueProposition}</Text>
       <View style={styles.actions}>
         <ExternalLink href={links.github} label={hero.primaryAction}>
           <View style={styles.primary}>
@@ -93,25 +63,10 @@ export function ResourcesSection(): ReactElement {
         </ExternalLink>
         <ExternalLink href={links.github} label={hero.secondaryAction} />
       </View>
-      <View style={styles.standards}>
-        {standards.map((standard) => (
-          <ExternalLink
-            href={standard.href}
-            label={`${standard.label} ${standard.detail}`}
-            key={standard.label}
-          >
-            <View style={styles.standard}>
-              <Text style={styles.standardTitle}>{standard.label}</Text>
-              <Text style={styles.standardDetail}>/ {standard.detail}</Text>
-            </View>
-          </ExternalLink>
-        ))}
-      </View>
       <View style={styles.destinations}>
-        <Text style={styles.kicker}>{aboutIntro.destinationHeading}</Text>
         {aboutDestinations.map((destination) => (
           <ExternalLink href={destination.href} label={destination.label} key={destination.number}>
-            <View style={styles.destination}>
+            <View style={[styles.destination, compact && styles.destinationCompact]}>
               <Text style={styles.destinationNumber}>{destination.number}</Text>
               <View style={styles.destinationCopy}>
                 <Text style={styles.destinationTitle}>{destination.label}</Text>
@@ -125,91 +80,67 @@ export function ResourcesSection(): ReactElement {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
+  opening: { paddingHorizontal: 24, width: "100%", maxWidth: 620, alignSelf: "center" },
+  mission: {
+    fontFamily,
+    fontSize: 21,
+    lineHeight: 30,
+    fontWeight: "500",
+    color: homeTheme.opening.ink,
+    textAlign: "center",
+  },
+  missionAccent: { color: homeTheme.opening.accent },
+  missionDetail: {
+    fontFamily,
+    fontSize: 15,
+    lineHeight: 24,
+    color: homeTheme.opening.copy,
+    textAlign: "center",
+    marginTop: 14,
+  },
   about: { paddingHorizontal: 26, alignItems: "center", width: "100%" },
-  kicker: { color: "#5d6259", fontSize: 11, lineHeight: 17, letterSpacing: 0.9, marginBottom: 24 },
   aboutTitle: {
-    color: "#1b1d19",
+    fontFamily,
+    color: homeTheme.about.ink,
     fontSize: 46,
-    lineHeight: 52,
-    letterSpacing: -2.3,
+    lineHeight: 53,
+    letterSpacing: -1.5,
+    fontWeight: "500",
     textAlign: "center",
     marginBottom: 26,
   },
   aboutTitleCompact: { fontSize: 38, lineHeight: 44 },
-  accent: { color: "#6c7463" },
+  aboutAccent: { color: homeTheme.about.accent },
   aboutCopy: {
-    color: "#50564a",
-    fontSize: 18,
-    lineHeight: 29,
+    fontFamily,
+    color: homeTheme.about.copy,
+    fontSize: 16,
+    lineHeight: 27,
     textAlign: "center",
     maxWidth: 520,
   },
-  aboutCopyCompact: { fontSize: 16, lineHeight: 26 },
-  signature: { color: "#5d6259", fontSize: 11, lineHeight: 19, marginTop: 26, textAlign: "center" },
-  protocols: { paddingHorizontal: 22, width: "100%", maxWidth: 720, alignSelf: "center" },
-  protocolTitle: {
-    color: "#1b1d19",
-    fontSize: 34,
-    lineHeight: 39,
-    letterSpacing: -1.5,
-    marginBottom: 18,
-  },
-  protocolTitleCompact: { fontSize: 28, lineHeight: 33, marginBottom: 12 },
-  protocolIntro: { color: "#5d6259", fontSize: 15, lineHeight: 24, marginBottom: 30 },
-  protocolIntroCompact: { fontSize: 14, lineHeight: 22, marginBottom: 22 },
-  features: { flexDirection: "row", flexWrap: "wrap", columnGap: 20, rowGap: 26 },
-  featuresCompact: { columnGap: 16, rowGap: 22 },
-  feature: {
-    width: "46%",
-    flexGrow: 1,
-    borderTopWidth: 1,
-    borderTopColor: "#c8cec0",
-    paddingTop: 16,
-  },
-  featureDocument: { width: "100%", marginBottom: 6 },
-  featureMeta: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
-  featureNumber: { color: "#535b4c", fontSize: 11 },
-  badge: {
-    color: "#535b4c",
-    backgroundColor: "#eef0e9",
-    borderWidth: 1,
-    borderColor: "#d6dccf",
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  featureTitle: {
-    color: "#1b1d19",
-    fontSize: 24,
-    lineHeight: 30,
-    letterSpacing: -0.8,
-    marginBottom: 10,
-  },
-  featureTitleCompact: { fontSize: 22, lineHeight: 27, marginBottom: 8 },
-  featureCopy: { color: "#5d6259", fontSize: 14, lineHeight: 22 },
-  featureCopyCompact: { fontSize: 13, lineHeight: 20 },
   resources: {
-    paddingHorizontal: 26,
-    paddingTop: 44,
-    paddingBottom: 44,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
     width: "100%",
     maxWidth: 680,
     alignSelf: "center",
-    backgroundColor: "#fafaf8",
   },
+  resourcesCompact: { paddingVertical: 20 },
   resourcesTitle: {
-    color: "#1b1d19",
+    fontFamily,
+    color: homeTheme.resources.ink,
     fontSize: 36,
-    lineHeight: 42,
-    letterSpacing: -1.7,
+    lineHeight: 43,
+    fontWeight: "500",
+    letterSpacing: -0.8,
     marginBottom: 24,
   },
-  resourcesCopy: { color: "#5d6259", fontSize: 16, lineHeight: 27 },
-  actions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 20, marginTop: 26 },
+  resourcesTitleCompact: { fontSize: 32, lineHeight: 38, marginBottom: 18 },
+  resourcesAccent: { color: homeTheme.resources.accent },
+  resourcesCopy: { fontFamily, color: homeTheme.resources.copy, fontSize: 16, lineHeight: 26 },
+  actions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 20, marginTop: 24 },
   primary: {
     flexDirection: "row",
     alignItems: "center",
@@ -217,35 +148,28 @@ const styles = StyleSheet.create({
     backgroundColor: "#1b1d19",
     borderRadius: 28,
     paddingHorizontal: 22,
-    paddingVertical: 14,
+    paddingVertical: 12,
   },
-  primaryText: { color: "#ffffff", fontSize: 14, lineHeight: 22, fontWeight: "600" },
+  primaryText: { fontFamily, color: "#ffffff", fontSize: 14, lineHeight: 22, fontWeight: "600" },
   primaryArrow: { color: "#ffffff", fontSize: 21 },
-  standards: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    columnGap: 22,
-    rowGap: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#dcded6",
-    marginTop: 34,
-    paddingTop: 22,
-  },
-  standard: { gap: 8, paddingVertical: 8 },
-  standardTitle: { color: "#525c48", fontSize: 16, fontWeight: "600", letterSpacing: -0.4 },
-  standardDetail: { color: "#525c48", fontSize: 11, lineHeight: 17 },
-  destinations: { marginTop: 46 },
+  destinations: { marginTop: 26, gap: 8 },
   destination: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    borderTopWidth: 1,
-    borderTopColor: "#dcded6",
-    paddingVertical: 25,
+    paddingVertical: 22,
+    paddingHorizontal: 12,
   },
-  destinationNumber: { color: "#5d6259", fontSize: 11 },
-  destinationCopy: { flex: 1, gap: 8 },
-  destinationTitle: { color: "#1b1d19", fontSize: 21, lineHeight: 28, letterSpacing: -0.5 },
-  destinationDetail: { color: "#5d6259", fontSize: 13, lineHeight: 21 },
-  destinationArrow: { color: "#657459", fontSize: 22 },
+  destinationCompact: { paddingVertical: 18 },
+  destinationNumber: { fontFamily, color: homeTheme.resources.copy, fontSize: 12 },
+  destinationCopy: { flex: 1, gap: 6 },
+  destinationTitle: {
+    fontFamily,
+    color: homeTheme.resources.ink,
+    fontSize: 20,
+    lineHeight: 27,
+    fontWeight: "500",
+  },
+  destinationDetail: { fontFamily, color: homeTheme.resources.copy, fontSize: 13, lineHeight: 20 },
+  destinationArrow: { color: homeTheme.resources.accent, fontSize: 22 },
 });

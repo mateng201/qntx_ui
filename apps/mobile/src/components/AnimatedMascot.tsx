@@ -3,7 +3,7 @@ import type { MascotPaths } from "@qntx-ui/mascot";
 import type { ReactElement, Ref } from "react";
 import { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 
 import { createMascotPlaybackController } from "../animation/mascot-playback";
 import type {
@@ -47,7 +47,10 @@ export function AnimatedMascot({
   );
   useImperativeHandle(
     ref,
-    () => ({ notifyActivity: () => controller.current?.notifyActivity() }),
+    () => ({
+      notifyActivity: () => controller.current?.notifyActivity(),
+      setGaze: (gaze) => controller.current?.setGaze(gaze),
+    }),
     [],
   );
 
@@ -66,7 +69,11 @@ export function AnimatedMascot({
       } else {
         // Paths are animation-owned: avoid React reconciliation on every frame.
         if (paths.body !== previous.body) {
-          body.current?.setNativeProps({ d: paths.body });
+          body.current?.setNativeProps({
+            d: paths.body,
+            fill:
+              paths.body === staticMascotPaths.body ? "#1b1d19" : "url(#mobile-mascot-material)",
+          });
         }
         if (paths.left !== previous.left) {
           left.current?.setNativeProps({ d: paths.left });
@@ -94,10 +101,17 @@ export function AnimatedMascot({
 
   return (
     <Svg width={size} height={size} viewBox="-150 -150 300 300" {...accessibilityProps}>
+      <Defs>
+        <LinearGradient id="mobile-mascot-material" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor="#60645b" />
+          <Stop offset="0.4" stopColor="#363a31" />
+          <Stop offset="1" stopColor="#191c17" />
+        </LinearGradient>
+      </Defs>
       <Path
         ref={body}
         d={drawing.body}
-        fill="#1b1d19"
+        fill={drawing.body === staticMascotPaths.body ? "#1b1d19" : "url(#mobile-mascot-material)"}
         fillRule="evenodd"
         testID="mobile-mascot-body"
       />

@@ -307,6 +307,75 @@ test("the downward heat expression keeps white eyes and a neutral body", async (
   }
 });
 
+test("resources fade with the actual flight on entry, exit and mid-flight reversal", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  await expect(page.locator("[data-home-page]")).toHaveAttribute("data-scroll-ready", "true");
+  const trips = await page.evaluate(async () => {
+    const mascot = document.querySelector<HTMLElement>("[data-mascot]");
+    const dock = document.querySelector<HTMLElement>("[data-mascot-dock]");
+    const resources = document.querySelector<HTMLElement>("#resources");
+    const track = document.querySelector<HTMLElement>("[data-scroll-track]");
+    if (mascot === null || dock === null || resources === null || track === null) {
+      throw new Error("Missing scene or flight geometry");
+    }
+    const slot = dock.getBoundingClientRect();
+    const dx = slot.x + slot.width / 2 - innerWidth / 2;
+    const dy = slot.y + slot.height / 2 - innerHeight / 2;
+    const distance = dx * dx + dy * dy;
+    const move = (progress: number): void =>
+      scrollTo({ top: (track.clientHeight - innerHeight) * progress, behavior: "instant" });
+    const trips: Array<Array<{ opacity: number; position: number }>> = [];
+    for (const destination of [1, 0.5, 1, 0.5]) {
+      move(destination);
+      const started = performance.now();
+      const frames = await new Promise<Array<{ opacity: number; position: number }>>((resolve) => {
+        const samples: Array<{ opacity: number; position: number }> = [];
+        const sample = (now: number): void => {
+          const box = mascot.getBoundingClientRect();
+          samples.push({
+            opacity: Number(getComputedStyle(resources).opacity),
+            // Project the visible center onto the route chord; the sideways arc cancels out.
+            position:
+              ((box.x + box.width / 2 - innerWidth / 2) * dx +
+                (box.y + box.height / 2 - innerHeight / 2) * dy) /
+              distance,
+          });
+          if (now - started > 1100) {
+            resolve(samples);
+          } else {
+            requestAnimationFrame(sample);
+          }
+        };
+        requestAnimationFrame(sample);
+      });
+      trips.push(frames);
+    }
+    move(1);
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 350);
+    });
+    move(0.5);
+    return { trips, curve: mascot.dataset["dockingCurve"] };
+  });
+  for (const [index, frames] of trips.trips.entries()) {
+    expect(
+      frames.filter(({ position }) => position > 0.05 && position < 0.95).length,
+    ).toBeGreaterThan(8);
+    expect(
+      Math.max(...frames.map(({ opacity, position }) => Math.abs(opacity - position))),
+    ).toBeLessThan(0.01);
+    expect(frames.at(-1)?.opacity).toBeCloseTo(index % 2 === 0 ? 1 : 0, 3);
+  }
+  await expect(page.locator("[data-mascot]")).toHaveAttribute(
+    "data-docking-curve",
+    trips.curve ?? "",
+  );
+  await expect(page.locator("#resources")).toHaveCSS("opacity", "0");
+});
+
 test("smooth perspective flight stays above the header and fractional scroll endpoints become static", async ({
   page,
 }) => {
@@ -317,7 +386,7 @@ test("smooth perspective flight stays above the header and fractional scroll end
     content:
       '.home-page[data-scroll-layout="pinned"] .scroll-track { height: calc(380svh + .7px); }',
   });
-  await scrollToProgress(page, 0.89);
+  await scrollToProgress(page, 0.56);
   await page.evaluate(() =>
     scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }),
   );
@@ -362,12 +431,12 @@ test("smooth perspective flight stays above the header and fractional scroll end
   await expect(mascot).toHaveAttribute("data-animation-running", "false");
 });
 
-test("docking starts after 90 percent, follows a varied arc and lands exactly without blocking content", async ({
+test("docking starts with resources, follows a varied arc and lands exactly without blocking content", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
-  await scrollToProgress(page, 0.89);
+  await scrollToProgress(page, 0.56);
   const mascot = page.locator("[data-mascot]");
   const start = await mascot.boundingBox();
   const dock = await page.locator("[data-mascot-dock]").boundingBox();
@@ -404,7 +473,7 @@ test("docking starts after 90 percent, follows a varied arc and lands exactly wi
   const forwardCurve = await mascot.getAttribute("data-docking-curve");
   await page.mouse.move(1200, 700);
   expect(await mascot.boundingBox()).toEqual(before);
-  await scrollToProgress(page, 0.89);
+  await scrollToProgress(page, 0.56);
   await expect(mascot).not.toHaveAttribute("data-docking-curve", forwardCurve ?? "");
   await expect
     .poll(async () => {
@@ -415,7 +484,7 @@ test("docking starts after 90 percent, follows a varied arc and lands exactly wi
   await scrollToProgress(page, 1);
   await page.waitForTimeout(140);
   const inFlightCurve = await mascot.getAttribute("data-docking-curve");
-  await scrollToProgress(page, 0.89);
+  await scrollToProgress(page, 0.56);
   await expect(mascot).toHaveAttribute("data-docking-curve", inFlightCurve ?? "");
 });
 
@@ -511,14 +580,9 @@ test("refresh always reopens on the centered mission screen without a duplicate 
   expect(await page.evaluate(() => scrollY)).toBe(0);
   await expect(page.locator(".site-brand svg")).toHaveCount(0);
   await expect(page.locator("[data-mascot]")).toHaveCount(1);
-  expect(
-    await page.evaluate(async () => {
-      await document.fonts.ready;
-      return [...document.fonts].some(
-        (font) => font.family === "DM Sans" && font.status === "loaded",
-      );
-    }),
-  ).toBe(true);
+  await expect(page.locator(".home-page")).toHaveCSS("font-family", /Segoe UI/);
+  await expect(page.getByText("THE NEXT CHAPTER STARTS WITH YOU.", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".welcome-caption h1 span")).toHaveCSS("color", "rgb(82, 106, 120)");
   await expect(page.locator(".welcome-caption h1")).toHaveText(/Building open protocols/);
   await expect(page.getByText("Scroll to discover", { exact: false })).toHaveCount(0);
   const docs = page.getByRole("link", { name: "Docs", exact: true });

@@ -175,7 +175,11 @@ void test("input moves the idle deadline without allocating timers per touch", (
   time.advance(500);
   assert.notEqual(drawing.body, staticMascotPaths.body);
   time.advance(650, 120, player.notifyActivity);
-  assert.equal(drawing, staticMascotPaths, "continuous input must finish the return morph");
+  assert.notEqual(
+    drawing.body,
+    staticMascotPaths.body,
+    "after idle starts, input drives gaze instead of cancelling playback",
+  );
   assert.ok(time.scheduledTimers <= 3);
   player.updateOptions({ playbackPhase: "scrolling", reducedMotion: false, foreground: true });
   time.advance(500, 120, player.notifyActivity);

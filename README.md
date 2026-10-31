@@ -60,7 +60,7 @@ npm run dev:mobile -- --no-dev --minify
 
 下面按目录逐个说明文件。职责表先用白话概括用途，再保留技术细节；单独展开的文件也按同样顺序介绍。
 
-命名按职责区分：`HomePage` 是网页结构，`MobileHomeScreen` 是原生首页，`HomeSections` 是原生内容区块；`home-page-scroll` 控制滚动，`mascot-playback` 控制播放，`SvgMascotRenderer` 负责将计算结果写入 SVG。网页区块使用 `opening / about / resources`，原生应用区块保持 `opening / about / protocols / resources`。动画阶段使用 `opening / scrolling / docked`；网页额外用 `arriving` 提前收拢归位中的表情。区块 ID 与播放阶段分别表达内容位置和播放状态。
+命名按职责区分：`HomePage` 是网页结构，`MobileHomeScreen` 是原生首页，`HomeSections` 是原生内容区块；`home-page-scroll` 控制滚动，`mascot-playback` 控制播放，`SvgMascotRenderer` 负责将计算结果写入 SVG。两端区块统一使用 `opening / about / resources`，播放阶段统一使用 `opening / scrolling / arriving / docked`；`arriving` 提前收拢归位中的表情。区块 ID 与播放阶段分别表达内容位置和播放状态。
 
 | 文件                                             | 职责                                                                                                                                                                    |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -140,11 +140,11 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 目标位置来自 `getBoundingClientRect()`，而不是固定百分比。控制器同时测量每个场景的实际内容高度：能全部放进视口时使用 `data-scroll-layout="pinned"` 的单屏叙事；内容超高时使用 `data-scroll-layout="document"`，全部内容进入自然文档流。两种排版共用同一 DOM，恢复可用空间后可自动回到叙事排版。自然文档排版按内容实际进入、离开视口的位置计算淡入淡出，阅读中部保持完全不透明；减少动态效果开启时直接显示内容。滚动事件通过单个 `requestAnimationFrame` 合并；`ResizeObserver` 负责重新测量。活动场景同时更新 `inert`、`aria-hidden` 和指针状态，避免不可见区域接收操作。该控制器不拦截 wheel / touch 输入，不再存在横向切屏或另一套宽度分支。
 
-导航栏归位只在最后 10% 的滚动区间触发，完整行程约 0.9 秒，与表情播放时钟独立。控制器对曲线进度执行独立 RAF 过渡，因此直接跳到页面底部也沿曲线移动；末段进入 `arriving` 收拢表情，到达槽位后进入 `docked`。SVG 的透视倾斜、深度和阴影通过 CSS 变量更新，不添加渲染组件。背景停留时位于正文后方，行程中提升到导航栏上方，降低透明度并保持 `pointer-events: none`；滚动终点容忍 2 个 CSS 像素的舍入误差。销毁时中止事件监听、断开 observer、取消帧任务、销毁动画控制器，并移除增强产生的属性与内联样式。
+导航栏归位与第三屏共用从滚动进度 58% 到终点的区间，完整行程约 0.9 秒，与表情播放时钟独立。第三屏透明度直接使用实际归位进度及相同的端点缓动，不再额外叠加 CSS 过渡；进入、退出或途中反向时，正文与路径一起过渡。控制器对曲线进度执行独立 RAF 过渡，因此直接跳到页面底部也沿曲线移动；末段进入 `arriving` 收拢表情，到达槽位后进入 `docked`。SVG 的透视倾斜、深度和阴影通过 CSS 变量更新，不添加渲染组件。背景停留时位于正文后方，行程中提升到导航栏上方，降低透明度并保持 `pointer-events: none`；滚动终点容忍 2 个 CSS 像素的舍入误差。销毁时中止事件监听、断开 observer、取消帧任务、销毁动画控制器，并移除增强产生的属性与内联样式。
 
 #### `mascot-docking.ts`
 
-计算 Logo 从视口中央到导航栏槽位的曲线路径，不管理页面状态或创建动画循环。
+保留 Web 查找曲线算法的入口；实际计算由共享库实现，两端不再各维护一份。
 
 [源码](apps/web/src/scripts/mascot-docking.ts)。`createMascotDockingCurve()` 为每次行程选定曲率，`getMascotDockingPosition()` 用二次曲线和端点缓动计算位置；反向行程可以另选曲线，途中反转保留当前路径，避免逐帧随机造成抖动。最终位置仍来自导航栏实际测量。
 
@@ -156,7 +156,7 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 控制器接收 `setPlaybackPhase()`，使用共享引擎和轮廓插值生成帧，通过 SVG 属性更新绘制，不依赖 React 重渲染。网页表情使用原来的 1 倍速，Q 与面部切换恢复 360 / 320ms 插值；渲染器忽略表情的配色数据，保持中性主体与白色眼睛。进入首屏或归位后先恢复静态 Q，再开始 5 秒等待；等待期间鼠标移动会重新计时，动画启动后则由鼠标驱动目光，不再因移动而立即中断。鼠标离开窗口后，目光平滑归中并恢复目录循环。文档可见性与媒体偏好决定暂停条件；`dispose()` 负责取消 RAF、计时器及事件监听并复位绘制。此文件拥有浏览器 API，不能放入共享库。
 
-目光只移动面部和投影视角，不移动整个 Logo。控制器将相对 SVG 中心的指针位置限幅、平滑处理，调用共享引擎的可选 `setLookDirection()` 从原有表情中选取相近方向；方向按八个扇区分类并带边界滞后，避免微小移动反复随机切换。停止移动 2.2 秒后恢复原目录循环，保留轻微目光偏移；移出窗口后完全归中。原生应用不调用此接口，继续使用原来的目录播放。
+目光只移动面部和投影视角，不移动整个 Logo。控制器将相对 SVG 中心的指针位置限幅、平滑处理，调用共享引擎的可选 `setLookDirection()` 从原有表情中选取相近方向；方向按八个扇区分类并带边界滞后，避免微小移动反复随机切换。停止移动 2.2 秒后恢复原目录循环，保留轻微目光偏移；移出窗口后完全归中。Mobile 也调用同一方向接口，以触点或指针位置驱动目光，触点结束后归中。
 
 ### 3.6 `src/styles/`
 
@@ -167,11 +167,9 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 ### 3.7 `public/`
 
-| 文件                                                                                                     | 职责                                                                                                                                         |
-| -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| [apps/web/public/favicon.svg](apps/web/public/favicon.svg)                                               | 浏览器标签页上使用的网站小图标。 以 `/favicon.svg` 提供的站点图标。                                                                          |
-| [apps/web/public/fonts/dm-sans-latin-variable.woff2](apps/web/public/fonts/dm-sans-latin-variable.woff2) | 实际加载的网页字体文件。由 `@font-face` 本地提供 DM Sans 可变字体，入口预加载，避免依赖用户电脑是否装有字体；不需要外部字体服务或新 npm 包。 |
-| [apps/web/public/fonts/DM-Sans-OFL.txt](apps/web/public/fonts/DM-Sans-OFL.txt)                           | 随字体保留的许可与版权说明。字体来源为 [Google Fonts](https://github.com/google/fonts/tree/main/ofl/dmsans)，按 SIL Open Font License 分发。 |
+| 文件                                                       | 职责                                                                |
+| ---------------------------------------------------------- | ------------------------------------------------------------------- |
+| [apps/web/public/favicon.svg](apps/web/public/favicon.svg) | 浏览器标签页上使用的网站小图标。 以 `/favicon.svg` 提供的站点图标。 |
 
 ### 3.8 `tests/`
 
@@ -200,17 +198,17 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 [源码](apps/mobile/src/App.tsx)。这是原生应用的组合与坐标控制层：创建安全区域容器，维护视口测量、ScrollView 引用、滚动值与离散场景状态，组合其他原生组件。
 
-`Animated.ScrollView` 通过稳定的 `Animated.event` 更新 `Animated.Value`。Android/iOS 的位移、缩放和透明度使用 native driver，浏览器辅助预览使用 Web 可用的实现。JS 监听只在阶段变化时通知 React；实际尺寸改变时重新测量并重置滚动位置。
+`Animated.ScrollView` 通过稳定的 `Animated.event` 更新 `Animated.Value`。正常视口用 `stickyHeaderIndices` 固定同一套场景容器，链接仍在 ScrollView 的事件树中，按住链接附近也能继续滑动。短屏、大字体和屏幕阅读器使用自然文档流。Android/iOS 的位移、缩放和透明度使用 native driver，浏览器辅助预览使用 Web 可用的实现。JS 监听只在阶段变化时通知 React；实际尺寸改变时重新测量并重置滚动位置。
 
-Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交还系统。触摸和指针活动通过 `MascotActivityHandle.notifyActivity()` 传给局部控制器，不为每个移动事件更新整页状态。
+Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交还系统。触摸和指针活动通过 `MascotActivityHandle.notifyActivity()` / `setGaze()` 传给局部控制器，不为每个移动事件更新整页状态。
 
 ### 4.3 `src/components/`
 
-| 文件                                                                                           | 职责                                                                                                                                                                                            |
-| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [apps/mobile/src/components/HomeSections.tsx](apps/mobile/src/components/HomeSections.tsx)     | 把共享资料组织成手机应用能显示的原生文字和区块。 导出 `AboutSection`、`ProtocolsSection`、`ResourcesSection`；用 `View` / `Text` 及各自 StyleSheet 组织共享数据，接受紧凑布局参数，不读取 DOM。 |
-| [apps/mobile/src/components/ExternalLink.tsx](apps/mobile/src/components/ExternalLink.tsx)     | 统一处理手机应用的外链点击，以及打不开链接时的提示。 用 `Pressable`、原生 `Linking.openURL` 和 `Alert` 封装外链；提供链接语义、触摸尺寸、按下态及共享颜色。                                     |
-| [apps/mobile/src/components/AnimatedMascot.tsx](apps/mobile/src/components/AnimatedMascot.tsx) | 把动画计算结果画到手机端 SVG 上，并连接应用前后台状态。 将绘制与应用组件树分开；连接播放控制器、SVG 引用和 `AppState`，对外提供活动通知句柄。                                                   |
+| 文件                                                                                           | 职责                                                                                                                                                                                          |
+| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [apps/mobile/src/components/HomeSections.tsx](apps/mobile/src/components/HomeSections.tsx)     | 把共享资料组织成手机应用能显示的原生文字和区块。 导出 `OpeningSection`、`AboutSection`、`ResourcesSection`；用 `View` / `Text` 及各自 StyleSheet 组织共享数据，接受紧凑布局参数，不读取 DOM。 |
+| [apps/mobile/src/components/ExternalLink.tsx](apps/mobile/src/components/ExternalLink.tsx)     | 统一处理手机应用的外链点击，以及打不开链接时的提示。 用 `Pressable`、原生 `Linking.openURL` 和 `Alert` 封装外链；提供链接语义、触摸尺寸、按下态及共享颜色。                                   |
+| [apps/mobile/src/components/AnimatedMascot.tsx](apps/mobile/src/components/AnimatedMascot.tsx) | 把动画计算结果画到手机端 SVG 上，并连接应用前后台状态。 将绘制与应用组件树分开；连接播放控制器、SVG 引用和 `AppState`，对外提供活动通知句柄。                                                 |
 
 `AnimatedMascot.tsx` 在 Android/iOS 通过 `setNativeProps` 只更新变化的路径，避免每帧 React 协调；Expo Web 使用局部 React state 更新 SVG。Web 传递 `aria-hidden`，原生平台传递各自的无障碍属性，避免原生属性泄漏到 SVG DOM。
 
@@ -218,19 +216,21 @@ Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交
 
 手机动画的播放控制器，决定何时计算下一帧、何时暂停，以及静态形状和动画怎样平滑衔接。
 
-[源码](apps/mobile/src/animation/mascot-playback.ts)。导出 `createMascotPlaybackController()`、`MascotPlaybackPhase`、`MascotActivityHandle` 和 `MascotPlaybackController`，以 `updateOptions()` 接收播放条件、以 `notifyActivity()` 接收用户活动，负责采样、形变、待机截止时间、前后台与减少动态效果的协调。
+[源码](apps/mobile/src/animation/mascot-playback.ts)。导出 `createMascotPlaybackController()`、`MascotPlaybackPhase`、`MascotActivityHandle` 和 `MascotPlaybackController`，以 `updateOptions()` 接收播放条件、以 `notifyActivity()` / `setGaze()` 接收用户活动及归一化触点，负责采样、形变、待机截止时间、前后台与减少动态效果的协调。
 
-应用只提供阶段和活动信号，绘制函数通过 `onRenderFrame(paths)` 接收结果。控制器先判断是否达到约 30fps 的预算，再执行完整轮廓计算；Mobile 启用共享引擎的 `directGeometry` 分支。计时器采用截止时间重排，连续输入不反复创建定时器，也不重复重启尚未完成的退出过渡。`dispose()` 释放 RAF 和计时器。
+应用只提供阶段和活动信号，绘制函数通过 `onRenderFrame(paths)` 接收结果。控制器先判断是否达到约 30fps 的预算，再执行完整轮廓计算；Mobile 启用共享引擎的 `directGeometry` 分支。计时器采用截止时间重排，连续输入不反复创建定时器，也不重复重启尚未完成的退出过渡。静态归位完成后再等待 5 秒，播放启动后输入只驱动目光；停止移动 2.2 秒后恢复原目录循环。`dispose()` 释放 RAF 和计时器。
 
 该文件依赖 Mobile 的调度环境，但不导入 React / DOM，便于用 Node 假时钟单独测试。
 
-### 4.5 `src/hooks/useReducedMotion.ts`
+### 4.5 `src/hooks/`
 
 读取并持续关注系统的减少动态效果和屏幕阅读器设置，供手机应用选择合适的交互与排版。
 
 [源码](apps/mobile/src/hooks/useReducedMotion.ts)。提供 `useReducedMotion()` 和 `useScreenReader()`，封装系统偏好读取、订阅、卸载清理及异步读取后的存活判断。
 
-原生端使用 `AccessibilityInfo`。Web 分支不把该库固定返回的 screen-reader 占位结果视为真实用户状态。应用在可用高度低于 `600`、字体缩放超过 `1.15` 或原生屏幕阅读器开启时采用自然文档布局；安全区域由 `react-native-safe-area-context` 处理。
+原生端使用 `AccessibilityInfo`。Web 分支不把该库固定返回的 screen-reader 占位结果视为真实用户状态。应用在宽度低于 `360`、高度低于 `760`、字体缩放超过 `1.15` 或原生屏幕阅读器开启时采用自然文档布局；安全区域由 `react-native-safe-area-context` 处理。
+
+[useMascotDocking.ts](apps/mobile/src/hooks/useMascotDocking.ts) 将第三屏滚动区间换算为吉祥物归位过程。区间、时长及缓动取自共享库，投影坐标按 41 个样本建立原生插值图，完整行程约 900ms；第三屏透明度也由同一个原生动画值驱动，避免与路径错开。每个手势最多更新 20 个目标值，React 只接收路线或播放阶段变化。它保留实际坐标供触摸目光使用，并在卸载时停止动画、释放监听。
 
 ### 4.6 `tests/mobile-preview.spec.ts`
 
@@ -246,23 +246,23 @@ Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交
 
 ### 5.1 `packages/content/`
 
-| 文件                                                             | 职责                                                                                                                                                                                     |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [packages/content/package.json](packages/content/package.json)   | 声明共享内容库的包名和入口，让两端都能导入它。 声明私有包 `@qntx-ui/content` 和 `src/index.ts` 源码 exports。                                                                            |
-| [packages/content/project.json](packages/content/project.json)   | 把共享内容库登记给 Nx，并配置它的检查任务。 注册 Nx `content` 库，标签为 `platform:shared` / `type:lib`，提供检查任务。                                                                  |
-| [packages/content/tsconfig.json](packages/content/tsconfig.json) | 按纯数据代码的环境检查内容库，不默认引入浏览器或手机平台类型。 继承公共严格配置，使用 ES2022 库且不自动引入环境类型。                                                                    |
-| [packages/content/src/index.ts](packages/content/src/index.ts)   | 集中保存文字、链接、协议资料和静态 Logo 路径，`homePageCopy` 单独提供当前网页文案；原生应用继续使用原有数据。只提供数据，不返回 JSX 或调用平台 API；旧横向面板导航数组及对应类型已删除。 |
+| 文件                                                             | 职责                                                                                                                                                                                                    |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [packages/content/package.json](packages/content/package.json)   | 声明共享内容库的包名和入口，让两端都能导入它。 声明私有包 `@qntx-ui/content` 和 `src/index.ts` 源码 exports。                                                                                           |
+| [packages/content/project.json](packages/content/project.json)   | 把共享内容库登记给 Nx，并配置它的检查任务。 注册 Nx `content` 库，标签为 `platform:shared` / `type:lib`，提供检查任务。                                                                                 |
+| [packages/content/tsconfig.json](packages/content/tsconfig.json) | 按纯数据代码的环境检查内容库，不默认引入浏览器或手机平台类型。 继承公共严格配置，使用 ES2022 库且不自动引入环境类型。                                                                                   |
+| [packages/content/src/index.ts](packages/content/src/index.ts)   | 集中保存文字、链接、协议资料和静态 Logo 路径，`homePageCopy` 提供两端统一的首页文案；`githubIconPath` 复用 GitHub 图标几何。只提供数据，不返回 JSX 或调用平台 API；旧横向面板导航数组及对应类型已删除。 |
 
 两端组件按各自需求读取这些数据，不要求共用相同组件树。修改共享值前应检查两端调用方；Web 的数据入口仍保留在 `src/data/site.ts`。
 
 ### 5.2 `packages/design-tokens/`
 
-| 文件                                                                         | 职责                                                                                    |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| [packages/design-tokens/package.json](packages/design-tokens/package.json)   | 声明共享设计数值库的包名和入口。 声明私有包 `@qntx-ui/design-tokens` 及源码导出。       |
-| [packages/design-tokens/project.json](packages/design-tokens/project.json)   | 把共享设计数值库登记给 Nx，并配置检查任务。 注册 Nx 共享库及检查任务。                  |
-| [packages/design-tokens/tsconfig.json](packages/design-tokens/tsconfig.json) | 让设计数值库按平台无关的 TypeScript 环境接受检查。 将类型环境限制为纯 ES2022。          |
-| [packages/design-tokens/src/index.ts](packages/design-tokens/src/index.ts)   | 集中存放可供两端选用的颜色、间距和字号数值。 导出 `palette`、`spacing` 和 `typeScale`。 |
+| 文件                                                                         | 职责                                                                                                                                            |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| [packages/design-tokens/package.json](packages/design-tokens/package.json)   | 声明共享设计数值库的包名和入口。 声明私有包 `@qntx-ui/design-tokens` 及源码导出。                                                               |
+| [packages/design-tokens/project.json](packages/design-tokens/project.json)   | 把共享设计数值库登记给 Nx，并配置检查任务。 注册 Nx 共享库及检查任务。                                                                          |
+| [packages/design-tokens/tsconfig.json](packages/design-tokens/tsconfig.json) | 让设计数值库按平台无关的 TypeScript 环境接受检查。 将类型环境限制为纯 ES2022。                                                                  |
+| [packages/design-tokens/src/index.ts](packages/design-tokens/src/index.ts)   | 集中存放可供两端选用的颜色、间距和字号数值。 导出 `palette`、`spacing`、`typeScale`、平台字体策略 `fontFamilies` 和三组低饱和配色 `homeTheme`。 |
 
 当前 Web 将部分 `palette` 注入 CSS 变量，Mobile 外链组件直接读取共享颜色。两端仍有各自的局部数值；不能把此包理解成全部样式已统一或自动同步。
 
@@ -280,7 +280,11 @@ Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交
 | [packages/mascot/src/vendor/logo-catalog.js](packages/mascot/src/vendor/logo-catalog.js)     | 根据播放时间算出当前动画形状和颜色，供两端绘制。`sample(time)` 保留原目录行为，`sample(time, gaze)` 与 `setLookDirection()` 可选择启用方向表情和目光偏移；`directGeometry` 路径缓存模型点和旋转计算，跳过中间 SVG 往返。没有 DOM、事件或定时器。 |
 | [packages/mascot/src/vendor/logo-catalog.d.ts](packages/mascot/src/vendor/logo-catalog.d.ts) | 告诉 TypeScript 动画引擎可以传什么、会返回什么。声明 `CatalogFrame`、归一化目光向量 `MascotGaze`、引擎工厂、方向接口和选项，为生成式 JavaScript 提供类型边界。                                                                                   |
 
+[packages/mascot/src/docking.ts](packages/mascot/src/docking.ts) 计算归位曲线，并提供第三屏与路径共用的时间参数、滚动进度换算和缓动。纯函数生成每次行程的随机曲率与带端点缓动的二次曲线坐标；Web 逐帧采样，Mobile 预采样到原生插值图，没有 DOM、React 或平台 API。
+
 共享范围止于数据、几何与路径计算。Web DOM、React Native SVG、RAF 生命周期、输入事件及平台无障碍属性分别由应用层处理。vendor 文件的局部规则例外有源码说明，不应扩展为全仓库豁免。
+
+字体遵循 [GitHub Primer 的系统字体栈](https://primer.style/product/getting-started/react/theme-reference/) 的回退策略：Windows 优先 Segoe UI，iOS 使用 System，Android 使用 sans-serif。`fontFamilies` 与 `homeTheme` 由 `packages/design-tokens/src/index.ts` 提供；Web 映射为 CSS 变量，Mobile 映射为 StyleSheet。字体无需下载，不再保留 DM Sans 文件。
 
 ## 6. Nx 边界、共享范围与两端区别
 

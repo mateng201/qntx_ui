@@ -5,10 +5,13 @@ import {
   staticMascotFrame,
   staticMascotPaths,
 } from "@qntx-ui/mascot";
-import type { CatalogFrame, MascotPaths } from "@qntx-ui/mascot";
+import type { CatalogFrame, MascotGaze, MascotPaths } from "@qntx-ui/mascot";
 
-export type MascotPlaybackPhase = "opening" | "scrolling" | "docked";
-export type MascotActivityHandle = { notifyActivity: () => void };
+export type MascotPlaybackPhase = "opening" | "scrolling" | "arriving" | "docked";
+export type MascotActivityHandle = {
+  notifyActivity: () => void;
+  setGaze: (gaze: MascotGaze | undefined) => void;
+};
 type MascotPlaybackOptions = {
   playbackPhase: MascotPlaybackPhase;
   reducedMotion: boolean;
@@ -40,6 +43,9 @@ export function createMascotPlaybackController(
   let idle = false;
   let lastPaint = -1000;
   let lastActivity = 0;
+  let pointer: MascotGaze | undefined;
+  let lastPointerTime = Number.NEGATIVE_INFINITY;
+  const gaze: MascotGaze = { x: 0, y: 0 };
 
   function renderAnimationFrame(now: number): void {
     frame = undefined;
@@ -49,8 +55,15 @@ export function createMascotPlaybackController(
       frame = requestAnimationFrame(renderAnimationFrame);
       return;
     }
+    const elapsed = Math.min(100, Math.max(0, now - lastPaint));
     lastPaint = now;
-    const target = catalog?.sample(now) ?? staticMascotFrame;
+    const follow = 1 - Math.exp(-elapsed / 180);
+    gaze.x += ((pointer?.x ?? 0) - gaze.x) * follow;
+    gaze.y += ((pointer?.y ?? 0) - gaze.y) * follow;
+    catalog?.setLookDirection(
+      pointer !== undefined && now - lastPointerTime < 2200 ? pointer : undefined,
+    );
+    const target = catalog?.sample(now, gaze) ?? staticMascotFrame;
     if (transition === undefined) {
       current = target;
     } else {
@@ -66,6 +79,10 @@ export function createMascotPlaybackController(
     } else {
       current = staticMascotFrame;
       onRenderFrame(staticMascotPaths);
+      // The five-second wait starts after the return morph, not during it.
+      if (timer === undefined) {
+        extendIdleDeadline();
+      }
     }
   }
 
@@ -107,7 +124,11 @@ export function createMascotPlaybackController(
 
   function checkIdleDeadline(): void {
     timer = undefined;
-    if (options.playbackPhase !== "scrolling" && !options.reducedMotion && options.foreground) {
+    if (
+      (options.playbackPhase === "opening" || options.playbackPhase === "docked") &&
+      !options.reducedMotion &&
+      options.foreground
+    ) {
       const remaining = 5000 - (performance.now() - lastActivity);
       if (remaining > 0) {
         timer = setTimeout(checkIdleDeadline, remaining);
@@ -121,7 +142,13 @@ export function createMascotPlaybackController(
   function extendIdleDeadline(): void {
     idle = false;
     lastActivity = performance.now();
-    if (options.playbackPhase !== "scrolling" && !options.reducedMotion && options.foreground) {
+    if (
+      (options.playbackPhase === "opening" || options.playbackPhase === "docked") &&
+      !playing &&
+      transition === undefined &&
+      !options.reducedMotion &&
+      options.foreground
+    ) {
       // Input only moves the deadline; don't cancel/create a timer on every touchmove.
       timer ??= setTimeout(checkIdleDeadline, 5000);
     }
@@ -135,10 +162,19 @@ export function createMascotPlaybackController(
       updatePlaybackState();
     },
     notifyActivity(): void {
-      if (options.playbackPhase !== "scrolling" && !options.reducedMotion && options.foreground) {
+      if (
+        !idle &&
+        (options.playbackPhase === "opening" || options.playbackPhase === "docked") &&
+        !options.reducedMotion &&
+        options.foreground
+      ) {
         extendIdleDeadline();
         updatePlaybackState();
       }
+    },
+    setGaze(next): void {
+      pointer = next;
+      lastPointerTime = performance.now();
     },
     dispose(): void {
       clearIdlePlaybackTimer();

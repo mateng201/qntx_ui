@@ -20,3 +20,16 @@ export const palette = {
 
 export const spacing = { xs: 6, sm: 12, md: 20, lg: 28, xl: 40, xxl: 56 } as const;
 export const typeScale = { caption: 12, label: 13, body: 16, subtitle: 24, title: 38 } as const;
+
+/** GitHub-style system typography; native platforms select their own UI face. */
+export const fontFamilies = {
+  web: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif',
+  ios: "System",
+  android: "sans-serif",
+} as const;
+
+export const homeTheme = {
+  opening: { ink: "#263d4b", accent: "#526a78", copy: "#596b76" },
+  about: { ink: "#1b1d19", accent: "#6c7463", copy: "#50564a" },
+  resources: { ink: "#403832", accent: "#7a6559", copy: "#6e6259" },
+} as const;

@@ -30,7 +30,7 @@ body {
   align-items: center;
   gap: 12px;
   font-size: 24px;
-  font-weight: 550;
+  font-weight: 600;
   letter-spacing: -1px;
 }
 .mascot-dock {
@@ -122,26 +122,23 @@ body {
   margin-inline: auto;
 }
 .welcome-caption h1 {
+  color: var(--opening-ink);
   margin: 0 0 14px;
   font-size: clamp(22px, 2vw, 28px);
   font-weight: 500;
   line-height: 1.4;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.015em;
   text-wrap: balance;
+}
+.welcome-caption h1 span {
+  color: var(--opening-accent);
 }
 .welcome-caption p {
   margin: 0;
-  color: #50564a;
+  color: var(--opening-copy);
   font-size: 16px;
   line-height: 1.6;
   font-weight: 400;
-}
-.section-eyebrow {
-  font: 500 11px/1.6 var(--font-sans);
-  color: var(--page-muted);
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  margin: 0 0 28px;
 }
 .about-content {
   width: 100%;
@@ -150,6 +147,7 @@ body {
   text-align: center;
 }
 .about-content h2 {
+  color: var(--about-ink);
   font-weight: 500;
   font-size: clamp(58px, 6.4vw, 96px);
   line-height: 1.07;
@@ -157,14 +155,14 @@ body {
   margin: 0 0 32px;
 }
 .about-content h2 span {
-  color: #6c7463;
+  color: var(--about-accent);
 }
 .about-description {
   max-width: 610px;
   margin: 0 auto;
   font-size: clamp(18px, 1.6vw, 23px);
   line-height: 1.65;
-  color: #50564a;
+  color: var(--about-copy);
   text-wrap: pretty;
 }
 .resources-layout {
@@ -177,15 +175,19 @@ body {
   margin-inline: auto;
 }
 .resources-intro h2 {
+  color: var(--resources-ink);
   font-size: clamp(36px, 4.1vw, 66px);
   font-weight: 500;
   line-height: 1.14;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.025em;
   margin: 0 0 28px;
+}
+.resources-intro h2 span {
+  color: var(--resources-accent);
 }
 .resources-description {
   max-width: 570px;
-  color: var(--page-muted);
+  color: var(--resources-copy);
   font-size: clamp(16px, 1.25vw, 20px);
   line-height: 1.75;
   margin: 0;
@@ -221,7 +223,7 @@ body {
   height: 16px;
 }
 .secondary-link {
-  color: var(--page-muted);
+  color: var(--resources-copy);
   display: inline-flex;
   gap: 16px;
   padding-block: 10px;
@@ -233,9 +235,6 @@ body {
 .resources-links {
   display: grid;
   gap: 12px;
-}
-.resources-links .section-eyebrow {
-  margin-bottom: 24px;
 }
 .resource-link {
   display: grid;
@@ -255,10 +254,11 @@ body {
   transform: translateX(4px);
 }
 .resource-number {
-  color: var(--page-muted);
+  color: var(--resources-copy);
   font: 500 12px/1.6 var(--font-sans);
 }
 .resource-link h3 {
+  color: var(--resources-ink);
   font-size: clamp(19px, 1.6vw, 25px);
   font-weight: 500;
   letter-spacing: -0.02em;
@@ -266,13 +266,13 @@ body {
   margin: 0 0 10px;
 }
 .resource-link p {
-  color: var(--page-muted);
+  color: var(--resources-copy);
   font-size: 13px;
   line-height: 1.5;
   margin: 0;
 }
 .resource-link > .icon {
-  color: #657459;
+  color: var(--resources-accent);
   width: 19px;
   height: 19px;
   transition: transform 160ms;
@@ -318,6 +318,10 @@ body {
 .home-page[data-scroll-layout="pinned"] .page-section[data-visible="true"] {
   visibility: visible;
   transition-delay: 0s;
+}
+/* The flight RAF already eases this scene; a second CSS transition would lag behind it. */
+.home-page[data-scroll-layout="pinned"] .resources-section {
+  transition: none;
 }
 .home-page[data-scroll-layout="document"] .page-section {
   transition: opacity 180ms ease-out;
@@ -372,9 +376,6 @@ html[data-home-starting] .page-mascot {
   }
   .page-section {
     padding-block: 94px 28px;
-  }
-  .section-eyebrow {
-    margin-bottom: 20px;
   }
   .about-content h2 {
     font-size: clamp(54px, 5.5vw, 76px);

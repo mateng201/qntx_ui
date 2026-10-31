@@ -1,4 +1,10 @@
-import { createMascotDockingCurve, getMascotDockingPosition } from "./mascot-docking";
+import {
+  createMascotDockingCurve,
+  easeMascotDocking,
+  getMascotDockingPosition,
+  getMascotDockingProgress,
+  mascotDockingTiming,
+} from "./mascot-docking";
 import { initializeMascotPlayback } from "./mascot-playback";
 
 function clampProgress(value: number): number {
@@ -59,9 +65,11 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
     // Fractional viewport sizes can leave the browser's real endpoint just below 1.
     const progress =
       top + scrollDistance - scrollY <= 2 ? 1 : clampProgress((scrollY - top) / scrollDistance);
-    const desiredDocking = progress === 1 ? 1 : clampProgress((progress - 0.9) / 0.1);
+    const desiredDocking = getMascotDockingProgress(progress);
     if (dockingTransition !== undefined) {
-      const elapsed = clampProgress((now - dockingTransition.started) / 900);
+      const elapsed = clampProgress(
+        (now - dockingTransition.started) / mascotDockingTiming.duration,
+      );
       docking = dockingTransition.from + (dockingTransition.to - dockingTransition.from) * elapsed;
       if (elapsed === 1) {
         dockingTransition = undefined;
@@ -119,7 +127,12 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
       dockingTransition !== undefined || (docking > 0.001 && docking < 0.999),
     );
     mascot.dataset["dockingCurve"] = dockingCurve.bend.toFixed(5);
-    let activeSectionId = progress < 0.2 ? "opening" : progress < 0.58 ? "about" : "resources";
+    let activeSectionId =
+      progress < 0.2
+        ? "opening"
+        : progress < mascotDockingTiming.scrollStart
+          ? "about"
+          : "resources";
     const isDocumentLayout = root.dataset["scrollLayout"] === "document";
     if (isDocumentLayout) {
       for (const section of sections) {
@@ -128,10 +141,12 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
         }
       }
     }
+    // Follow the rendered flight, including its easing and reversals, rather than raw scroll input.
+    const resourcesOpacity = easeMascotDocking(docking);
     const sectionOpacities: Record<string, number> = {
       opening: 1 - smoothStep(progress / 0.12),
-      about: getSectionOpacity(progress, 0.18, 0.48),
-      resources: smoothStep((progress - 0.58) / 0.14),
+      about: Math.min(getSectionOpacity(progress, 0.18, 0.48), 1 - resourcesOpacity),
+      resources: resourcesOpacity,
     };
     for (const section of sections) {
       if (isDocumentLayout) {

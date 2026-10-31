@@ -189,7 +189,7 @@ test("larger text falls back to document layout and restores pinned scrolling wh
   await page.goto("/");
   await expect(page.locator("[data-home-page]")).toHaveAttribute("data-scroll-layout", "pinned");
   const largerText = await page.addStyleTag({
-    content: ".resources-description { font-size: 44px; line-height: 2; }",
+    content: ".resources-description { font-size: 88px; line-height: 2; }",
   });
   await expect(page.locator("[data-home-page]")).toHaveAttribute("data-scroll-layout", "document");
   await page.locator(".resource-link:last-child").scrollIntoViewIfNeeded();
