@@ -6,6 +6,7 @@ import {
   mascotDockingTiming,
 } from "./mascot-docking";
 import { initializeMascotPlayback } from "./mascot-playback";
+import { initializeWheelSectionNavigation } from "./wheel-section-navigation";
 
 function clampProgress(value: number): number {
   return Math.min(1, Math.max(0, value));
@@ -254,6 +255,15 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
     }
   }
   const animation = initializeMascotPlayback(mascot);
+  const disposeWheelNavigation = initializeWheelSectionNavigation(root, {
+    getStops: () => [
+      { id: "opening", top },
+      { id: "about", top: top + scrollDistance * 0.36 },
+      { id: "resources", top: top + scrollDistance },
+    ],
+    isSettling: () => dockingTransition !== undefined,
+    renderFrame: () => renderScrollFrame(),
+  });
   measureScrollLayout();
   renderScrollFrame();
   root.dataset["scrollReady"] = "true";
@@ -267,6 +277,7 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
 
   return () => {
     events.abort();
+    disposeWheelNavigation();
     observer.disconnect();
     animation.dispose();
     if (renderFrameId !== undefined) {

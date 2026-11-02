@@ -1,6 +1,7 @@
-/* oxlint-disable no-await-in-loop -- Each browser action depends on the previous rendered section. */
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
+/* oxlint-disable no-await-in-loop -- Each browser action depends on the previous rendered section. */
+import { homePageCopy } from "@qntx-ui/content";
 
 type StartupFrame = {
   time: number;
@@ -236,22 +237,29 @@ test("Q morphs through intermediate shapes in both directions and can reverse mi
 test("wheel input switches between about and resources without the deleted protocol screen", async ({
   page,
 }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
   const root = page.locator("[data-home-page]");
   await expect(root).toHaveAttribute("data-scroll-ready", "true");
-  const span = await page
-    .locator("[data-scroll-track]")
-    .evaluate((track) => track.clientHeight - innerHeight);
   await page.mouse.move(1000, 600);
-  await page.mouse.wheel(0, span * 0.36);
+  await page.mouse.wheel(0, 1);
+  await expect(root).toHaveAttribute("data-wheel-navigating", "true");
+  await expect(root).not.toHaveAttribute("data-wheel-navigating", "true");
   await expect(root).toHaveAttribute("data-active-section", "about");
-  await expect(page.locator("#about-title")).toBeVisible();
+  await expect(page.locator("#about")).toHaveCSS("opacity", "1");
   for (let cycle = 0; cycle < 5; cycle += 1) {
-    await page.mouse.wheel(0, span * 0.4);
+    await page.mouse.wheel(0, 1);
+    await expect(root).toHaveAttribute("data-wheel-navigating", "true");
+    await expect(root).not.toHaveAttribute("data-wheel-navigating", "true");
     await expect(root).toHaveAttribute("data-active-section", "resources");
+    await expect(page.locator("#resources")).toHaveCSS("opacity", "1");
+    await expect(page.locator("[data-mascot]")).toHaveAttribute("data-logo-docked", "true");
     await expect(page.locator(".resource-link")).toHaveCount(3);
-    await page.mouse.wheel(0, -span * 0.4);
+    await page.mouse.wheel(0, -1);
+    await expect(root).toHaveAttribute("data-wheel-navigating", "true");
+    await expect(root).not.toHaveAttribute("data-wheel-navigating", "true");
     await expect(root).toHaveAttribute("data-active-section", "about");
+    await expect(page.locator("#about")).toHaveCSS("opacity", "1");
   }
   await expect(page.locator("#protocols, .standards-list")).toHaveCount(0);
   expect(await page.evaluate(() => scrollX)).toBe(0);
@@ -583,7 +591,8 @@ test("refresh always reopens on the centered mission screen without a duplicate 
   await expect(page.locator(".home-page")).toHaveCSS("font-family", /Segoe UI/);
   await expect(page.getByText("THE NEXT CHAPTER STARTS WITH YOU.", { exact: true })).toHaveCount(0);
   await expect(page.locator(".welcome-caption h1 span")).toHaveCSS("color", "rgb(82, 106, 120)");
-  await expect(page.locator(".welcome-caption h1")).toHaveText(/Building open protocols/);
+  await expect(page.locator(".welcome-caption h1")).toContainText(homePageCopy.missionLead);
+  await expect(page.locator(".welcome-caption h1 span")).toHaveText(homePageCopy.missionAccent);
   await expect(page.getByText("Scroll to discover", { exact: false })).toHaveCount(0);
   const docs = page.getByRole("link", { name: "Docs", exact: true });
   const icon = await docs.locator("svg").boundingBox();

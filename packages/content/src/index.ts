@@ -16,8 +16,8 @@ export const hero = {
 
 export const homePageCopy = {
   mission: "Building open protocols and sovereign infrastructure for autonomous AI agents.",
-  missionLead: "Building open protocols and sovereign",
-  missionAccent: "infrastructure for autonomous AI agents.",
+  missionLead: "Building the economic layer",
+  missionAccent: "for autonomous AI agents",
   missionDetail: "To transact, coordinate, and govern on-chain.",
   valueProposition: "Read the code. Share your ideas.",
 } as const;
