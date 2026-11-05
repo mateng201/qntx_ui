@@ -1,0 +1,25 @@
+{
+  "frames": 119,
+  "controllerRenderCalls": 209,
+  "framesWithMultipleControllerCalls": 90,
+  "maxControllerCallsPerFrame": 2,
+  "controllerRendersAfterDispose": 0,
+  "pendingAnimationCallbacksAfterDispose": [],
+  "unAbortedOwnedListeners": [],
+  "abortedOwnedListeners": [
+    "click",
+    "scroll",
+    "resize",
+    "change",
+    "pointermove",
+    "pointerleave",
+    "blur",
+    "visibilitychange",
+    "change",
+    "wheel",
+    "resize",
+    "pointerdown",
+    "keydown",
+    "change"
+  ]
+}

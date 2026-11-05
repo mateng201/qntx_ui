@@ -1,0 +1,552 @@
+{
+  "exports": [
+    {
+      "file": "packages/content/src/index.ts",
+      "exports": [
+        {
+          "name": "links",
+          "line": 1,
+          "appReferences": [
+            "apps/web/src/components/HomePage.tsx",
+            "apps/web/src/data/site.ts",
+            "apps/mobile/src/App.tsx",
+            "apps/mobile/src/components/HomeSections.tsx"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "hero",
+          "line": 9,
+          "appReferences": [
+            "apps/web/src/components/HomePage.tsx",
+            "apps/web/src/data/site.ts",
+            "apps/mobile/src/components/HomeSections.tsx"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "homePageCopy",
+          "line": 17,
+          "appReferences": [
+            "apps/web/src/components/HomePage.tsx",
+            "apps/web/src/data/site.ts",
+            "apps/mobile/src/components/HomeSections.tsx"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "standards",
+          "line": 25,
+          "appReferences": [],
+          "internalReferences": []
+        },
+        {
+          "name": "protocolIntro",
+          "line": 31,
+          "appReferences": [],
+          "internalReferences": []
+        },
+        {
+          "name": "aboutIntro",
+          "line": 38,
+          "appReferences": [
+            "apps/web/src/components/HomePage.tsx",
+            "apps/web/src/data/site.ts",
+            "apps/mobile/src/components/HomeSections.tsx"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "aboutDestinations",
+          "line": 45,
+          "appReferences": [
+            "apps/web/src/components/HomePage.tsx",
+            "apps/web/src/data/site.ts",
+            "apps/mobile/src/components/HomeSections.tsx"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "brandMarkPath",
+          "line": 62,
+          "appReferences": [
+            "apps/web/src/components/HomePage.tsx",
+            "apps/web/src/data/site.ts",
+            "apps/web/src/scripts/mascot-playback.ts"
+          ],
+          "internalReferences": [
+            "packages/mascot/src/paths.ts"
+          ]
+        },
+        {
+          "name": "primitives",
+          "line": 65,
+          "appReferences": [],
+          "internalReferences": []
+        },
+        {
+          "name": "repositories",
+          "line": 96,
+          "appReferences": [],
+          "internalReferences": []
+        },
+        {
+          "name": "githubIconPath",
+          "line": 124,
+          "appReferences": [
+            "apps/web/src/components/Icon.tsx",
+            "apps/web/src/data/site.ts",
+            "apps/mobile/src/components/ExternalLink.tsx"
+          ],
+          "internalReferences": []
+        }
+      ]
+    },
+    {
+      "file": "packages/design-tokens/src/index.ts",
+      "exports": [
+        {
+          "name": "palette",
+          "line": 2,
+          "appReferences": [
+            "apps/web/src/pages/index.astro",
+            "apps/mobile/src/components/ExternalLink.tsx"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "spacing",
+          "line": 21,
+          "appReferences": [],
+          "internalReferences": []
+        },
+        {
+          "name": "typeScale",
+          "line": 22,
+          "appReferences": [],
+          "internalReferences": []
+        },
+        {
+          "name": "fontFamilies",
+          "line": 25,
+          "appReferences": [
+            "apps/web/src/pages/index.astro",
+            "apps/mobile/src/App.tsx",
+            "apps/mobile/src/components/ExternalLink.tsx",
+            "apps/mobile/src/components/HomeSections.tsx"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "homeTheme",
+          "line": 31,
+          "appReferences": [
+            "apps/web/src/pages/index.astro",
+            "apps/mobile/src/components/HomeSections.tsx"
+          ],
+          "internalReferences": []
+        }
+      ]
+    },
+    {
+      "file": "packages/mascot/src/index.ts",
+      "exports": [
+        {
+          "name": "createCatalogAnimation",
+          "line": 1,
+          "typeOnly": false,
+          "appReferences": [
+            "apps/web/src/scripts/mascot-playback.ts",
+            "apps/mobile/src/animation/mascot-playback.ts"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "CatalogFrame",
+          "line": 2,
+          "typeOnly": true,
+          "appReferences": [
+            "apps/web/src/scripts/mascot-playback.ts",
+            "apps/mobile/src/animation/mascot-playback.ts"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "MascotGaze",
+          "line": 2,
+          "typeOnly": true,
+          "appReferences": [
+            "apps/web/src/scripts/mascot-playback.ts",
+            "apps/mobile/src/animation/mascot-playback.ts"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "createMascotMorph",
+          "line": 3,
+          "typeOnly": false,
+          "appReferences": [
+            "apps/web/src/scripts/mascot-playback.ts",
+            "apps/mobile/src/animation/mascot-playback.ts"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "staticMascotFrame",
+          "line": 3,
+          "typeOnly": false,
+          "appReferences": [
+            "apps/web/src/scripts/mascot-playback.ts",
+            "apps/mobile/src/animation/mascot-playback.ts"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "contourPath",
+          "line": 4,
+          "typeOnly": false,
+          "appReferences": [
+            "apps/web/src/scripts/mascot-playback.ts"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "pathsForFrame",
+          "line": 4,
+          "typeOnly": false,
+          "appReferences": [
+            "apps/mobile/src/animation/mascot-playback.ts"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "staticMascotPaths",
+          "line": 4,
+          "typeOnly": false,
+          "appReferences": [
+            "apps/mobile/src/animation/mascot-playback.ts",
+            "apps/mobile/src/components/AnimatedMascot.tsx"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "MascotPaths",
+          "line": 5,
+          "typeOnly": true,
+          "appReferences": [
+            "apps/mobile/src/animation/mascot-playback.ts",
+            "apps/mobile/src/components/AnimatedMascot.tsx"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "createMascotDockingCurve",
+          "line": 7,
+          "typeOnly": false,
+          "appReferences": [
+            "apps/web/src/scripts/home-page-scroll.ts",
+            "apps/web/src/scripts/mascot-docking.ts",
+            "apps/mobile/src/hooks/useMascotDocking.ts"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "easeMascotDocking",
+          "line": 8,
+          "typeOnly": false,
+          "appReferences": [
+            "apps/web/src/scripts/home-page-scroll.ts",
+            "apps/web/src/scripts/mascot-docking.ts",
+            "apps/mobile/src/App.tsx"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "getMascotDockingPosition",
+          "line": 9,
+          "typeOnly": false,
+          "appReferences": [
+            "apps/web/src/scripts/home-page-scroll.ts",
+            "apps/web/src/scripts/mascot-docking.ts",
+            "apps/mobile/src/App.tsx",
+            "apps/mobile/src/hooks/useMascotDocking.ts"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "getMascotDockingProgress",
+          "line": 10,
+          "typeOnly": false,
+          "appReferences": [
+            "apps/web/src/scripts/home-page-scroll.ts",
+            "apps/web/src/scripts/mascot-docking.ts",
+            "apps/mobile/src/hooks/useMascotDocking.ts"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "mascotDockingTiming",
+          "line": 11,
+          "typeOnly": false,
+          "appReferences": [
+            "apps/web/src/scripts/home-page-scroll.ts",
+            "apps/web/src/scripts/mascot-docking.ts",
+            "apps/mobile/src/App.tsx",
+            "apps/mobile/src/hooks/useMascotDocking.ts"
+          ],
+          "internalReferences": []
+        },
+        {
+          "name": "MascotDockingCurve",
+          "line": 13,
+          "typeOnly": true,
+          "appReferences": [
+            "apps/web/src/scripts/mascot-docking.ts",
+            "apps/mobile/src/hooks/useMascotDocking.ts"
+          ],
+          "internalReferences": []
+        }
+      ]
+    }
+  ],
+  "components": [
+    {
+      "file": "apps/web/src/components/HomePage.tsx",
+      "reachable": true
+    },
+    {
+      "file": "apps/web/src/components/Icon.tsx",
+      "reachable": true
+    },
+    {
+      "file": "apps/mobile/src/components/AnimatedMascot.tsx",
+      "reachable": true
+    },
+    {
+      "file": "apps/mobile/src/components/ExternalLink.tsx",
+      "reachable": true
+    },
+    {
+      "file": "apps/mobile/src/components/HomeSections.tsx",
+      "reachable": true
+    }
+  ],
+  "css": [
+    {
+      "file": "apps/web/src/styles/global.css",
+      "line": 45,
+      "class": "icon",
+      "references": [
+        "apps/web/src/components/Icon.tsx",
+        "apps/web/src/pages/index.astro",
+        "apps/mobile/src/App.tsx",
+        "apps/mobile/src/components/ExternalLink.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 7,
+      "class": "home-page",
+      "references": [
+        "apps/web/src/components/HomePage.tsx",
+        "apps/web/src/pages/index.astro",
+        "apps/mobile/src/hooks/useReducedMotion.ts"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 17,
+      "class": "site-header",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 28,
+      "class": "site-brand",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 36,
+      "class": "mascot-dock",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 42,
+      "class": "resource-navigation",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 63,
+      "class": "icon",
+      "references": [
+        "apps/web/src/components/Icon.tsx",
+        "apps/web/src/pages/index.astro",
+        "apps/mobile/src/App.tsx",
+        "apps/mobile/src/components/ExternalLink.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 71,
+      "class": "page-mascot",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 102,
+      "class": "scroll-viewport",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 106,
+      "class": "page-section",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 113,
+      "class": "welcome-section",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 116,
+      "class": "welcome-caption",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 143,
+      "class": "about-content",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 160,
+      "class": "about-description",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 168,
+      "class": "resources-layout",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 177,
+      "class": "resources-intro",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 188,
+      "class": "resources-description",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 196,
+      "class": "resources-actions",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 204,
+      "class": "primary-link",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 225,
+      "class": "secondary-link",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 235,
+      "class": "resources-links",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 239,
+      "class": "resource-link",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 256,
+      "class": "resource-number",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 283,
+      "class": "skip-to-content",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 298,
+      "class": "scroll-track",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 323,
+      "class": "resources-section",
+      "references": [
+        "apps/web/src/components/HomePage.tsx"
+      ]
+    }
+  ]
+}

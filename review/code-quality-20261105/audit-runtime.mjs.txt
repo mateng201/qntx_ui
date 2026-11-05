@@ -1,0 +1,69 @@
+import fs from "node:fs";
+import { chromium } from "@playwright/test";
+
+const browser = await chromium.launch({ channel: "chrome" });
+const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, reducedMotion: "no-preference" });
+await page.addInitScript(() => {
+  const audit = { pending: new Map(), renders: new Map(), listeners: [], rafTime: 0 };
+  globalThis.qualityAudit = audit;
+  const request = requestAnimationFrame.bind(globalThis);
+  const cancel = cancelAnimationFrame.bind(globalThis);
+  globalThis.requestAnimationFrame = (callback) => {
+    const id = request((time) => {
+      audit.pending.delete(id);
+      audit.rafTime = time;
+      callback(time);
+    });
+    audit.pending.set(id, callback.name);
+    return id;
+  };
+  globalThis.cancelAnimationFrame = (id) => { audit.pending.delete(id); cancel(id); };
+  const set = CSSStyleDeclaration.prototype.setProperty;
+  CSSStyleDeclaration.prototype.setProperty = function (name, ...args) {
+    if (name === "--mascot-flight-pitch") audit.renders.set(audit.rafTime, (audit.renders.get(audit.rafTime) ?? 0) + 1);
+    return set.call(this, name, ...args);
+  };
+  const add = EventTarget.prototype.addEventListener;
+  EventTarget.prototype.addEventListener = function (type, listener, options) {
+    if (options?.signal) audit.listeners.push({ type, signal: options.signal });
+    return add.call(this, type, listener, options);
+  };
+});
+try {
+  await page.goto("http://127.0.0.1:4321/");
+  const root = page.locator("[data-home-page]");
+  await root.locator("[data-scroll-track]").waitFor();
+  await page.waitForFunction(() => document.querySelector("[data-home-page]")?.dataset.scrollReady === "true");
+  await page.mouse.move(700, 700);
+  await page.mouse.wheel(0, 1);
+  await page.waitForFunction(() => document.querySelector("[data-home-page]")?.dataset.wheelNavigating === "true");
+  await page.waitForFunction(() => document.querySelector("[data-home-page]")?.dataset.wheelNavigating !== "true");
+  await page.evaluate(() => globalThis.qualityAudit.renders.clear());
+  await page.mouse.wheel(0, 1);
+  await page.waitForFunction(() => document.querySelector("[data-home-page]")?.dataset.wheelNavigating === "true");
+  await page.waitForFunction(() => document.querySelector("[data-home-page]")?.dataset.wheelNavigating !== "true");
+  const result = await page.evaluate(() => {
+    const audit = globalThis.qualityAudit;
+    const counts = [...audit.renders.values()];
+    const observed = {
+      frames: counts.length,
+      controllerRenderCalls: counts.reduce((sum, count) => sum + count, 0),
+      framesWithMultipleControllerCalls: counts.filter((count) => count > 1).length,
+      maxControllerCallsPerFrame: Math.max(...counts),
+    };
+    document.dispatchEvent(new Event("astro:before-swap"));
+    audit.renders.clear();
+    return observed;
+  });
+  await page.waitForTimeout(500);
+  Object.assign(result, await page.evaluate(() => ({
+    controllerRendersAfterDispose: [...globalThis.qualityAudit.renders.values()].reduce((a, b) => a + b, 0),
+    pendingAnimationCallbacksAfterDispose: [...globalThis.qualityAudit.pending.values()].filter((name) => ["renderScrollFrame", "renderAnimationFrame", "advance"].includes(name)),
+    unAbortedOwnedListeners: globalThis.qualityAudit.listeners.filter(({ signal }) => !signal.aborted).map(({ type }) => type),
+    abortedOwnedListeners: globalThis.qualityAudit.listeners.filter(({ signal }) => signal.aborted).map(({ type }) => type),
+  })));
+  fs.writeFileSync("review/code-quality-20261105/evidence/runtime-analysis.json", JSON.stringify(result, null, 2) + "\n");
+  console.log(JSON.stringify(result, null, 2));
+} finally {
+  await browser.close();
+}

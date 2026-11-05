@@ -1,0 +1,174 @@
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import ts from "typescript";
+import postcss from "postcss";
+
+const cwd = process.cwd();
+const out = path.join(cwd, "review/code-quality-20261105/evidence");
+const relative = (file) => path.relative(cwd, file).replaceAll("\\", "/");
+function walk(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const file = path.join(directory, entry.name);
+    return entry.isDirectory() ? walk(file) : [file];
+  });
+}
+const files = ["apps/web/src", "apps/mobile/src", "packages"].flatMap((dir) => walk(path.join(cwd, dir)))
+  .filter((file) => /\.(?:ts|tsx|js|astro|css|json)$/.test(file));
+const sources = files.map((file) => ({ file: relative(file), text: fs.readFileSync(file, "utf8") }));
+const appSources = sources.filter(({ file }) => file.startsWith("apps/"));
+function save(name, data) {
+  fs.writeFileSync(path.join(out, `${name}.json`), JSON.stringify(data, null, 2) + "\n");
+}
+function parse(source) {
+  return ts.createSourceFile(source.file, source.text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+}
+function line(text, offset) { return text.slice(0, offset).split("\n").length; }
+function identifiers(source) {
+  const result = [];
+  function visit(node) {
+    if (ts.isIdentifier(node)) result.push(node.text);
+    ts.forEachChild(node, visit);
+  }
+  visit(parse(source));
+  return result;
+}
+
+if (process.argv[2] === "shared") {
+  save("source-hashes", Object.fromEntries(sources.map(({ file, text }) => [file, crypto.createHash("sha256").update(text).digest("hex")])));
+  const tokens = sources.find(({ file }) => file === "packages/design-tokens/src/index.ts");
+  const tokenColors = new Set([...tokens.text.matchAll(/#[\da-fA-F]{3,8}\b/g)].map(([color]) => color.toLowerCase()));
+  const colors = appSources.flatMap(({ file, text }) => [...text.matchAll(/#[\da-fA-F]{3,8}\b/g)].map((match) => ({
+    file, line: line(text, match.index), color: match[0], sharedValueExists: tokenColors.has(match[0].toLowerCase()),
+  })));
+  const imports = appSources.flatMap(({ file, text }) => [...text.matchAll(/(?:import|export)\s+[^;]*?from\s+["'](@qntx-ui\/(?:content|design-tokens|mascot))["']/g)].map((match) => ({ file, line: line(text, match.index), package: match[1], code: match[0] })));
+  const functions = sources.filter(({ file }) => /mascot-playback\.ts$/.test(file)).map((source) => {
+    const sf = parse(source);
+    const declarations = [];
+    function visit(node) {
+      if ((ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) && node.name) {
+        declarations.push({ name: node.name.getText(sf), start: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1, end: sf.getLineAndCharacterOfPosition(node.end).line + 1 });
+      }
+      ts.forEachChild(node, visit);
+    }
+    visit(sf);
+    return { file: source.file, lines: source.text.trimEnd().split("\n").length, functions: declarations };
+  });
+  save("shared-analysis", { imports, colors, functions });
+  console.log(JSON.stringify({ imports, colors, functions }, null, 2));
+}
+
+if (process.argv[2] === "dead") {
+  const allIdentifiers = new Map(sources.map((source) => [source.file, new Set(identifiers(source))]));
+  const exports = sources.filter(({ file }) => /^packages\/[^/]+\/src\/index\.ts$/.test(file)).map((source) => {
+    const sf = parse(source);
+    const names = [];
+    for (const node of sf.statements) {
+      if (ts.isExportDeclaration(node) && node.exportClause && ts.isNamedExports(node.exportClause)) {
+        names.push(...node.exportClause.elements.map((element) => ({ name: element.name.text, line: sf.getLineAndCharacterOfPosition(element.getStart(sf)).line + 1, typeOnly: node.isTypeOnly || element.isTypeOnly })));
+      }
+      if (node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)) {
+        if (ts.isVariableStatement(node)) names.push(...node.declarationList.declarations.map((declaration) => ({ name: declaration.name.getText(sf), line: sf.getLineAndCharacterOfPosition(declaration.getStart(sf)).line + 1 })));
+        else if (node.name) names.push({ name: node.name.text, line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1, typeOnly: ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node) });
+      }
+    }
+    const packageName = `@qntx-ui/${source.file.split("/")[1]}`;
+    return { file: source.file, exports: names.map((entry) => ({ ...entry, appReferences: [...allIdentifiers].filter(([file, ids]) => file.startsWith("apps/") && !file.endsWith(".css") && ids.has(entry.name)).map(([file]) => file), internalReferences: [...allIdentifiers].filter(([file, ids]) => file.startsWith("packages/") && file.split("/")[1] !== source.file.split("/")[1] && ids.has(entry.name) && sources.find((candidate) => candidate.file === file).text.includes(packageName)).map(([file]) => file) })) };
+  });
+  // Reachability through actual import/export declarations, including Astro script blocks.
+  const graph = new Map(appSources.map(({ file, text }) => [file, [...text.matchAll(/(?:import|export)\s+(?:[^;]*?\s+from\s+)?["'](\.[^"']+)["']/g)].flatMap((match) => {
+    const base = path.posix.normalize(path.posix.join(path.posix.dirname(file), match[1]));
+    const resolved = [base, ...[".ts", ".tsx", ".astro", ".js", ".css", "/index.ts", "/index.tsx"].map((suffix) => base + suffix)].find((candidate) => sources.some((source) => source.file === candidate));
+    return resolved ? [resolved] : [];
+  })]));
+  const reachable = new Set();
+  function visit(file) { if (reachable.has(file)) return; reachable.add(file); (graph.get(file) ?? []).forEach(visit); }
+  appSources.filter(({ file }) => file.startsWith("apps/web/src/pages/")).forEach(({ file }) => visit(file));
+  visit("apps/mobile/src/App.tsx");
+  const components = appSources.filter(({ file }) => file.includes("/components/") && /\.(tsx|astro)$/.test(file)).map(({ file }) => ({ file, reachable: reachable.has(file) }));
+  const css = appSources.filter(({ file }) => file.endsWith(".css")).flatMap((source) => {
+    const classes = new Map();
+    postcss.parse(source.text).walkRules((rule) => {
+      for (const match of rule.selector.matchAll(/\.([A-Za-z_][\w-]*)/g)) {
+        if (!classes.has(match[1])) classes.set(match[1], rule.source.start.line);
+      }
+    });
+    return [...classes].map(([name, at]) => ({ file: source.file, line: at, class: name, references: appSources.filter(({ file, text }) => !file.endsWith(".css") && new RegExp(`(?<![\\w-])${name}(?![\\w-])`).test(text)).map(({ file }) => file) }));
+  });
+  save("dead-analysis", { exports, components, css });
+  console.log(JSON.stringify({ exports, components, css }, null, 2));
+}
+
+if (process.argv[2] === "size") {
+  const builds = ["apps/web/dist", "apps/mobile/dist"].map((directory) => {
+    const entries = walk(path.join(cwd, directory)).map((file) => ({ file: relative(file), bytes: fs.statSync(file).size }));
+    return { directory, bytes: entries.reduce((sum, file) => sum + file.bytes, 0), files: entries.length, largest: entries.sort((a, b) => b.bytes - a.bytes).slice(0, 10) };
+  });
+  save("build-sizes", builds);
+  console.log(JSON.stringify(builds, null, 2));
+}
+
+if (process.argv[2] === "verify") {
+  const before = JSON.parse(fs.readFileSync(path.join(out, "source-hashes.json"), "utf8"));
+  const changed = sources.filter(({ file, text }) => before[file] !== crypto.createHash("sha256").update(text).digest("hex")).map(({ file }) => file);
+  console.log(JSON.stringify({ changedSourceFiles: changed }));
+}
+
+if (process.argv[2] === "duplicates") {
+  function tokens(source) {
+    const sf = parse(source);
+    const result = [];
+    function visit(node) {
+      const children = node.getChildren(sf);
+      if (children.length === 0 && node.kind !== ts.SyntaxKind.EndOfFileToken) {
+        result.push({ text: node.getText(sf), line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1 });
+      } else {
+        children.forEach(visit);
+      }
+    }
+    visit(sf);
+    return result;
+  }
+  function compare(webFiles, mobileFiles) {
+    const selected = sources.filter(({ file }) => [...webFiles, ...mobileFiles].includes(file));
+    const selectedTokens = new Map(selected.map((source) => [source.file, tokens(source)]));
+    const matched = new Map(selected.map(({ file }) => [file, new Set()]));
+    const clones = [];
+    for (const web of webFiles) for (const mobile of mobileFiles) {
+      const a = selectedTokens.get(web), b = selectedTokens.get(mobile);
+      let previous = new Uint32Array(b.length + 1);
+      for (let i = 1; i <= a.length; i += 1) {
+        const current = new Uint32Array(b.length + 1);
+        for (let j = 1; j <= b.length; j += 1) {
+          if (a[i - 1].text !== b[j - 1].text) continue;
+          const length = previous[j - 1] + 1;
+          current[j] = length;
+          if (length < 50 || (i < a.length && j < b.length && a[i].text === b[j].text)) continue;
+          const startA = a[i - length].line, endA = a[i - 1].line;
+          const startB = b[j - length].line, endB = b[j - 1].line;
+          if (endA - startA < 4 || endB - startB < 4) continue;
+          clones.push({ web, mobile, tokens: length, webLines: [startA, endA], mobileLines: [startB, endB] });
+          for (let at = startA; at <= endA; at += 1) matched.get(web).add(at);
+          for (let at = startB; at <= endB; at += 1) matched.get(mobile).add(at);
+        }
+        previous = current;
+      }
+    }
+    const fileCounts = selected.map((source) => ({ file: source.file, lines: source.text.trimEnd().split("\n").length, matchedLines: matched.get(source.file).size }));
+    const lines = fileCounts.reduce((sum, entry) => sum + entry.lines, 0);
+    const matchedLines = fileCounts.reduce((sum, entry) => sum + entry.matchedLines, 0);
+    return { minimumTokens: 50, minimumPhysicalLines: 5, method: "Exact TS-token runs, comments/whitespace skipped, identifiers and literal values preserved; merged physical-line coverage / total physical lines", lines, matchedLines, percent: Number((100 * matchedLines / lines).toFixed(2)), fileCounts, clones };
+  }
+  const playback = compare(["apps/web/src/scripts/mascot-playback.ts"], ["apps/mobile/src/animation/mascot-playback.ts"]);
+  const navigation = compare(["apps/web/src/scripts/home-page-scroll.ts", "apps/web/src/scripts/wheel-section-navigation.ts"], ["apps/mobile/src/App.tsx", "apps/mobile/src/hooks/useMascotDocking.ts"]);
+  function colorSet(platform) {
+    return new Set(appSources.filter(({ file }) => file.startsWith(`apps/${platform}/`)).flatMap(({ text }) => [...text.matchAll(/#[\da-fA-F]{3,8}\b/g)].map(([color]) => color.length === 4 ? `#${[...color.slice(1)].map((c) => c + c).join("")}` : color.toLowerCase())));
+  }
+  const web = colorSet("web"), mobile = colorSet("mobile");
+  const shared = [...web].filter((color) => mobile.has(color));
+  const all = new Set([...web, ...mobile]);
+  const styleValues = { method: "Jaccard overlap of unique hardcoded HEX colors; NOT structural CSS/StyleSheet duplication", web: [...web], mobile: [...mobile], shared, union: all.size, percent: Number((100 * shared.length / all.size).toFixed(2)) };
+  const result = { playback, navigation, styleValues };
+  save("duplicate-analysis", result);
+  console.log(JSON.stringify(result, null, 2));
+}

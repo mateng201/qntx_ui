@@ -1,0 +1,102 @@
+{
+  "playback": {
+    "minimumTokens": 50,
+    "minimumPhysicalLines": 5,
+    "method": "Exact TS-token runs, comments/whitespace skipped, identifiers and literal values preserved; merged physical-line coverage / total physical lines",
+    "lines": 467,
+    "matchedLines": 22,
+    "percent": 4.71,
+    "fileCounts": [
+      {
+        "file": "apps/web/src/scripts/mascot-playback.ts",
+        "lines": 281,
+        "matchedLines": 11
+      },
+      {
+        "file": "apps/mobile/src/animation/mascot-playback.ts",
+        "lines": 186,
+        "matchedLines": 11
+      }
+    ],
+    "clones": [
+      {
+        "web": "apps/web/src/scripts/mascot-playback.ts",
+        "mobile": "apps/mobile/src/animation/mascot-playback.ts",
+        "tokens": 75,
+        "webLines": [
+          117,
+          127
+        ],
+        "mobileLines": [
+          66,
+          76
+        ]
+      }
+    ]
+  },
+  "navigation": {
+    "minimumTokens": 50,
+    "minimumPhysicalLines": 5,
+    "method": "Exact TS-token runs, comments/whitespace skipped, identifiers and literal values preserved; merged physical-line coverage / total physical lines",
+    "lines": 924,
+    "matchedLines": 0,
+    "percent": 0,
+    "fileCounts": [
+      {
+        "file": "apps/web/src/scripts/home-page-scroll.ts",
+        "lines": 307,
+        "matchedLines": 0
+      },
+      {
+        "file": "apps/web/src/scripts/wheel-section-navigation.ts",
+        "lines": 103,
+        "matchedLines": 0
+      },
+      {
+        "file": "apps/mobile/src/App.tsx",
+        "lines": 414,
+        "matchedLines": 0
+      },
+      {
+        "file": "apps/mobile/src/hooks/useMascotDocking.ts",
+        "lines": 100,
+        "matchedLines": 0
+      }
+    ],
+    "clones": []
+  },
+  "styleValues": {
+    "method": "Jaccard overlap of unique hardcoded HEX colors; NOT structural CSS/StyleSheet duplication",
+    "web": [
+      "#60645b",
+      "#363a31",
+      "#191c17",
+      "#ffffff",
+      "#dfe2d8",
+      "#181918",
+      "#fafaf8",
+      "#1b1d19",
+      "#5d6259",
+      "#11130f",
+      "#353d2e"
+    ],
+    "mobile": [
+      "#fafaf8",
+      "#1b1d19",
+      "#60645b",
+      "#363a31",
+      "#191c17",
+      "#ffffff"
+    ],
+    "shared": [
+      "#60645b",
+      "#363a31",
+      "#191c17",
+      "#ffffff",
+      "#fafaf8",
+      "#1b1d19"
+    ],
+    "union": 11,
+    "percent": 54.55
+  }
+}

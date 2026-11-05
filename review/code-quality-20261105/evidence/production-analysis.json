@@ -1,0 +1,16 @@
+{
+  "productionJavascriptRequests": [
+    "/_astro/index.astro_astro_type_script_index_0_lang.DahThLdp.js"
+  ],
+  "nativeBinaryMarkerScan": [
+    {
+      "platform": "android",
+      "forbiddenPathMarkers": []
+    },
+    {
+      "platform": "ios",
+      "forbiddenPathMarkers": []
+    }
+  ],
+  "limitation": "Native binary marker absence is supplemental; source boundary rules and imports provide the primary evidence. No complete native source map was collected."
+}

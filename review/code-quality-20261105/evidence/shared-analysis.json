@@ -1,0 +1,437 @@
+{
+  "imports": [
+    {
+      "file": "apps/web/src/data/site.ts",
+      "line": 2,
+      "package": "@qntx-ui/content",
+      "code": "export {\n  aboutDestinations,\n  aboutIntro,\n  brandMarkPath,\n  hero,\n  githubIconPath,\n  homePageCopy,\n  links,\n} from \"@qntx-ui/content\""
+    },
+    {
+      "file": "apps/web/src/pages/index.astro",
+      "line": 2,
+      "package": "@qntx-ui/design-tokens",
+      "code": "import { fontFamilies, homeTheme, palette } from \"@qntx-ui/design-tokens\""
+    },
+    {
+      "file": "apps/web/src/scripts/mascot-docking.ts",
+      "line": 1,
+      "package": "@qntx-ui/mascot",
+      "code": "export {\n  createMascotDockingCurve,\n  easeMascotDocking,\n  getMascotDockingPosition,\n  getMascotDockingProgress,\n  mascotDockingTiming,\n} from \"@qntx-ui/mascot\""
+    },
+    {
+      "file": "apps/web/src/scripts/mascot-docking.ts",
+      "line": 8,
+      "package": "@qntx-ui/mascot",
+      "code": "export type { MascotDockingCurve } from \"@qntx-ui/mascot\""
+    },
+    {
+      "file": "apps/web/src/scripts/mascot-playback.ts",
+      "line": 1,
+      "package": "@qntx-ui/content",
+      "code": "import { brandMarkPath } from \"@qntx-ui/content\""
+    },
+    {
+      "file": "apps/web/src/scripts/mascot-playback.ts",
+      "line": 2,
+      "package": "@qntx-ui/mascot",
+      "code": "import {\n  contourPath,\n  createCatalogAnimation,\n  createMascotMorph,\n  staticMascotFrame,\n} from \"@qntx-ui/mascot\""
+    },
+    {
+      "file": "apps/web/src/scripts/mascot-playback.ts",
+      "line": 8,
+      "package": "@qntx-ui/mascot",
+      "code": "import type { CatalogFrame, MascotGaze } from \"@qntx-ui/mascot\""
+    },
+    {
+      "file": "apps/mobile/src/animation/mascot-playback.ts",
+      "line": 1,
+      "package": "@qntx-ui/mascot",
+      "code": "import {\n  createCatalogAnimation,\n  createMascotMorph,\n  pathsForFrame,\n  staticMascotFrame,\n  staticMascotPaths,\n} from \"@qntx-ui/mascot\""
+    },
+    {
+      "file": "apps/mobile/src/animation/mascot-playback.ts",
+      "line": 8,
+      "package": "@qntx-ui/mascot",
+      "code": "import type { CatalogFrame, MascotGaze, MascotPaths } from \"@qntx-ui/mascot\""
+    },
+    {
+      "file": "apps/mobile/src/App.tsx",
+      "line": 1,
+      "package": "@qntx-ui/content",
+      "code": "import { links } from \"@qntx-ui/content\""
+    },
+    {
+      "file": "apps/mobile/src/App.tsx",
+      "line": 2,
+      "package": "@qntx-ui/design-tokens",
+      "code": "import { fontFamilies } from \"@qntx-ui/design-tokens\""
+    },
+    {
+      "file": "apps/mobile/src/App.tsx",
+      "line": 3,
+      "package": "@qntx-ui/mascot",
+      "code": "import { easeMascotDocking, getMascotDockingPosition, mascotDockingTiming } from \"@qntx-ui/mascot\""
+    },
+    {
+      "file": "apps/mobile/src/components/AnimatedMascot.tsx",
+      "line": 1,
+      "package": "@qntx-ui/mascot",
+      "code": "import { staticMascotPaths } from \"@qntx-ui/mascot\""
+    },
+    {
+      "file": "apps/mobile/src/components/AnimatedMascot.tsx",
+      "line": 2,
+      "package": "@qntx-ui/mascot",
+      "code": "import type { MascotPaths } from \"@qntx-ui/mascot\""
+    },
+    {
+      "file": "apps/mobile/src/components/ExternalLink.tsx",
+      "line": 1,
+      "package": "@qntx-ui/content",
+      "code": "import { githubIconPath } from \"@qntx-ui/content\""
+    },
+    {
+      "file": "apps/mobile/src/components/ExternalLink.tsx",
+      "line": 2,
+      "package": "@qntx-ui/design-tokens",
+      "code": "import { fontFamilies, palette } from \"@qntx-ui/design-tokens\""
+    },
+    {
+      "file": "apps/mobile/src/components/HomeSections.tsx",
+      "line": 1,
+      "package": "@qntx-ui/content",
+      "code": "import { aboutDestinations, aboutIntro, hero, homePageCopy, links } from \"@qntx-ui/content\""
+    },
+    {
+      "file": "apps/mobile/src/components/HomeSections.tsx",
+      "line": 2,
+      "package": "@qntx-ui/design-tokens",
+      "code": "import { fontFamilies, homeTheme } from \"@qntx-ui/design-tokens\""
+    },
+    {
+      "file": "apps/mobile/src/hooks/useMascotDocking.ts",
+      "line": 1,
+      "package": "@qntx-ui/mascot",
+      "code": "import {\n  createMascotDockingCurve,\n  getMascotDockingPosition,\n  getMascotDockingProgress,\n  mascotDockingTiming,\n} from \"@qntx-ui/mascot\""
+    },
+    {
+      "file": "apps/mobile/src/hooks/useMascotDocking.ts",
+      "line": 7,
+      "package": "@qntx-ui/mascot",
+      "code": "import type { MascotDockingCurve } from \"@qntx-ui/mascot\""
+    }
+  ],
+  "colors": [
+    {
+      "file": "apps/web/src/components/HomePage.tsx",
+      "line": 39,
+      "color": "#60645b",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/web/src/components/HomePage.tsx",
+      "line": 40,
+      "color": "#363a31",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/web/src/components/HomePage.tsx",
+      "line": 41,
+      "color": "#191c17",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/web/src/components/HomePage.tsx",
+      "line": 45,
+      "color": "#ffffff",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/web/src/components/HomePage.tsx",
+      "line": 46,
+      "color": "#ffffff",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/web/src/pages/index.astro",
+      "line": 23,
+      "color": "#ffffff",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/web/src/scripts/mascot-playback.ts",
+      "line": 31,
+      "color": "#ffffff",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/web/src/styles/global.css",
+      "line": 51,
+      "color": "#dfe2d8",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/web/src/styles/global.css",
+      "line": 52,
+      "color": "#181918",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 5,
+      "color": "#fafaf8",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 11,
+      "color": "#1b1d19",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 12,
+      "color": "#5d6259",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 15,
+      "color": "#fafaf8",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 61,
+      "color": "#11130f",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 79,
+      "color": "#1b1d19",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 209,
+      "color": "#1b1d19",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 210,
+      "color": "#fff",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 218,
+      "color": "#353d2e",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/web/src/styles/home-page.css",
+      "line": 289,
+      "color": "#1b1d19",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/mobile/src/App.tsx",
+      "line": 382,
+      "color": "#fafaf8",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/mobile/src/App.tsx",
+      "line": 392,
+      "color": "#fafaf8",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/mobile/src/App.tsx",
+      "line": 396,
+      "color": "#1b1d19",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/mobile/src/components/AnimatedMascot.tsx",
+      "line": 75,
+      "color": "#1b1d19",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/mobile/src/components/AnimatedMascot.tsx",
+      "line": 106,
+      "color": "#60645b",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/mobile/src/components/AnimatedMascot.tsx",
+      "line": 107,
+      "color": "#363a31",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/mobile/src/components/AnimatedMascot.tsx",
+      "line": 108,
+      "color": "#191c17",
+      "sharedValueExists": false
+    },
+    {
+      "file": "apps/mobile/src/components/AnimatedMascot.tsx",
+      "line": 114,
+      "color": "#1b1d19",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/mobile/src/components/AnimatedMascot.tsx",
+      "line": 118,
+      "color": "#ffffff",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/mobile/src/components/AnimatedMascot.tsx",
+      "line": 119,
+      "color": "#ffffff",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/mobile/src/components/HomeSections.tsx",
+      "line": 148,
+      "color": "#1b1d19",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/mobile/src/components/HomeSections.tsx",
+      "line": 153,
+      "color": "#ffffff",
+      "sharedValueExists": true
+    },
+    {
+      "file": "apps/mobile/src/components/HomeSections.tsx",
+      "line": 154,
+      "color": "#ffffff",
+      "sharedValueExists": true
+    }
+  ],
+  "functions": [
+    {
+      "file": "apps/web/src/scripts/mascot-playback.ts",
+      "lines": 281,
+      "functions": [
+        {
+          "name": "createSvgMascotRenderer",
+          "start": 17,
+          "end": 42
+        },
+        {
+          "name": "renderFrame",
+          "start": 23,
+          "end": 34
+        },
+        {
+          "name": "resetToStaticLogo",
+          "start": 35,
+          "end": 40
+        },
+        {
+          "name": "initializeMascotPlayback",
+          "start": 52,
+          "end": 281
+        },
+        {
+          "name": "renderAnimationFrame",
+          "start": 83,
+          "end": 145
+        },
+        {
+          "name": "updatePlaybackState",
+          "start": 147,
+          "end": 188
+        },
+        {
+          "name": "clearIdlePlaybackTimer",
+          "start": 190,
+          "end": 195
+        },
+        {
+          "name": "scheduleIdlePlayback",
+          "start": 197,
+          "end": 212
+        },
+        {
+          "name": "resetIdlePlayback",
+          "start": 214,
+          "end": 219
+        },
+        {
+          "name": "setPlaybackPhase",
+          "start": 259,
+          "end": 264
+        },
+        {
+          "name": "dispose",
+          "start": 265,
+          "end": 279
+        }
+      ]
+    },
+    {
+      "file": "apps/mobile/src/animation/mascot-playback.ts",
+      "lines": 186,
+      "functions": [
+        {
+          "name": "createMascotPlaybackController",
+          "start": 26,
+          "end": 186
+        },
+        {
+          "name": "renderAnimationFrame",
+          "start": 50,
+          "end": 87
+        },
+        {
+          "name": "updatePlaybackState",
+          "start": 89,
+          "end": 116
+        },
+        {
+          "name": "clearIdlePlaybackTimer",
+          "start": 118,
+          "end": 123
+        },
+        {
+          "name": "checkIdleDeadline",
+          "start": 125,
+          "end": 140
+        },
+        {
+          "name": "extendIdleDeadline",
+          "start": 142,
+          "end": 155
+        },
+        {
+          "name": "updateOptions",
+          "start": 158,
+          "end": 163
+        },
+        {
+          "name": "notifyActivity",
+          "start": 164,
+          "end": 174
+        },
+        {
+          "name": "setGaze",
+          "start": 175,
+          "end": 178
+        },
+        {
+          "name": "dispose",
+          "start": 179,
+          "end": 184
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+[
+  {
+    "directory": "apps/web/dist",
+    "bytes": 293959,
+    "files": 5,
+    "largest": [
+      {
+        "file": "apps/web/dist/_astro/client.DjHPOnZk.js",
+        "bytes": 220761
+      },
+      {
+        "file": "apps/web/dist/_astro/index.astro_astro_type_script_index_0_lang.DahThLdp.js",
+        "bytes": 51006
+      },
+      {
+        "file": "apps/web/dist/_astro/index.J6EL0tnM.css",
+        "bytes": 15488
+      },
+      {
+        "file": "apps/web/dist/index.html",
+        "bytes": 6259
+      },
+      {
+        "file": "apps/web/dist/favicon.svg",
+        "bytes": 445
+      }
+    ]
+  },
+  {
+    "directory": "apps/mobile/dist",
+    "bytes": 4395522,
+    "files": 5,
+    "largest": [
+      {
+        "file": "apps/mobile/dist/_expo/static/js/android/index-86d6ad1e25f93eb6ca1803473d3ae3ee.hbc",
+        "bytes": 1863848
+      },
+      {
+        "file": "apps/mobile/dist/_expo/static/js/ios/index-824015967b7d2583b398979d252c9d15.hbc",
+        "bytes": 1857705
+      },
+      {
+        "file": "apps/mobile/dist/_expo/static/js/web/index-bce40f28b29f4fe392829525dc6147f1.js",
+        "bytes": 672547
+      },
+      {
+        "file": "apps/mobile/dist/index.html",
+        "bytes": 1178
+      },
+      {
+        "file": "apps/mobile/dist/metadata.json",
+        "bytes": 244
+      }
+    ]
+  }
+]

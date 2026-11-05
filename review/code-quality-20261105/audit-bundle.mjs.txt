@@ -1,0 +1,31 @@
+import fs from "node:fs";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+import { build } from "astro";
+
+const chunks = [];
+await build({
+  root: pathToFileURL(path.join(process.cwd(), "apps/web/")),
+  vite: {
+    plugins: [{
+      name: "audit-module-contributions",
+      generateBundle(_options, output) {
+        for (const chunk of Object.values(output)) {
+          if (chunk.type !== "chunk") continue;
+          chunks.push({ file: chunk.fileName, modules: Object.entries(chunk.modules).map(([id, info]) => ({ id, renderedLength: info.renderedLength })) });
+        }
+      },
+    }],
+  },
+});
+const deployed = chunks.filter(({ file }) => fs.existsSync(path.join("apps/web/dist", file)));
+const packages = new Map();
+for (const chunk of deployed) {
+  for (const module of chunk.modules) {
+    const match = module.id.replaceAll("\\", "/").match(/node_modules\/((?:@[^/]+\/)?[^/]+)/);
+    if (match) packages.set(match[1], (packages.get(match[1]) ?? 0) + module.renderedLength);
+  }
+}
+const result = { method: "Rollup chunk.modules renderedLength (before final minification), deployed JS chunks only", packages: [...packages].sort((a, b) => b[1] - a[1]), chunks: deployed };
+fs.writeFileSync("review/code-quality-20261105/evidence/bundle-modules.json", JSON.stringify(result, null, 2) + "\n");
+console.log(JSON.stringify({ method: result.method, packages: result.packages }, null, 2));

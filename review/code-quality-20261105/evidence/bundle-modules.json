@@ -1,0 +1,117 @@
+{
+  "method": "Rollup chunk.modules renderedLength (before final minification), deployed JS chunks only",
+  "packages": [
+    [
+      "react-dom",
+      538519
+    ],
+    [
+      "react",
+      16175
+    ],
+    [
+      "scheduler",
+      9252
+    ],
+    [
+      "@astrojs/react",
+      3763
+    ]
+  ],
+  "chunks": [
+    {
+      "file": "_astro/client.DjHPOnZk.js",
+      "modules": [
+        {
+          "id": "\u0000rolldown/runtime.js",
+          "renderedLength": 174
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/node_modules/react/cjs/react.production.js",
+          "renderedLength": 15999
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/node_modules/react/index.js",
+          "renderedLength": 176
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedLength": 9064
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/node_modules/scheduler/index.js",
+          "renderedLength": 188
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/node_modules/react-dom/cjs/react-dom.production.js",
+          "renderedLength": 6270
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/node_modules/react-dom/index.js",
+          "renderedLength": 468
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedLength": 531308
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/node_modules/react-dom/client.js",
+          "renderedLength": 473
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/node_modules/@astrojs/react/dist/static-html.js",
+          "renderedLength": 514
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/node_modules/@astrojs/react/dist/client.js",
+          "renderedLength": 3249
+        }
+      ]
+    },
+    {
+      "file": "_astro/index.astro_astro_type_script_index_0_lang.DahThLdp.js",
+      "modules": [
+        {
+          "id": "E:/bigshoot/qntx.ui/packages/mascot/src/vendor/logo-catalog.js",
+          "renderedLength": 47277
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/packages/mascot/src/rest.json",
+          "renderedLength": 4365
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/packages/mascot/src/morph.ts",
+          "renderedLength": 2588
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/packages/content/src/index.ts",
+          "renderedLength": 940
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/packages/mascot/src/paths.ts",
+          "renderedLength": 878
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/packages/mascot/src/docking.ts",
+          "renderedLength": 976
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/apps/web/src/scripts/mascot-playback.ts",
+          "renderedLength": 6769
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/apps/web/src/scripts/wheel-section-navigation.ts",
+          "renderedLength": 2683
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/apps/web/src/scripts/home-page-scroll.ts",
+          "renderedLength": 10225
+        },
+        {
+          "id": "E:/bigshoot/qntx.ui/apps/web/src/pages/index.astro?astro&type=script&index=0&lang.ts",
+          "renderedLength": 289
+        }
+      ]
+    }
+  ]
+}
