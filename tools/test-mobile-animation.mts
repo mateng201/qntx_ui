@@ -49,8 +49,13 @@ registerHooks({
   },
 });
 
-const { createCatalogAnimation, createMascotMorph, staticMascotFrame, staticMascotPaths } =
-  await import("@qntx-ui/mascot");
+const {
+  createCatalogAnimation,
+  createMascotMorph,
+  createMascotPlayback,
+  staticMascotFrame,
+  staticMascotPaths,
+} = await import("@qntx-ui/mascot");
 const { createMascotPlaybackController } =
   await import("../apps/mobile/src/animation/mascot-playback.ts");
 
@@ -221,4 +226,39 @@ void test("contour alignment does not twist a reversed, offset closed contour", 
   const target = { ...staticMascotFrame, outer: shifted };
   const morph = createMascotMorph(staticMascotFrame, target);
   assert.deepEqual(morph(target, 0.5).outer, shifted);
+});
+
+void test("shared web playback follows display cadence and ignores activity after disposal", (context) => {
+  const time = clock(context);
+  let paints = 0;
+  const player = createMascotPlayback({
+    scheduler: {
+      now: () => performance.now(),
+      requestFrame: (callback) => requestAnimationFrame(callback),
+      cancelFrame: (id) => cancelAnimationFrame(id),
+      delay: (callback, milliseconds) => {
+        const id = setTimeout(callback, milliseconds);
+        return () => clearTimeout(id);
+      },
+    },
+    renderFrame: () => {
+      paints += 1;
+    },
+    renderStatic: () => undefined,
+    maxElapsed: 64,
+  });
+  player.updateOptions({ playbackPhase: "scrolling", reducedMotion: false, foreground: true });
+  time.advance(1000, 60);
+  assert.ok(
+    paints >= 58,
+    `${paints} paints; the web profile must not inherit the native 30fps cap`,
+  );
+  player.dispose();
+  const before = paints;
+  player.notifyActivity();
+  player.setGaze({ x: 1, y: -1 });
+  player.updateOptions({ playbackPhase: "scrolling", reducedMotion: false, foreground: true });
+  time.advance(6000);
+  assert.equal(paints, before);
+  assert.equal(time.pending, 0);
 });

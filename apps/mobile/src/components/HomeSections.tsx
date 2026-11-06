@@ -1,5 +1,5 @@
 import { aboutDestinations, aboutIntro, hero, homePageCopy, links } from "@qntx-ui/content";
-import { fontFamilies, homeTheme } from "@qntx-ui/design-tokens";
+import { fontFamilies, homeTheme, palette, spacing, typeScale } from "@qntx-ui/design-tokens";
 import type { ReactElement } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 
@@ -81,7 +81,7 @@ export function ResourcesSection({ compact = false }: { compact?: boolean }): Re
   );
 }
 const styles = StyleSheet.create({
-  opening: { paddingHorizontal: 24, width: "100%", maxWidth: 620, alignSelf: "center" },
+  opening: { paddingHorizontal: spacing.action, width: "100%", maxWidth: 620, alignSelf: "center" },
   mission: {
     fontFamily,
     fontSize: 21,
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: homeTheme.opening.copy,
     textAlign: "center",
-    marginTop: 14,
+    marginTop: spacing.text,
   },
   about: { paddingHorizontal: 26, alignItems: "center", width: "100%" },
   aboutTitle: {
@@ -110,24 +110,24 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 26,
   },
-  aboutTitleCompact: { fontSize: 38, lineHeight: 44 },
+  aboutTitleCompact: { fontSize: typeScale.title, lineHeight: 44 },
   aboutAccent: { color: homeTheme.about.accent },
   aboutCopy: {
     fontFamily,
     color: homeTheme.about.copy,
-    fontSize: 16,
+    fontSize: typeScale.body,
     lineHeight: 27,
     textAlign: "center",
     maxWidth: 520,
   },
   resources: {
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.action,
     paddingVertical: 32,
     width: "100%",
     maxWidth: 680,
     alignSelf: "center",
   },
-  resourcesCompact: { paddingVertical: 20 },
+  resourcesCompact: { paddingVertical: spacing.md },
   resourcesTitle: {
     fontFamily,
     color: homeTheme.resources.ink,
@@ -135,34 +135,51 @@ const styles = StyleSheet.create({
     lineHeight: 43,
     fontWeight: "500",
     letterSpacing: -0.8,
-    marginBottom: 24,
+    marginBottom: spacing.action,
   },
   resourcesTitleCompact: { fontSize: 32, lineHeight: 38, marginBottom: 18 },
   resourcesAccent: { color: homeTheme.resources.accent },
-  resourcesCopy: { fontFamily, color: homeTheme.resources.copy, fontSize: 16, lineHeight: 26 },
-  actions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 20, marginTop: 24 },
+  resourcesCopy: {
+    fontFamily,
+    color: homeTheme.resources.copy,
+    fontSize: typeScale.body,
+    lineHeight: 26,
+  },
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: spacing.md,
+    marginTop: spacing.action,
+  },
   primary: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 24,
-    backgroundColor: "#1b1d19",
+    gap: spacing.action,
+    backgroundColor: palette.brand,
     borderRadius: 28,
     paddingHorizontal: 22,
-    paddingVertical: 12,
+    paddingVertical: spacing.sm,
   },
-  primaryText: { fontFamily, color: "#ffffff", fontSize: 14, lineHeight: 22, fontWeight: "600" },
-  primaryArrow: { color: "#ffffff", fontSize: 21 },
+  primaryText: {
+    fontFamily,
+    color: palette.white,
+    fontSize: typeScale.control,
+    lineHeight: 22,
+    fontWeight: "600",
+  },
+  primaryArrow: { color: palette.white, fontSize: 21 },
   destinations: { marginTop: 26, gap: 8 },
   destination: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: spacing.text,
     paddingVertical: 22,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.sm,
   },
   destinationCompact: { paddingVertical: 18 },
-  destinationNumber: { fontFamily, color: homeTheme.resources.copy, fontSize: 12 },
-  destinationCopy: { flex: 1, gap: 6 },
+  destinationNumber: { fontFamily, color: homeTheme.resources.copy, fontSize: typeScale.caption },
+  destinationCopy: { flex: 1, gap: spacing.xs },
   destinationTitle: {
     fontFamily,
     color: homeTheme.resources.ink,
@@ -170,6 +187,11 @@ const styles = StyleSheet.create({
     lineHeight: 27,
     fontWeight: "500",
   },
-  destinationDetail: { fontFamily, color: homeTheme.resources.copy, fontSize: 13, lineHeight: 20 },
+  destinationDetail: {
+    fontFamily,
+    color: homeTheme.resources.copy,
+    fontSize: typeScale.label,
+    lineHeight: 20,
+  },
   destinationArrow: { color: homeTheme.resources.accent, fontSize: 22 },
 });

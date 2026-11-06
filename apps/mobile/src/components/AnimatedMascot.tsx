@@ -1,3 +1,4 @@
+import { mascotMaterial, palette } from "@qntx-ui/design-tokens";
 import { staticMascotPaths } from "@qntx-ui/mascot";
 import type { MascotPaths } from "@qntx-ui/mascot";
 import type { ReactElement, Ref } from "react";
@@ -72,7 +73,9 @@ export function AnimatedMascot({
           body.current?.setNativeProps({
             d: paths.body,
             fill:
-              paths.body === staticMascotPaths.body ? "#1b1d19" : "url(#mobile-mascot-material)",
+              paths.body === staticMascotPaths.body
+                ? palette.brand
+                : "url(#mobile-mascot-material)",
           });
         }
         if (paths.left !== previous.left) {
@@ -103,20 +106,22 @@ export function AnimatedMascot({
     <Svg width={size} height={size} viewBox="-150 -150 300 300" {...accessibilityProps}>
       <Defs>
         <LinearGradient id="mobile-mascot-material" x1="0" y1="0" x2="1" y2="1">
-          <Stop offset="0" stopColor="#60645b" />
-          <Stop offset="0.4" stopColor="#363a31" />
-          <Stop offset="1" stopColor="#191c17" />
+          {mascotMaterial.map((stop) => (
+            <Stop key={stop.offset} offset={stop.offset} stopColor={stop.color} />
+          ))}
         </LinearGradient>
       </Defs>
       <Path
         ref={body}
         d={drawing.body}
-        fill={drawing.body === staticMascotPaths.body ? "#1b1d19" : "url(#mobile-mascot-material)"}
+        fill={
+          drawing.body === staticMascotPaths.body ? palette.brand : "url(#mobile-mascot-material)"
+        }
         fillRule="evenodd"
         testID="mobile-mascot-body"
       />
-      <Path ref={left} d={drawing.left} fill="#ffffff" />
-      <Path ref={right} d={drawing.right} fill="#ffffff" />
+      <Path ref={left} d={drawing.left} fill={palette.white} />
+      <Path ref={right} d={drawing.right} fill={palette.white} />
     </Svg>
   );
 }

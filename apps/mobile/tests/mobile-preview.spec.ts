@@ -1,6 +1,7 @@
-/* oxlint-disable no-await-in-loop -- Gestures and viewports are verified in order. */
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
+/* oxlint-disable no-await-in-loop -- Gestures and viewports are verified in order. */
+import { homePageCopy } from "@qntx-ui/content";
 
 async function scrollToProgress(page: Page, amount: number): Promise<void> {
   await page.getByTestId("mobile-scroll-view").evaluate((element, value) => {
@@ -20,8 +21,11 @@ test("mobile has the current shared mission, system font and no deleted sections
   });
   await page.goto("/");
   await expect(page.getByTestId("mobile-section-opening")).toHaveCSS("opacity", "1");
-  await expect(page.getByTestId("mobile-opening-content")).toHaveText(
-    /Building open protocols.*autonomous AI agents.*To transact/s,
+  await expect(page.getByTestId("mobile-opening-content").getByRole("heading")).toContainText(
+    homePageCopy.missionLead,
+  );
+  await expect(page.getByTestId("mobile-opening-content").getByRole("heading")).toContainText(
+    homePageCopy.missionAccent,
   );
   await expect(
     page.getByText(

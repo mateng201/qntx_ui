@@ -9,7 +9,7 @@ function coordinate(value: number): string {
 }
 
 // Both renderers retain the original 0.86 safety inset and spline geometry.
-export function contourPath(points: Point[]): string {
+function contourPath(points: Point[]): string {
   const [first] = points;
   if (first === undefined) {
     return "";

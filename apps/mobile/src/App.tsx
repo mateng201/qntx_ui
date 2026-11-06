@@ -1,5 +1,5 @@
 import { links } from "@qntx-ui/content";
-import { fontFamilies } from "@qntx-ui/design-tokens";
+import { fontFamilies, homeMotion, palette } from "@qntx-ui/design-tokens";
 import { easeMascotDocking, getMascotDockingPosition, mascotDockingTiming } from "@qntx-ui/mascot";
 import { StatusBar } from "expo-status-bar";
 import type { ComponentRef, ReactElement } from "react";
@@ -110,7 +110,7 @@ function MobileHomeScreen(): ReactElement {
       offset.current = Math.max(0, value);
       const progress = offset.current / scrollDistance;
       const next =
-        progress < 0.2
+        progress < homeMotion.backgroundEnd
           ? "opening"
           : progress < mascotDockingTiming.scrollStart
             ? "about"
@@ -132,28 +132,28 @@ function MobileHomeScreen(): ReactElement {
 
   const bounded = { extrapolate: "clamp" as const };
   const welcomeOpacity = scrollY.interpolate({
-    inputRange: [0, scrollDistance * 0.12],
+    inputRange: [0, scrollDistance * homeMotion.openingFadeEnd],
     outputRange: [1, 0],
     ...bounded,
   });
   const aboutOpacity = scrollY.interpolate({
     inputRange: [
-      scrollDistance * 0.18,
-      scrollDistance * 0.28,
-      scrollDistance * 0.48,
-      scrollDistance * 0.58,
+      scrollDistance * homeMotion.aboutEnter,
+      scrollDistance * (homeMotion.aboutEnter + homeMotion.aboutFade),
+      scrollDistance * homeMotion.aboutLeave,
+      scrollDistance * mascotDockingTiming.scrollStart,
     ],
     outputRange: [0, 1, 1, 0],
     ...bounded,
   });
   const recedingOpacity = scrollY.interpolate({
-    inputRange: [0, scrollDistance * 0.2],
-    outputRange: [1, 0.045],
+    inputRange: [0, scrollDistance * homeMotion.backgroundEnd],
+    outputRange: [1, homeMotion.backgroundOpacity],
     ...bounded,
   });
   const recedingScale = scrollY.interpolate({
-    inputRange: [0, scrollDistance * 0.2],
-    outputRange: [1, 0.8],
+    inputRange: [0, scrollDistance * homeMotion.backgroundEnd],
+    outputRange: [1, homeMotion.backgroundScale],
     ...bounded,
   });
   const samples = Array.from({ length: 41 }, (_, index) => index / 40);
@@ -175,7 +175,10 @@ function MobileHomeScreen(): ReactElement {
   );
   const lift = samples.map((progress) => Math.sin(Math.PI * progress) ** 2);
   const arrival = samples.map((progress) => {
-    const t = Math.min(1, Math.max(0, (progress - 0.78) / 0.22));
+    const t = Math.min(
+      1,
+      Math.max(0, (progress - homeMotion.arrivalStart) / (1 - homeMotion.arrivalStart)),
+    );
     return t * t * (3 - 2 * t);
   });
   const opacity = Animated.add(
@@ -183,9 +186,10 @@ function MobileHomeScreen(): ReactElement {
     map(
       samples.map(
         (progress, index) =>
-          (0.045 + 0.22 * Math.sin(Math.PI * progress)) * (1 - (arrival[index] ?? 0)) +
+          (homeMotion.backgroundOpacity + homeMotion.flightOpacity * Math.sin(Math.PI * progress)) *
+            (1 - (arrival[index] ?? 0)) +
           (arrival[index] ?? 0) -
-          0.045,
+          homeMotion.backgroundOpacity,
       ),
     ),
   );
@@ -213,7 +217,11 @@ function MobileHomeScreen(): ReactElement {
         map(
           samples.map(
             (progress) =>
-              1 + (dockSize / (size * 0.8) - 1) * progress * progress * (3 - 2 * progress),
+              1 +
+              (dockSize / (size * homeMotion.backgroundScale) - 1) *
+                progress *
+                progress *
+                (3 - 2 * progress),
           ),
         ),
       ),
@@ -379,7 +387,7 @@ export function App(): ReactElement {
   );
 }
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#fafaf8" },
+  safeArea: { flex: 1, backgroundColor: palette.surface },
   frame: { flex: 1, width: "100%", maxWidth: 760, alignSelf: "center", position: "relative" },
   header: {
     height: headerHeight,
@@ -389,11 +397,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
     zIndex: 20,
-    backgroundColor: "#fafaf8",
+    backgroundColor: palette.surface,
   },
   brand: { flexDirection: "row", alignItems: "center", gap: 9, minHeight: 44 },
   dock: { width: dockSize, height: dockSize },
-  brandName: { fontFamily, color: "#1b1d19", fontSize: 22, fontWeight: "600", letterSpacing: -0.5 },
+  brandName: {
+    fontFamily,
+    color: palette.brand,
+    fontSize: 22,
+    fontWeight: "600",
+    letterSpacing: -0.5,
+  },
   headerLinks: { flexDirection: "row", gap: 16, alignItems: "center" },
   scroller: { flex: 1 },
   scrollContent: { flexGrow: 1 },

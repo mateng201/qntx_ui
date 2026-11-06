@@ -43,7 +43,7 @@ const probes = [
   },
   {
     file: "apps/web/src/__boundary_probe__.ts",
-    source: 'import { links } from "@qntx-ui/content"; export const url = links.website;',
+    source: 'import { links } from "@qntx-ui/content"; export const url = links.github;',
     forbidden: false,
   },
 ];

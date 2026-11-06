@@ -1,5 +1,5 @@
 ---
-import { fontFamilies, homeTheme, palette } from "@qntx-ui/design-tokens";
+import { fontFamilies, homeTheme, palette, spacing, typeScale } from "@qntx-ui/design-tokens";
 import { HomePage } from "../components/HomePage";
 import "../styles/global.css";
 import "../styles/home-page.css";
@@ -9,10 +9,19 @@ const homeVariables = Object.entries(homeTheme)
     Object.entries(colors).map(([role, color]) => `--${section}-${role}:${color}`),
   )
   .join(";");
+const cssName = (name: string) => name.replaceAll(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+const designVariables = [
+  ...Object.entries(palette).map(([name, value]) => `--color-${cssName(name)}:${value}`),
+  ...Object.entries(spacing).map(([name, value]) => `--space-${name}:${value}px`),
+  ...Object.entries(typeScale).map(([name, value]) => `--type-${name}:${value}px`),
+].join(";");
 ---
 
 <!doctype html>
-<html lang="en" style={`--hover:${palette.hover};--font-sans:${fontFamilies.web};${homeVariables}`}>
+<html
+  lang="en"
+  style={`--hover:${palette.hover};--font-sans:${fontFamilies.web};${homeVariables};${designVariables}`}
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,7 +29,7 @@ const homeVariables = Object.entries(homeTheme)
       name="description"
       content="QuantX builds open protocols and infrastructure for autonomous AI agents to transact, collaborate, govern, and evolve on-chain."
     />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content={palette.white} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>QuantX — An open economy for autonomous agents</title>
     <script is:inline type="module" {...{ blocking: "render" }}>

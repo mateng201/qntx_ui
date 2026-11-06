@@ -1,3 +1,4 @@
+import { mascotMaterial, palette } from "@qntx-ui/design-tokens";
 import type { ReactElement } from "react";
 
 import {
@@ -36,14 +37,14 @@ export function HomePage(): ReactElement {
         <svg viewBox="-150 -150 300 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
             <linearGradient id="mascot-material" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#60645b" />
-              <stop offset="0.4" stopColor="#363a31" />
-              <stop offset="1" stopColor="#191c17" />
+              {mascotMaterial.map((stop) => (
+                <stop key={stop.offset} offset={stop.offset} stopColor={stop.color} />
+              ))}
             </linearGradient>
           </defs>
           <path data-mascot-body d={brandMarkPath} fill="currentColor" fillRule="evenodd" />
-          <path data-mascot-eye="left" d="M0 0Z" fill="#ffffff" />
-          <path data-mascot-eye="right" d="M0 0Z" fill="#ffffff" />
+          <path data-mascot-eye="left" d="M0 0Z" fill={palette.white} />
+          <path data-mascot-eye="right" d="M0 0Z" fill={palette.white} />
         </svg>
       </div>
 

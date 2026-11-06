@@ -1,3 +1,5 @@
+import { homeMotion } from "@qntx-ui/design-tokens";
+
 import {
   createMascotDockingCurve,
   easeMascotDocking,
@@ -18,7 +20,10 @@ function smoothStep(value: number): number {
 }
 
 function getSectionOpacity(progress: number, start: number, end: number): number {
-  return smoothStep((progress - start) / 0.1) * (1 - smoothStep((progress - end) / 0.1));
+  return (
+    smoothStep((progress - start) / homeMotion.aboutFade) *
+    (1 - smoothStep((progress - end) / homeMotion.aboutFade))
+  );
 }
 
 function getDocumentSectionOpacity(bounds: DOMRect, headerBottom: number): number {
@@ -50,6 +55,7 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
   let size = 220;
   let headerBottom = 0;
   let target = { x: 0, y: 0, size: 40 };
+  let mascotCenter = { x: innerWidth / 2, y: innerHeight / 2 };
   let previousSectionId = "";
   let docking = 0;
   let targetDocking = 0;
@@ -66,6 +72,15 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
     // Fractional viewport sizes can leave the browser's real endpoint just below 1.
     const progress =
       top + scrollDistance - scrollY <= 2 ? 1 : clampProgress((scrollY - top) / scrollDistance);
+    const isDocumentLayout = root.dataset["scrollLayout"] === "document";
+    // Read all document geometry before writing animated styles.
+    const documentSections = isDocumentLayout
+      ? sections.map((section) => ({
+          section,
+          top: section.getBoundingClientRect().top,
+          content: (section.firstElementChild ?? section).getBoundingClientRect(),
+        }))
+      : [];
     const desiredDocking = getMascotDockingProgress(progress);
     if (dockingTransition !== undefined) {
       const elapsed = clampProgress(
@@ -100,8 +115,8 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
             ? "opening"
             : "scrolling",
     );
-    const receding = smoothStep(progress / 0.2);
-    const backgroundScale = 1 - receding * 0.2;
+    const receding = smoothStep(progress / homeMotion.backgroundEnd);
+    const backgroundScale = 1 - receding * (1 - homeMotion.backgroundScale);
     const scale = backgroundScale + (target.size / size - backgroundScale) * smoothStep(docking);
     const position = getMascotDockingPosition(
       { x: innerWidth / 2, y: innerHeight / 2 },
@@ -109,11 +124,13 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
       docking,
       dockingCurve,
     );
+    mascotCenter = position;
     // Translate in screen coordinates; scale about the mascot's center so the dock is exact.
     mascot.style.transform = `translate3d(${position.x - size / 2}px, ${position.y - size / 2}px, 0) scale(${scale})`;
-    const arrival = smoothStep((docking - 0.78) / 0.22);
+    const arrival = smoothStep((docking - homeMotion.arrivalStart) / (1 - homeMotion.arrivalStart));
     const flightLift = Math.sin(Math.PI * docking);
-    const backgroundOpacity = 1 - receding * 0.955 + 0.22 * flightLift;
+    const backgroundOpacity =
+      1 - receding * (1 - homeMotion.backgroundOpacity) + homeMotion.flightOpacity * flightLift;
     mascot.style.opacity = String(Math.min(1, backgroundOpacity * (1 - arrival) + arrival));
     const flightSide = Math.sign(dockingCurve.bend);
     const flightDepth = flightLift * flightLift;
@@ -123,21 +140,22 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
     mascot.style.setProperty("--mascot-depth", `${36 * flightDepth}px`);
     mascot.style.setProperty("--mascot-shadow-y", `${16 * flightDepth}px`);
     mascot.style.setProperty("--mascot-shadow-blur", `${12 * flightDepth}px`);
-    mascot.dataset["mascotBackground"] = String(progress >= 0.12 && docking < 0.95);
+    mascot.dataset["mascotBackground"] = String(
+      progress >= homeMotion.openingFadeEnd && docking < 0.95,
+    );
     mascot.dataset["mascotTravelling"] = String(
       dockingTransition !== undefined || (docking > 0.001 && docking < 0.999),
     );
     mascot.dataset["dockingCurve"] = dockingCurve.bend.toFixed(5);
     let activeSectionId =
-      progress < 0.2
+      progress < homeMotion.backgroundEnd
         ? "opening"
         : progress < mascotDockingTiming.scrollStart
           ? "about"
           : "resources";
-    const isDocumentLayout = root.dataset["scrollLayout"] === "document";
     if (isDocumentLayout) {
-      for (const section of sections) {
-        if (section.getBoundingClientRect().top <= innerHeight * 0.55) {
+      for (const { section, top: sectionTop } of documentSections) {
+        if (sectionTop <= innerHeight * 0.55) {
           activeSectionId = section.dataset["pageSection"] ?? activeSectionId;
         }
       }
@@ -145,8 +163,11 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
     // Follow the rendered flight, including its easing and reversals, rather than raw scroll input.
     const resourcesOpacity = easeMascotDocking(docking);
     const sectionOpacities: Record<string, number> = {
-      opening: 1 - smoothStep(progress / 0.12),
-      about: Math.min(getSectionOpacity(progress, 0.18, 0.48), 1 - resourcesOpacity),
+      opening: 1 - smoothStep(progress / homeMotion.openingFadeEnd),
+      about: Math.min(
+        getSectionOpacity(progress, homeMotion.aboutEnter, homeMotion.aboutLeave),
+        1 - resourcesOpacity,
+      ),
       resources: resourcesOpacity,
     };
     for (const section of sections) {
@@ -155,9 +176,11 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
         section.removeAttribute("aria-hidden");
         section.style.removeProperty("transform");
         section.style.removeProperty("pointer-events");
-        const contentBounds = (section.firstElementChild ?? section).getBoundingClientRect();
+        const contentBounds = documentSections.find((entry) => entry.section === section)?.content;
         section.style.opacity = String(
-          reducedMotion.matches ? 1 : getDocumentSectionOpacity(contentBounds, headerBottom),
+          reducedMotion.matches || contentBounds === undefined
+            ? 1
+            : getDocumentSectionOpacity(contentBounds, headerBottom),
         );
         delete section.dataset["visible"];
         continue;
@@ -254,7 +277,7 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
       observer.observe(section.firstElementChild);
     }
   }
-  const animation = initializeMascotPlayback(mascot);
+  const animation = initializeMascotPlayback(mascot, () => mascotCenter);
   const disposeWheelNavigation = initializeWheelSectionNavigation(root, {
     getStops: () => [
       { id: "opening", top },
@@ -262,7 +285,7 @@ export function initializeHomePageScroll(root: HTMLElement): () => void {
       { id: "resources", top: top + scrollDistance },
     ],
     isSettling: () => dockingTransition !== undefined,
-    renderFrame: () => renderScrollFrame(),
+    renderFrame: scheduleScrollRender,
   });
   measureScrollLayout();
   renderScrollFrame();

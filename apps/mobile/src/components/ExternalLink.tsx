@@ -1,5 +1,5 @@
 import { githubIconPath } from "@qntx-ui/content";
-import { fontFamilies, palette } from "@qntx-ui/design-tokens";
+import { fontFamilies, palette, spacing, typeScale } from "@qntx-ui/design-tokens";
 import type { ReactElement, ReactNode } from "react";
 import { useState } from "react";
 import { Alert, Linking, Platform, Pressable, StyleSheet, Text } from "react-native";
@@ -61,7 +61,7 @@ export function ExternalLink({
 
 const styles = StyleSheet.create({
   link: { minHeight: 44, justifyContent: "center", borderRadius: 6 },
-  iconLink: { flexDirection: "row", alignItems: "center", gap: 6 },
+  iconLink: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   label: {
     fontFamily:
       Platform.OS === "web"
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
         : Platform.OS === "ios"
           ? fontFamilies.ios
           : fontFamilies.android,
-    fontSize: 14,
+    fontSize: typeScale.control,
     lineHeight: 22,
     fontWeight: "500",
   },
