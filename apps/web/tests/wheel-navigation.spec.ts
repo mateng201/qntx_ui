@@ -6,14 +6,15 @@ import type { initializeWheelSectionNavigation as WheelInitializer } from "../sr
 declare global {
   var disposeWheelFixture: () => void;
   var wheelFixtureVisits: number[];
+  var wheelFixtureSettlingUntil: number;
 }
 
-/** Exercise five queued trips without adding artificial screens to the actual three-scene site. */
-async function installSixSceneFixture(page: Page): Promise<void> {
+/** Exercise long journeys without adding artificial screens to the actual three-scene site. */
+async function installNavigationFixture(page: Page, stopCount = 6): Promise<void> {
   await page.locator("[data-home-page]").evaluate(() => {
     document.dispatchEvent(new Event("astro:before-swap"));
   });
-  await page.evaluate(async () => {
+  await page.evaluate(async (count) => {
     const moduleUrl = "/src/scripts/wheel-section-navigation.ts";
     const navigationModule: unknown = await import(moduleUrl);
     function assertNavigationModule(
@@ -33,14 +34,18 @@ async function installSixSceneFixture(page: Page): Promise<void> {
     const root = document.createElement("main");
     root.dataset["wheelFixture"] = "true";
     root.dataset["scrollLayout"] = "pinned";
-    root.style.height = `${innerHeight * 6}px`;
+    root.style.height = `${innerHeight * count}px`;
     document.body.replaceChildren(root);
     scrollTo({ top: 0, behavior: "instant" });
     globalThis.wheelFixtureVisits = [0];
+    globalThis.wheelFixtureSettlingUntil = 0;
     globalThis.disposeWheelFixture = initializeWheelSectionNavigation(root, {
       getStops: () =>
-        Array.from({ length: 6 }, (_, index) => ({ id: String(index), top: innerHeight * index })),
-      isSettling: () => false,
+        Array.from({ length: count }, (_, index) => ({
+          id: String(index),
+          top: innerHeight * index,
+        })),
+      isSettling: () => performance.now() < globalThis.wheelFixtureSettlingUntil,
       renderFrame: () => {
         const stop = Math.round(scrollY / innerHeight);
         if (
@@ -51,7 +56,12 @@ async function installSixSceneFixture(page: Page): Promise<void> {
         }
       },
     });
-  });
+  }, stopCount);
+}
+
+async function pauseFixtureTime(page: Page): Promise<void> {
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(Date.now() + 60000));
 }
 
 test("one small wheel step animates to the next scene without further input", async ({ page }) => {
@@ -79,7 +89,9 @@ test("one small wheel step animates to the next scene without further input", as
   await expect(root).toHaveAttribute("data-scroll-progress", "0.0000");
 });
 
-test("continuous input queues adjacent scenes without needing a quiet gap", async ({ page }) => {
+test("continuous fresh input advances adjacent scenes without needing a quiet gap", async ({
+  page,
+}) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
   const root = page.locator("[data-home-page]");
@@ -115,42 +127,198 @@ test("continuous input queues adjacent scenes without needing a quiet gap", asyn
   await expect(root).toHaveAttribute("data-active-section", "about");
 });
 
-test("five rapid wheel steps visit five adjacent stops and drain the bounded queue", async ({
+test("five rapid steps expire after release instead of playing five historical trips", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
-  await installSixSceneFixture(page);
+  await installNavigationFixture(page);
+  await pauseFixtureTime(page);
   const root = page.locator("[data-wheel-fixture]");
-  await root.evaluate(async (element) => {
-    await new Promise<void>((resolve) => {
-      let count = 0;
-      const emit = (): void => {
+  await root.evaluate((element) => {
+    for (const delay of [0, 140, 280, 420, 560]) {
+      setTimeout(() => {
         element.dispatchEvent(new WheelEvent("wheel", { deltaY: 1, cancelable: true }));
-        count += 1;
-        if (count < 5) {
-          setTimeout(emit, 140);
-        } else {
-          resolve();
-        }
-      };
-      emit();
-    });
+      }, delay);
+    }
   });
-  await expect(root).not.toHaveAttribute("data-wheel-navigating", "true", { timeout: 8000 });
-  expect(await page.evaluate(() => globalThis.wheelFixtureVisits)).toEqual([0, 1, 2, 3, 4, 5]);
-  await root.dispatchEvent("wheel", { deltaY: -1, cancelable: true });
+  await page.clock.runFor(600);
   await expect(root).toHaveAttribute("data-wheel-navigating", "true");
+  await page.clock.runFor(3000);
   await expect(root).not.toHaveAttribute("data-wheel-navigating", "true");
-  expect(await page.evaluate(() => scrollY / innerHeight)).toBe(4);
+  expect(await page.evaluate(() => globalThis.wheelFixtureVisits)).toEqual([0, 1]);
+  await page.clock.runFor(5000);
+  expect(await page.evaluate(() => scrollY / innerHeight)).toBe(1);
+  await root.dispatchEvent("wheel", { deltaY: -1, cancelable: true });
+  await page.clock.runFor(1200);
+  await expect(root).not.toHaveAttribute("data-wheel-navigating", "true");
+  expect(await page.evaluate(() => scrollY / innerHeight)).toBe(0);
+  await page.evaluate(() => globalThis.disposeWheelFixture());
+});
+
+test("sustained fresh input visits five adjacent scenes in order", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  await installNavigationFixture(page);
+  await pauseFixtureTime(page);
+  await page.locator("[data-wheel-fixture]").evaluate((element) => {
+    const until = performance.now() + 5800;
+    const emit = (): void => {
+      element.dispatchEvent(new WheelEvent("wheel", { deltaY: 1, cancelable: true }));
+      if (performance.now() < until) {
+        setTimeout(emit, 35);
+      }
+    };
+    emit();
+  });
+  await page.clock.runFor(7000);
+  expect(await page.evaluate(() => globalThis.wheelFixtureVisits)).toEqual([0, 1, 2, 3, 4, 5]);
+  await expect(page.locator("[data-wheel-fixture]")).not.toHaveAttribute(
+    "data-wheel-navigating",
+    "true",
+  );
+  await page.evaluate(() => globalThis.disposeWheelFixture());
+});
+
+for (const [inputAt, expectedStop] of [
+  [700, 1],
+  [1000, 2],
+] as const) {
+  test(`continuation at ${inputAt}ms is checked for freshness when the trip finishes`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    await installNavigationFixture(page);
+    await pauseFixtureTime(page);
+    const root = page.locator("[data-wheel-fixture]");
+    await root.dispatchEvent("wheel", { deltaY: 1, cancelable: true });
+    await page.clock.runFor(inputAt);
+    await root.dispatchEvent("wheel", { deltaY: 1, cancelable: true });
+    await page.clock.runFor(4000);
+    expect(await page.evaluate(() => scrollY / innerHeight)).toBe(expectedStop);
+    await expect(root).not.toHaveAttribute("data-wheel-navigating", "true");
+    await page.evaluate(() => globalThis.disposeWheelFixture());
+  });
+}
+
+test("continuation can expire while waiting for mascot settling", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  await installNavigationFixture(page);
+  await pauseFixtureTime(page);
+  await page.evaluate(() => {
+    globalThis.wheelFixtureSettlingUntil = performance.now() + 2000;
+  });
+  const root = page.locator("[data-wheel-fixture]");
+  await root.dispatchEvent("wheel", { deltaY: 1, cancelable: true });
+  await page.clock.runFor(1000);
+  await root.dispatchEvent("wheel", { deltaY: 1, cancelable: true });
+  await page.clock.runFor(500);
+  await expect(root).toHaveAttribute("data-wheel-navigating", "true");
+  await page.clock.runFor(3000);
+  expect(await page.evaluate(() => globalThis.wheelFixtureVisits)).toEqual([0, 1]);
+  await expect(root).not.toHaveAttribute("data-wheel-navigating", "true");
+  await page.evaluate(() => globalThis.disposeWheelFixture());
+});
+
+test("a suspended frame cannot revive old continuation input", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  await installNavigationFixture(page);
+  await pauseFixtureTime(page);
+  const root = page.locator("[data-wheel-fixture]");
+  await root.dispatchEvent("wheel", { deltaY: 1, cancelable: true });
+  await page.clock.runFor(500);
+  await root.dispatchEvent("wheel", { deltaY: 1, cancelable: true });
+  await page.clock.fastForward(10000);
+  await page.clock.runFor(100);
+  expect(await page.evaluate(() => globalThis.wheelFixtureVisits)).toEqual([0, 1]);
+  await expect(root).not.toHaveAttribute("data-wheel-navigating", "true");
+  await page.evaluate(() => globalThis.disposeWheelFixture());
+});
+
+test("ten seconds of input across twenty stops leaves no historical backlog after release", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  await installNavigationFixture(page, 20);
+  await pauseFixtureTime(page);
+  const root = page.locator("[data-wheel-fixture]");
+  await root.evaluate((element) => {
+    const until = performance.now() + 10000;
+    const emit = (): void => {
+      element.dispatchEvent(new WheelEvent("wheel", { deltaY: 120, cancelable: true }));
+      if (performance.now() < until) {
+        setTimeout(emit, 10);
+      }
+    };
+    emit();
+  });
+  await page.clock.runFor(10350);
+  const visitedAfterExpiry = await page.evaluate(() => globalThis.wheelFixtureVisits.length);
+  expect(visitedAfterExpiry).toBeGreaterThan(5);
+  expect(visitedAfterExpiry).toBeLessThan(20);
+  await page.clock.runFor(5000);
+  // Only the already-running trip may finish after the continuation deadline.
+  expect(await page.evaluate(() => globalThis.wheelFixtureVisits.length)).toBeLessThanOrEqual(
+    visitedAfterExpiry + 1,
+  );
+  await expect(root).not.toHaveAttribute("data-wheel-navigating", "true");
+  const stoppedAt = await page.evaluate(() => scrollY);
+  await page.clock.runFor(5000);
+  expect(await page.evaluate(() => scrollY)).toBe(stoppedAt);
+  await root.dispatchEvent("wheel", { deltaY: -1, cancelable: true });
+  await page.clock.runFor(1200);
+  expect(await page.evaluate(() => scrollY)).toBe(stoppedAt - (page.viewportSize()?.height ?? 0));
+  await page.evaluate(() => globalThis.disposeWheelFixture());
+});
+
+test("an input storm is coalesced into one fresh continuation", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  await installNavigationFixture(page);
+  await pauseFixtureTime(page);
+  const root = page.locator("[data-wheel-fixture]");
+  await root.dispatchEvent("wheel", { deltaY: 1, cancelable: true });
+  await page.clock.runFor(950);
+  await root.evaluate((element) => {
+    for (let count = 0; count < 10000; count += 1) {
+      element.dispatchEvent(new WheelEvent("wheel", { deltaY: 1, cancelable: true }));
+    }
+  });
+  await page.clock.runFor(5000);
+  expect(await page.evaluate(() => globalThis.wheelFixtureVisits)).toEqual([0, 1, 2]);
+  await expect(root).not.toHaveAttribute("data-wheel-navigating", "true");
+  await page.evaluate(() => globalThis.disposeWheelFixture());
+});
+
+test("the leading 100ms window keeps reduced-motion input immediate and reversals unblocked", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await installNavigationFixture(page);
+  await pauseFixtureTime(page);
+  const root = page.locator("[data-wheel-fixture]");
+  await root.dispatchEvent("wheel", { deltaY: 1, cancelable: true });
+  await page.clock.runFor(32);
+  expect(await page.evaluate(() => scrollY / innerHeight)).toBe(1);
+  await root.dispatchEvent("wheel", { deltaY: 1, cancelable: true });
+  await page.clock.runFor(32);
+  expect(await page.evaluate(() => scrollY / innerHeight)).toBe(1);
+  await root.dispatchEvent("wheel", { deltaY: -1, cancelable: true });
+  await page.clock.runFor(32);
+  expect(await page.evaluate(() => scrollY / innerHeight)).toBe(0);
   await page.evaluate(() => globalThis.disposeWheelFixture());
 });
 
 for (const action of ["pointerdown", "resize", "keydown", "dispose"] as const) {
-  test(`${action} cancels both the running trip and pending queue`, async ({ page }) => {
+  test(`${action} cancels both the running trip and continuation intent`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/");
-    await installSixSceneFixture(page);
+    await installNavigationFixture(page);
     const root = page.locator("[data-wheel-fixture]");
     await root.dispatchEvent("wheel", { deltaY: 1, cancelable: true });
     await page.waitForTimeout(160);
@@ -188,12 +356,12 @@ for (const action of ["pointerdown", "resize", "keydown", "dispose"] as const) {
   });
 }
 
-test("reduced-motion changes cancel queued work and still accept the next input", async ({
+test("reduced-motion changes cancel continuation and still accept the next input", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
-  await installSixSceneFixture(page);
+  await installNavigationFixture(page);
   const root = page.locator("[data-wheel-fixture]");
   await root.dispatchEvent("wheel", { deltaY: 1, cancelable: true });
   await page.waitForTimeout(160);
@@ -208,7 +376,7 @@ test("reduced-motion changes cancel queued work and still accept the next input"
   await page.evaluate(() => globalThis.disposeWheelFixture());
 });
 
-test("opposite input immediately reverses the trip and discards the forward queue", async ({
+test("opposite input immediately reverses the trip and discards forward continuation", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
@@ -223,6 +391,7 @@ test("opposite input immediately reverses the trip and discards the forward queu
   const turningPoint = await root.evaluate((element) => {
     // Sample at event delivery, not before a potentially delayed browser mouse command.
     const position = scrollY;
+    element.dispatchEvent(new WheelEvent("wheel", { deltaY: 1, cancelable: true }));
     element.dispatchEvent(new WheelEvent("wheel", { deltaY: -1, cancelable: true }));
     return position;
   });

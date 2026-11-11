@@ -15,7 +15,9 @@ type SectionTransition = {
   duration: number;
 };
 
-/** Advance on the first input, coalesce sustained input and reverse from the current position. */
+type ContinuationIntent = { direction: number; updatedAt: number };
+
+/** Complete the current step, then continue only while the user's input is still fresh. */
 export function initializeWheelSectionNavigation(
   root: HTMLElement,
   options: WheelNavigationOptions,
@@ -23,11 +25,12 @@ export function initializeWheelSectionNavigation(
   const events = new AbortController();
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   const duration = 1100;
-  const inputInterval = 120;
+  const inputWindowMs = 100;
+  const continuationTimeoutMs = 300;
   let frameId: number | undefined;
   let transition: SectionTransition | undefined;
-  // A destination index is a bounded queue: at most one trip per remaining scene.
-  let queuedDestination: number | undefined;
+  // Capacity is structurally one: repeated input refreshes this slot, never a backlog.
+  let continuation: ContinuationIntent | undefined;
   let lastAcceptedAt = Number.NEGATIVE_INFINITY;
   let lastAcceptedDirection = 0;
 
@@ -37,7 +40,7 @@ export function initializeWheelSectionNavigation(
       frameId = undefined;
     }
     transition = undefined;
-    queuedDestination = undefined;
+    continuation = undefined;
     lastAcceptedAt = Number.NEGATIVE_INFINITY;
     lastAcceptedDirection = 0;
     delete root.dataset["wheelNavigating"];
@@ -75,6 +78,10 @@ export function initializeWheelSectionNavigation(
       cancelNavigation();
       return;
     }
+    // Use the existing RAF clock: no debounce timer or per-event queue allocation.
+    if (continuation !== undefined && time - continuation.updatedAt >= continuationTimeoutMs) {
+      continuation = undefined;
+    }
     const progress = reducedMotion.matches
       ? 1
       : Math.min(1, (time - current.started) / current.duration);
@@ -84,17 +91,21 @@ export function initializeWheelSectionNavigation(
       behavior: "instant",
     });
     options.renderFrame();
-    // The mascot and content must settle together before the next queued trip starts.
+    // Finish the accepted step and its mascot flight, even when the user has released the wheel.
     if (progress < 1 || options.isSettling()) {
       frameId = requestAnimationFrame(advance);
       return;
     }
-    const pendingDirection = Math.sign((queuedDestination ?? current.toIndex) - current.toIndex);
-    if (pendingDirection === 0) {
-      cancelNavigation();
-    } else {
-      navigate(current.toIndex, current.toIndex + pendingDirection, time);
+    const pending = continuation;
+    continuation = undefined;
+    if (pending === undefined) {
+      transition = undefined;
+      delete root.dataset["wheelNavigating"];
+      return;
     }
+    lastAcceptedAt = time;
+    lastAcceptedDirection = pending.direction;
+    navigate(current.toIndex, current.toIndex + pending.direction, time);
   }
 
   root.addEventListener(
@@ -126,33 +137,29 @@ export function initializeWheelSectionNavigation(
       ) {
         const { fromIndex, toIndex } = transition;
         cancelNavigation();
-        queuedDestination = fromIndex;
         lastAcceptedAt = now;
         lastAcceptedDirection = direction;
         navigate(toIndex, fromIndex, now);
         return;
       }
-      // Leading-edge throttle: discarded events do not postpone the next accepted input.
-      if (direction === lastAcceptedDirection && now - lastAcceptedAt < inputInterval) {
+      if (transition !== undefined) {
+        continuation ??= { direction, updatedAt: now };
+        continuation.updatedAt = now;
+        return;
+      }
+      // Leading-edge window: the first input is immediate, including with reduced motion.
+      if (direction === lastAcceptedDirection && now - lastAcceptedAt < inputWindowMs) {
         return;
       }
       lastAcceptedAt = now;
       lastAcceptedDirection = direction;
       const stops = options.getStops();
-      if (transition !== undefined) {
-        queuedDestination = Math.max(
-          0,
-          Math.min(stops.length - 1, (queuedDestination ?? transition.toIndex) + direction),
-        );
-        return;
-      }
       // Use position rather than the fading section's label, including after a manual cancel.
       const next =
         direction > 0
           ? stops.findIndex((stop) => stop.top > scrollY + 2)
           : stops.findLastIndex((stop) => stop.top < scrollY - 2);
       if (next !== -1) {
-        queuedDestination = next;
         navigate(next - direction, next, now);
       }
     },
