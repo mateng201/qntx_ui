@@ -7,7 +7,6 @@
 所有命令都在仓库根目录执行，项目使用一个 `package-lock.json`。
 
 ```powershell
-cd E:\bigshoot\qntx.ui
 npm ci
 ```
 
@@ -58,9 +57,7 @@ npm run dev:mobile -- --no-dev --minify
 
 应用代码位于 `apps/`，共享源码位于 `packages/`。根目录承担依赖安装、任务入口和统一规则。
 
-下面按目录逐个说明文件。职责表先用白话概括用途，再保留技术细节；单独展开的文件也按同样顺序介绍。
-
-命名按职责区分：`HomePage` 是网页结构，`MobileHomeScreen` 是原生首页，`HomeSections` 是原生内容区块；`home-page-scroll` 控制滚动，平台 `mascot-playback` 适配共享播放核心，SVG renderer 负责将计算结果写入 SVG。两端区块统一使用 `opening / about / resources`，播放阶段统一使用 `opening / scrolling / arriving / docked`；`arriving` 提前收拢归位中的表情。区块 ID 与播放阶段分别表达内容位置和播放状态。
+下面按目录逐个说明文件。
 
 | 文件                                             | 职责                                                                                                                                                                    |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -146,7 +143,7 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 让滚轮动一下即可切换一屏，用户松手后也会自动完成动画。
 
-[源码](apps/web/src/scripts/wheel-section-navigation.ts)。`initializeWheelSectionNavigation()` 仅在单屏排版接管纵向 wheel，将当前场景推进到相邻停靠点，用约 1100ms 的 RAF 缓动自动滚到目标；第三屏继续使用原有路径同步逻辑。切换和路径收尾期间忽略重复输入，连续事件之间需有 220ms 的安静间隔才视为新手势，过滤触控板惯性。首尾不循环；Ctrl / Command 缩放、横向滚轮、表单编辑及自然文档排版不被接管。窗口变化、指针按下、滚动按键和销毁都会取消自动滚动，避免与用户的其他操作争抢。
+[源码](apps/web/src/scripts/wheel-section-navigation.ts)。`initializeWheelSectionNavigation()` 仅在单屏排版接管纵向 wheel，首次输入立即触发相邻切屏，用约 1100ms 的 RAF 缓动自动滚到目标；第三屏继续使用原有路径同步逻辑。连续同向输入按 120ms 节流合并，用目标场景索引保存有界队列，当前切屏及路径收尾完成后逐屏推进，最多排到首尾场景。反向输入不受节流等待限制，会清空旧队列，从当前位置平滑返回上一停靠点，部分返程按剩余距离缩短时长。持续滚轮输入（包括持续的触控板惯性事件）可继续推进，不再要求安静间隔。首尾不循环；Ctrl / Command 缩放、横向滚轮、表单编辑及自然文档排版不被接管。窗口变化、指针按下、滚动按键、减少动态效果设置变化和销毁都会清空队列并取消 RAF。
 
 #### `mascot-docking.ts`
 
@@ -179,11 +176,11 @@ Astro 根据此目录中的文件生成 URL。当前仅保留首页路由，由�
 
 ### 3.8 `tests/`
 
-| 文件                                                                               | 职责                                                                                                                       |
-| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| [apps/web/tests/home-page.spec.ts](apps/web/tests/home-page.spec.ts)               | 自动检查滚动叙事和 SVG 动画是否正常。覆盖轮廓插值、目标定位、尺寸变化、无脚本与无障碍分支。                                |
-| [apps/web/tests/responsive.spec.ts](apps/web/tests/responsive.spec.ts)             | 检查设备仿真、触摸、窗口调整和大字体下是否仍是同一个纵向网页。覆盖窄屏、横向持机、内容超高回退、无嵌套滚动与无脚本阅读。   |
-| [apps/web/tests/wheel-navigation.spec.ts](apps/web/tests/wheel-navigation.spec.ts) | 检查滚轮轻动一次能否自动切完一屏。覆盖微小输入、惯性防连跳、首尾边界、浏览器缩放与普通滚动放行，以及控制器销毁后停止动画。 |
+| 文件                                                                               | 职责                                                                                                                                                                           |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [apps/web/tests/home-page.spec.ts](apps/web/tests/home-page.spec.ts)               | 自动检查滚动叙事和 SVG 动画是否正常。覆盖轮廓插值、目标定位、尺寸变化、无脚本与无障碍分支。                                                                                    |
+| [apps/web/tests/responsive.spec.ts](apps/web/tests/responsive.spec.ts)             | 检查设备仿真、触摸、窗口调整和大字体下是否仍是同一个纵向网页。覆盖窄屏、横向持机、内容超高回退、无嵌套滚动与无脚本阅读。                                                       |
+| [apps/web/tests/wheel-navigation.spec.ts](apps/web/tests/wheel-navigation.spec.ts) | 检查轻滚切屏、连续输入排队和反向中断。覆盖六停靠点隔离场景连续五次推进、真实三屏的首尾边界、路径反向同步、持续输入 10 秒、浏览器缩放与普通滚动放行，以及取消或销毁后清空队列。 |
 
 ## 4. `apps/mobile/`
 
@@ -275,21 +272,19 @@ Android 返回键通过 `BackHandler` 根据滚动位置决定返回顶部或交
 
 ### 5.3 `packages/mascot/`
 
-| 文件                                                                                         | 职责                                                                                                                                                                                                                                             |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [packages/mascot/package.json](packages/mascot/package.json)                                 | 声明共享动画计算库的入口，以及它依赖的共享内容库。 声明私有包 `@qntx-ui/mascot`，仅依赖共享 `content`，对外导出源码。                                                                                                                            |
-| [packages/mascot/project.json](packages/mascot/project.json)                                 | 把共享动画计算库登记给 Nx，并配置检查任务。 注册 Nx 共享库、标签和类型 / lint / 边界检查目标。                                                                                                                                                   |
-| [packages/mascot/tsconfig.json](packages/mascot/tsconfig.json)                               | 检查动画计算代码和配套数据，不引入网页或原生 UI 环境。 使用纯 ES2022 类型环境，并纳入静态 JSON 轮廓。                                                                                                                                            |
-| [packages/mascot/src/index.ts](packages/mascot/src/index.ts)                                 | 作为动画库的统一导入入口，两端从这里取得所需计算函数。 统一公开动画引擎、帧类型、形变与路径函数，应用通过此入口导入。                                                                                                                            |
-| [packages/mascot/src/morph.ts](packages/mascot/src/morph.ts)                                 | 计算两种轮廓之间的中间形状，让形状切换连续。 构造静态帧，对齐闭合轮廓的起点 / 方向，插值与收缩轮廓；只为选中的对齐方案分配结果数组。                                                                                                             |
-| [packages/mascot/src/paths.ts](packages/mascot/src/paths.ts)                                 | 把轮廓坐标转换成 SVG 能绘制的路径文字。 以闭合样条生成 SVG path，统一坐标精度和安全缩放，提供静态路径与帧到路径的转换。                                                                                                                          |
-| [packages/mascot/src/rest.json](packages/mascot/src/rest.json)                               | 保存静态 Q 外轮廓和内部孔洞的坐标。 静态外轮廓与孔洞的点集数据，不包含 UI 状态。                                                                                                                                                                 |
-| [packages/mascot/src/vendor/logo-catalog.js](packages/mascot/src/vendor/logo-catalog.js)     | 根据播放时间算出当前动画形状和颜色，供两端绘制。`sample(time)` 保留原目录行为，`sample(time, gaze)` 与 `setLookDirection()` 可选择启用方向表情和目光偏移；`directGeometry` 路径缓存模型点和旋转计算，跳过中间 SVG 往返。没有 DOM、事件或定时器。 |
-| [packages/mascot/src/vendor/logo-catalog.d.ts](packages/mascot/src/vendor/logo-catalog.d.ts) | 告诉 TypeScript 动画引擎可以传什么、会返回什么。声明 `CatalogFrame`、归一化目光向量 `MascotGaze`、引擎工厂、方向接口和选项，为生成式 JavaScript 提供类型边界。                                                                                   |
-
-[packages/mascot/src/docking.ts](packages/mascot/src/docking.ts) 计算归位曲线，并提供第三屏与路径共用的时间参数、滚动进度换算和缓动。纯函数生成每次行程的随机曲率与带端点缓动的二次曲线坐标；Web 逐帧采样，Mobile 预采样到原生插值图，没有 DOM、React 或平台 API。
-
-[packages/mascot/src/playback.ts](packages/mascot/src/playback.ts) 决定动画何时开始、停止、变形和等待。`createMascotPlayback()` 通过注入的调度器管理唯一帧句柄与待机截止时间，接收帧绘制/静态绘制回调和归一化目光；共享状态、时间参数及销毁保护，不访问 DOM、React 或 React Native。Web 不设置限帧，Mobile 设置 30fps，预算检查在采样前执行。
+| 文件                                                                                         | 职责                                                                                                                                                                                                                                                                       |
+| -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [packages/mascot/package.json](packages/mascot/package.json)                                 | 声明共享动画计算库的入口，以及它依赖的共享内容库。 声明私有包 `@qntx-ui/mascot`，仅依赖共享 `content`，对外导出源码。                                                                                                                                                      |
+| [packages/mascot/project.json](packages/mascot/project.json)                                 | 把共享动画计算库登记给 Nx，并配置检查任务。 注册 Nx 共享库、标签和类型 / lint / 边界检查目标。                                                                                                                                                                             |
+| [packages/mascot/tsconfig.json](packages/mascot/tsconfig.json)                               | 检查动画计算代码和配套数据，不引入网页或原生 UI 环境。 使用纯 ES2022 类型环境，并纳入静态 JSON 轮廓。                                                                                                                                                                      |
+| [packages/mascot/src/index.ts](packages/mascot/src/index.ts)                                 | 作为动画库的统一导入入口，两端从这里取得所需计算函数。 统一公开动画引擎、帧类型、形变与路径函数，应用通过此入口导入。                                                                                                                                                      |
+| [packages/mascot/src/morph.ts](packages/mascot/src/morph.ts)                                 | 计算两种轮廓之间的中间形状，让形状切换连续。 构造静态帧，对齐闭合轮廓的起点 / 方向，插值与收缩轮廓；只为选中的对齐方案分配结果数组。                                                                                                                                       |
+| [packages/mascot/src/paths.ts](packages/mascot/src/paths.ts)                                 | 把轮廓坐标转换成 SVG 能绘制的路径文字。 以闭合样条生成 SVG path，统一坐标精度和安全缩放，提供静态路径与帧到路径的转换。                                                                                                                                                    |
+| [packages/mascot/src/rest.json](packages/mascot/src/rest.json)                               | 保存静态 Q 外轮廓和内部孔洞的坐标。 静态外轮廓与孔洞的点集数据，不包含 UI 状态。                                                                                                                                                                                           |
+| [packages/mascot/src/vendor/logo-catalog.js](packages/mascot/src/vendor/logo-catalog.js)     | 根据播放时间算出当前动画形状和颜色，供两端绘制。`sample(time)` 保留原目录行为，`sample(time, gaze)` 与 `setLookDirection()` 可选择启用方向表情和目光偏移；`directGeometry` 路径缓存模型点和旋转计算，跳过中间 SVG 往返。没有 DOM、事件或定时器。                           |
+| [packages/mascot/src/vendor/logo-catalog.d.ts](packages/mascot/src/vendor/logo-catalog.d.ts) | 告诉 TypeScript 动画引擎可以传什么、会返回什么。声明 `CatalogFrame`、归一化目光向量 `MascotGaze`、引擎工厂、方向接口和选项，为生成式 JavaScript 提供类型边界。                                                                                                             |
+| [packages/mascot/src/docking.ts](packages/mascot/src/docking.ts)                             | 计算归位曲线，并提供第三屏与路径共用的时间参数、滚动进度换算和缓动。纯函数生成每次行程的随机曲率与带端点缓动的二次曲线坐标；Web 逐帧采样，Mobile 预采样到原生插值图，没有 DOM、React 或平台 API。                                                                          |
+| [packages/mascot/src/playback.ts](packages/mascot/src/playback.ts)                           | 决定动画何时开始、停止、变形和等待。`createMascotPlayback()` 通过注入的调度器管理唯一帧句柄与待机截止时间，接收帧绘制/静态绘制回调和归一化目光；共享状态、时间参数及销毁保护，不访问 DOM、React 或 React Native。Web 不设置限帧，Mobile 设置 30fps，预算检查在采样前执行。 |
 
 共享范围包括数据、设计数值、几何、路径和纯播放生命周期。Web DOM、React Native SVG、实际时钟/RAF/timer 适配、输入监听及平台无障碍属性留在应用层；完整的滚动容器不跨端共享。vendor 文件的局部规则例外有源码说明，不应扩展为全仓库豁免。
 
